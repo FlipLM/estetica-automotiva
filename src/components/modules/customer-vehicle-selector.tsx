@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import {
   Search,
   User,
@@ -60,7 +61,12 @@ export default function CustomerVehicleSelector({
   disabled = false,
 }: CustomerVehicleSelectorProps) {
   // Estados de busca
+  const [mounted, setMounted] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
   const [searchResults, setSearchResults] = useState<CustomerItem[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
