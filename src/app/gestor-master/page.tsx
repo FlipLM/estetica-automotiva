@@ -59,7 +59,10 @@ interface TenantItem {
 
 export default function GestorMasterPage() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
-  const [masterKeyInput, setMasterKeyInput] = useState("");
+  const [adminUser, setAdminUser] = useState<any>(null);
+  const [adminEmail, setAdminEmail] = useState("");
+  const [adminPassword, setAdminPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
   const [authLoading, setAuthLoading] = useState(false);
 
@@ -87,14 +90,17 @@ export default function GestorMasterPage() {
   // Ações nos Tenants existentes
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
 
-  // 1. Checa se o usuário já tem cookie master autenticado
+  // 1. Checa se o usuário já tem cookie master autenticado ou sessão ADMIN ativa
   async function checkAuth() {
     try {
       const res = await fetch("/api/master-saas/auth");
       const data = await res.json();
-      setIsAuthenticated(data.authenticated === true);
       if (data.authenticated === true) {
+        setIsAuthenticated(true);
+        setAdminUser(data.user);
         loadTenants();
+      } else {
+        setIsAuthenticated(false);
       }
     } catch {
       setIsAuthenticated(false);
@@ -114,20 +120,24 @@ export default function GestorMasterPage() {
       const res = await fetch("/api/master-saas/auth", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ masterKey: masterKeyInput }),
+        body: JSON.stringify({
+          email: adminEmail,
+          password: adminPassword,
+        }),
       });
 
       const data = await res.json();
       if (!res.ok) {
-        setAuthError(data.error || "Chave mestre inválida.");
+        setAuthError(data.error || "Credenciais de administrador incorretas.");
         setAuthLoading(false);
         return;
       }
 
       setIsAuthenticated(true);
+      setAdminUser(data.user);
       loadTenants();
     } catch {
-      setAuthError("Falha de conexão com o servidor master.");
+      setAuthError("Falha de conexão com o servidor.");
     } finally {
       setAuthLoading(false);
     }
@@ -136,7 +146,8 @@ export default function GestorMasterPage() {
   async function handleLogoutMaster() {
     await fetch("/api/master-saas/auth", { method: "DELETE" });
     setIsAuthenticated(false);
-    setMasterKeyInput("");
+    setAdminUser(null);
+    setAdminPassword("");
   }
 
   async function loadTenants() {
@@ -302,7 +313,7 @@ export default function GestorMasterPage() {
   }
 
   // ---------------------------------------------------------------------------
-  // TELA 2: LOGIN COM CHAVE MESTRE SECRETA (Se não autenticado)
+  // TELA 2: LOGIN DO ADMINISTRADOR GESTOR (E-mail e Senha)
   // ---------------------------------------------------------------------------
   if (!isAuthenticated) {
     return (
@@ -315,9 +326,9 @@ export default function GestorMasterPage() {
               <ShieldCheck className="w-7 h-7" />
             </div>
             <div>
-              <h1 className="text-xl font-bold tracking-tight text-white">Console Master do Proprietário</h1>
+              <h1 className="text-xl font-bold tracking-tight text-white">Login do Gestor SaaS</h1>
               <p className="text-xs text-slate-400 mt-1">
-                Acesso restrito à gestão de clientes e licenças SaaS
+                Acesse o painel restrito de gerenciamento de licenças e clientes
               </p>
             </div>
           </div>
@@ -331,17 +342,42 @@ export default function GestorMasterPage() {
 
             <div>
               <label className="block text-xs font-bold text-slate-300 mb-1.5 flex items-center gap-1.5">
-                <KeyRound className="w-3.5 h-3.5 text-emerald-400" />
-                <span>Chave Secreta Mestre (Master Key)</span>
+                <Users className="w-3.5 h-3.5 text-emerald-400" />
+                <span>E-mail do Administrador</span>
               </label>
               <input
-                type="password"
+                type="email"
                 required
-                value={masterKeyInput}
-                onChange={(e) => setMasterKeyInput(e.target.value)}
-                placeholder="Insira sua chave de acesso mestre..."
+                value={adminEmail}
+                onChange={(e) => setAdminEmail(e.target.value)}
+                placeholder="seu-email@administrador.com"
                 className="w-full h-11 px-3.5 text-xs bg-slate-900 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-emerald-500 transition"
               />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-300 mb-1.5 flex items-center gap-1.5">
+                <Lock className="w-3.5 h-3.5 text-emerald-400" />
+                <span>Senha de Acesso</span>
+              </label>
+              <div className="relative">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  required
+                  value={adminPassword}
+                  onChange={(e) => setAdminPassword(e.target.value)}
+                  placeholder="Sua senha de administrador..."
+                  className="w-full h-11 pl-3.5 pr-10 text-xs bg-slate-900 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-emerald-500 transition"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white transition"
+                  tabIndex={-1}
+                >
+                  <Eye className="w-4 h-4" />
+                </button>
+              </div>
             </div>
 
             <button
@@ -352,19 +388,19 @@ export default function GestorMasterPage() {
               {authLoading ? (
                 <>
                   <RefreshCw className="w-4 h-4 animate-spin" />
-                  <span>Validando chave...</span>
+                  <span>Validando credenciais...</span>
                 </>
               ) : (
                 <>
                   <Lock className="w-4 h-4" />
-                  <span>Entrar no Console Master</span>
+                  <span>Entrar no Painel Master</span>
                 </>
               )}
             </button>
           </form>
 
           <p className="text-[11px] text-center text-slate-500 mt-6">
-            DetailPro SaaS Platform • Área exclusiva do Administrador da Software House
+            DetailPro SaaS Platform • Acesso exclusivo ao Administrador da Plataforma
           </p>
         </div>
       </div>
@@ -396,7 +432,7 @@ export default function GestorMasterPage() {
             </div>
           </div>
 
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-3">
             <button
               onClick={() => setCreateModalOpen(true)}
               className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold flex items-center gap-2 shadow-lg shadow-emerald-900/40 transition cursor-pointer"
@@ -404,6 +440,13 @@ export default function GestorMasterPage() {
               <Plus className="w-4 h-4" />
               <span>Gerar Acesso Temporário (Lead)</span>
             </button>
+
+            {adminUser && (
+              <div className="hidden sm:flex flex-col text-right px-2">
+                <span className="text-xs font-bold text-white">{adminUser.name}</span>
+                <span className="text-[10px] text-emerald-400 font-mono">{adminUser.email}</span>
+              </div>
+            )}
 
             <button
               onClick={handleLogoutMaster}
@@ -846,3 +889,4 @@ export default function GestorMasterPage() {
     </div>
   );
 }
+
