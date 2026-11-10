@@ -82,5 +82,12 @@ A reformulação visual e de experiência do **DetailPro SaaS** reconstruiu inte
    - Ao clicar em qualquer item da tabela de produtos (ou no ranking de gastos), abre-se um modal detalhado com filtro por tipo (`Todas`, `Entradas`, `Saídas`, `Perdas`), resumo financeiro do insumo e linha do tempo completa com **data e hora** (`dd/MM/yyyy às HH:mm`).
 3. **Cálculo do Valor Médio Unitário Ponderado:**
    - Calculado dinamicamente a partir de todas as entradas (`IN`) do produto: $\text{Custo Médio} = \frac{\sum \text{totalCost}_{\text{IN}}}{\sum \text{quantity}_{\text{IN}}}$, atualizando também o `costPrice` de referência do produto a cada nova entrada ou edição de entrada.
+4. **Seletor de Produto com Barra de Busca e Dropdown Interativo:**
+   - O `<select>` nativo foi substituído por uma barra de busca interativa com dropdown flutuante (ícone de busca, fechamento no clique externo, badges de estoque crítico, exibição de saldo e valor médio unitário por insumo, e atalho para cadastrar novo produto caso a pesquisa não retorne resultados).
+5. **Integração Automática com o Financeiro (Contas a Pagar / DRE):**
+   - Toda entrada de produto com valor financeiro (seja no saldo inicial de cadastro ou em uma nova compra/reposição em lote) gera automaticamente uma **Despesa (`Expense`)** da categoria `PRODUCTS` com status pago (`paid: true`), vinculada via `expenseId` em `StockMovement`.
+   - Edições no valor total pago da entrada sincronizam o lançamento no Financeiro; a exclusão do produto remove as despesas vinculadas, mantendo a integridade do DRE.
+
+
 
 

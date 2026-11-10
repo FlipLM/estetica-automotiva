@@ -95,14 +95,37 @@ export async function DELETE(
 
     const product = await prisma.product.findFirst({
       where: { id: params.id, tenantId: session.tenantId },
+      include: {
+        movements: true,
+      },
     });
 
     if (!product) {
       return NextResponse.json({ error: "Produto não encontrado" }, { status: 404 });
     }
 
-    await prisma.product.delete({
-      where: { id: params.id },
+    await prisma.$transaction(async (tx) => {
+      // Coleta os IDs de despesas vinculadas a entradas deste produto
+      const linkedExpenseIds = product.movements
+        .map((m) => m.expenseId)
+        .filter((id): id is string => !!id);
+
+      // Exclui as movimentações
+      await tx.stockMovement.deleteMany({
+        where: { productId: params.id },
+      });
+
+      // Exclui o produto
+      await tx.product.delete({
+        where: { id: params.id },
+      });
+
+      // Se houver despesas vinculadas exclusivamente a essas entradas, exclui-as do financeiro
+      if (linkedExpenseIds.length > 0) {
+        await tx.expense.deleteMany({
+          where: { id: { in: linkedExpenseIds } },
+        });
+      }
     });
 
     return NextResponse.json({ message: "Produto excluído com sucesso" });

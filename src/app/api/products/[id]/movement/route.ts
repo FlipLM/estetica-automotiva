@@ -106,6 +106,26 @@ export async function POST(
     }
 
     const result = await prisma.$transaction(async (tx) => {
+      // Se for uma entrada (IN) com valor financeiro, gera automaticamente a despesa no Financeiro (PRODUCTS)
+      let expenseId: string | null = null;
+      if (validated.type === "IN" && movTotalCost > 0) {
+        const expense = await tx.expense.create({
+          data: {
+            tenantId: session.tenantId,
+            description: `Entrada de Estoque: ${product.name} (+${validated.quantity} ${product.unit})`,
+            amount: movTotalCost,
+            category: "PRODUCTS",
+            dueDate: new Date(),
+            paid: true,
+            paidAt: new Date(),
+            notes: validated.reason
+              ? `Entrada registrada no estoque. Motivo/NF: ${validated.reason}`
+              : "Entrada de produto no estoque",
+          },
+        });
+        expenseId = expense.id;
+      }
+
       const movement = await tx.stockMovement.create({
         data: {
           productId: product.id,
@@ -114,6 +134,7 @@ export async function POST(
           unitCost: movUnitCost,
           totalCost: movTotalCost,
           reason: validated.reason,
+          expenseId: expenseId,
         },
       });
 
@@ -285,6 +306,40 @@ export async function PATCH(
         validated.quantity > 0 ? newTotalCost / validated.quantity : product.costPrice;
 
       const result = await prisma.$transaction(async (tx) => {
+        // Se for uma entrada (IN) vinculada a uma despesa no financeiro, sincroniza o valor e descrição
+        if (existingMovement.type === "IN") {
+          if (existingMovement.expenseId) {
+            await tx.expense.update({
+              where: { id: existingMovement.expenseId },
+              data: {
+                amount: newTotalCost,
+                description: `Entrada de Estoque: ${product.name} (+${validated.quantity} ${product.unit})`,
+                notes: validated.reason
+                  ? `Atualizado via estoque. Motivo/NF: ${validated.reason}`
+                  : undefined,
+              },
+            });
+          } else if (newTotalCost > 0) {
+            // Se a entrada antiga não tinha despesa vinculada (ex: criada antes), gera agora
+            const newExp = await tx.expense.create({
+              data: {
+                tenantId: session.tenantId,
+                description: `Entrada de Estoque: ${product.name} (+${validated.quantity} ${product.unit})`,
+                amount: newTotalCost,
+                category: "PRODUCTS",
+                dueDate: new Date(),
+                paid: true,
+                paidAt: new Date(),
+                notes: validated.reason,
+              },
+            });
+            await tx.stockMovement.update({
+              where: { id: existingMovement.id },
+              data: { expenseId: newExp.id },
+            });
+          }
+        }
+
         const updatedMovement = await tx.stockMovement.update({
           where: { id: existingMovement.id },
           data: {

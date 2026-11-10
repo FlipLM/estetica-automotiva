@@ -241,6 +241,26 @@ export async function POST(request: NextRequest) {
       });
 
       if (validated.currentStock > 0) {
+        // Se houver valor pago no lote inicial, registra automaticamente uma despesa no Financeiro (Contas a Pagar / DRE)
+        let expenseId: string | null = null;
+        if (computedTotalCost > 0) {
+          const expense = await tx.expense.create({
+            data: {
+              tenantId: session.tenantId,
+              description: `Compra de Insumo: ${validated.name} (${validated.currentStock} ${validated.unit})`,
+              amount: computedTotalCost,
+              category: "PRODUCTS",
+              dueDate: new Date(),
+              paid: true,
+              paidAt: new Date(),
+              notes: validated.supplier
+                ? `Entrada inicial no estoque via fornecedor: ${validated.supplier}`
+                : "Entrada inicial de saldo no cadastro do produto",
+            },
+          });
+          expenseId = expense.id;
+        }
+
         await tx.stockMovement.create({
           data: {
             productId: created.id,
@@ -249,6 +269,7 @@ export async function POST(request: NextRequest) {
             unitCost: computedUnitCost,
             totalCost: computedTotalCost,
             reason: "Saldo inicial de cadastro",
+            expenseId: expenseId,
           },
         });
       }
