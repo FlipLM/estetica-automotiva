@@ -656,9 +656,9 @@ export default function VistoriaPage() {
 
       {/* MODAL DE NOVA VISTORIA & CHECKLIST 360 */}
       {modalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-4">
-          <div className="carbon-card border border-[#2b354c] w-full max-w-4xl p-5 sm:p-6 shadow-2xl space-y-4 max-h-[92vh] overflow-y-auto">
-            <div className="flex items-center justify-between pb-3 border-b border-[#1c2230]">
+        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+          <div className="w-full max-w-4xl p-5 sm:p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto rounded-xl bg-carbon-900 border border-carbon-700 font-mono my-auto">
+            <div className="flex items-center justify-between pb-3 border-b border-carbon-800">
               <h2 className="text-sm font-black text-white uppercase tracking-wider font-mono flex items-center gap-2">
                 <Camera className="w-4 h-4 text-lime-400" />
                 <span>Recepção de Veículo & Checklist 360º</span>

@@ -638,9 +638,9 @@ export default function CustomerVehicleSelector({
       )}
 
       {/* MODAL 1: CADASTRAR NOVO CLIENTE */}
-      {isNewCustomerModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
-          <div className="carbon-card w-full max-w-lg p-5 sm:p-6 shadow-2xl space-y-4 max-h-[92vh] overflow-y-auto bg-carbon-900 border-carbon-700 font-mono">
+      {mounted && isNewCustomerModalOpen && createPortal(
+        <div className="fixed inset-0 z-[100] bg-black/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+          <div className="w-full max-w-lg p-5 sm:p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto rounded-xl bg-carbon-900 border border-carbon-700 font-mono my-auto animate-in fade-in zoom-in-95 duration-150">
             <div className="flex items-center justify-between pb-3 border-b border-carbon-700">
               <h3 className="text-base font-display font-extrabold text-white uppercase flex items-center gap-2">
                 <User className="w-4 h-4 text-lime-400" />
@@ -928,13 +928,14 @@ export default function CustomerVehicleSelector({
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* MODAL 2: CADASTRAR NOVO VEÍCULO PARA O CLIENTE SELECIONADO */}
-      {isNewVehicleModalOpen && selectedCustomer && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
-          <div className="carbon-card w-full max-w-md p-5 sm:p-6 shadow-2xl space-y-4 max-h-[92vh] overflow-y-auto bg-carbon-900 border-carbon-700 font-mono">
+      {mounted && isNewVehicleModalOpen && selectedCustomer && createPortal(
+        <div className="fixed inset-0 z-[100] bg-black/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+          <div className="w-full max-w-md p-5 sm:p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto rounded-xl bg-carbon-900 border border-carbon-700 font-mono my-auto animate-in fade-in zoom-in-95 duration-150">
             <div className="flex items-center justify-between pb-3 border-b border-carbon-700">
               <div className="space-y-0.5">
                 <h3 className="text-base font-display font-extrabold text-white uppercase flex items-center gap-2">
@@ -1092,7 +1093,8 @@ export default function CustomerVehicleSelector({
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
