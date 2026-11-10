@@ -72,11 +72,11 @@ export function VehicleSilhouette360({
   const [mode, setMode] = useState<"3d" | "2d">(defaultMode);
 
   return (
-    <section className="rounded-2xl border border-[#DFE2DF] bg-white p-4 sm:p-5 text-[#142D26] shadow-xs relative space-y-4">
+    <section className="rounded-2xl border border-[#DFE2DF] bg-white p-3.5 sm:p-5 text-[#142D26] shadow-xs relative space-y-4 max-w-full overflow-hidden">
       {/* Cabeçalho do Módulo de Vistoria com Alternador 3D / 2D */}
-      <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-[#F2F4F1]">
-        <div>
-          <div className="flex items-center gap-2">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-3 border-b border-[#F2F4F1]">
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-2">
             <h3 className="text-sm font-bold text-[#142D26]">Mapeamento Visual de Avarias</h3>
             <span className="text-[10px] font-bold text-[#247653] bg-[#E9F3EC] px-2 py-0.5 rounded-full border border-[#247653]/20 flex items-center gap-1">
               <Sparkles className="w-3 h-3" />
@@ -91,11 +91,11 @@ export function VehicleSilhouette360({
         </div>
 
         {/* Toggle Segmentado 3D / 2D */}
-        <div className="flex items-center p-1 bg-[#F2F4F1] rounded-xl border border-[#DFE2DF]">
+        <div className="grid grid-cols-2 sm:flex items-center p-1 bg-[#F2F4F1] rounded-xl border border-[#DFE2DF] w-full sm:w-auto shrink-0">
           <button
             type="button"
             onClick={() => setMode("3d")}
-            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
               mode === "3d"
                 ? "bg-white text-[#247653] shadow-xs border border-[#DFE2DF]/60"
                 : "text-[#737D75] hover:text-[#142D26]"
@@ -108,7 +108,7 @@ export function VehicleSilhouette360({
           <button
             type="button"
             onClick={() => setMode("2d")}
-            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
               mode === "2d"
                 ? "bg-white text-[#247653] shadow-xs border border-[#DFE2DF]/60"
                 : "text-[#737D75] hover:text-[#142D26]"

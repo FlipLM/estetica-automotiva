@@ -12,6 +12,7 @@ const updateProductSchema = z.object({
   minStock: z.number().min(0).optional(),
   costPrice: z.number().min(0).optional(),
   supplier: z.string().nullable().optional(),
+  purchasedAt: z.string().nullish(),
 });
 
 export async function GET(
@@ -65,9 +66,16 @@ export async function PUT(
     const body = await request.json();
     const validated = updateProductSchema.parse(body);
 
+    const updateData: any = { ...validated };
+    if (validated.purchasedAt !== undefined) {
+      updateData.purchasedAt = validated.purchasedAt
+        ? new Date(validated.purchasedAt)
+        : null;
+    }
+
     const updated = await prisma.product.update({
       where: { id: params.id },
-      data: validated,
+      data: updateData,
     });
 
     return NextResponse.json({

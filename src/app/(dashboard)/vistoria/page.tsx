@@ -661,16 +661,17 @@ export default function VistoriaPage() {
 
       {/* MODAL DE NOVA VISTORIA & CHECKLIST 360 */}
       {modalOpen && (
-        <div className="fixed inset-0 z-50 bg-[#142D26]/45 backdrop-blur-[2px] flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
-          <div className="w-full max-w-4xl p-5 sm:p-6 shadow-xl space-y-4 max-h-[90vh] overflow-y-auto rounded-2xl bg-white border border-[#E7EAE7] my-auto">
+        <div className="fixed inset-0 z-50 bg-[#142D26]/60 backdrop-blur-xs flex items-start sm:items-center justify-center p-2 sm:p-4 overflow-y-auto overflow-x-hidden">
+          <div className="w-full max-w-4xl min-w-0 p-4 sm:p-6 shadow-2xl space-y-4 max-h-[92vh] overflow-y-auto overflow-x-hidden rounded-2xl bg-white border border-[#E7EAE7] my-auto">
             <div className="flex items-center justify-between pb-3 border-b border-[#E7EAE7]">
-              <h2 className="text-base font-bold text-[#252B27] flex items-center gap-2">
-                <Camera className="w-4 h-4 text-[#247653]" />
+              <h2 className="text-sm sm:text-base font-bold text-[#252B27] flex items-center gap-2">
+                <Camera className="w-4 h-4 text-[#247653] shrink-0" />
                 <span>Recepção de Veículo e Checklist 360º</span>
               </h2>
               <button
                 onClick={() => setModalOpen(false)}
-                className="text-[#737D75] hover:text-[#252B27] p-1 rounded-lg hover:bg-[#F7F8F6]"
+                className="text-[#737D75] hover:text-[#252B27] p-1.5 rounded-lg hover:bg-[#F7F8F6] cursor-pointer"
+                aria-label="Fechar"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -685,17 +686,17 @@ export default function VistoriaPage() {
 
             <form onSubmit={handleCreateChecklist} className="space-y-4">
               {/* ETAPA 1: SELEÇÃO DO VEÍCULO */}
-              <div className="p-4 bg-[#F7F8F6] border border-[#E7EAE7] rounded-xl space-y-3">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 pb-2 border-b border-[#E7EAE7]">
+              <div className="p-3.5 sm:p-4 bg-[#F7F8F6] border border-[#E7EAE7] rounded-xl space-y-3">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5 pb-2 border-b border-[#E7EAE7]">
                   <label className="text-xs font-bold text-[#252B27]">
                     1. Identificação do Veículo para Entrada <span className="text-[#DC4C4C]">*</span>
                   </label>
 
-                  <div className="inline-flex p-1 rounded-lg bg-white border border-[#E7EAE7] text-xs">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-1 p-1 rounded-lg bg-white border border-[#E7EAE7] text-xs w-full sm:w-auto">
                     <button
                       type="button"
                       onClick={() => setSelectionMode("TODO_OS")}
-                      className={`px-3 py-1 rounded-md flex items-center gap-1.5 transition cursor-pointer text-xs font-semibold ${
+                      className={`px-3 py-1.5 rounded-md flex items-center justify-center gap-1.5 transition cursor-pointer text-xs font-semibold ${
                         selectionMode === "TODO_OS"
                           ? "bg-[#247653] text-white"
                           : "text-[#737D75] hover:text-[#252B27]"
@@ -708,7 +709,7 @@ export default function VistoriaPage() {
                     <button
                       type="button"
                       onClick={() => setSelectionMode("SEARCH_CUSTOMER")}
-                      className={`px-3 py-1 rounded-md flex items-center gap-1.5 transition cursor-pointer text-xs font-semibold ${
+                      className={`px-3 py-1.5 rounded-md flex items-center justify-center gap-1.5 transition cursor-pointer text-xs font-semibold ${
                         selectionMode === "SEARCH_CUSTOMER"
                           ? "bg-[#247653] text-white"
                           : "text-[#737D75] hover:text-[#252B27]"
@@ -724,18 +725,18 @@ export default function VistoriaPage() {
                 {selectionMode === "TODO_OS" && (
                   <div className="space-y-2">
                     {selectedOrderSummary ? (
-                      <div className="p-3.5 rounded-xl bg-[#E9F3EC] border border-[#247653] flex items-center justify-between gap-3">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-xl bg-[#247653] text-white flex flex-col items-center justify-center font-bold text-xs shrink-0">
+                      <div className="p-3 sm:p-3.5 rounded-xl bg-[#E9F3EC] border border-[#247653] flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                        <div className="flex items-start sm:items-center gap-3 min-w-0">
+                          <div className="w-10 h-10 rounded-xl bg-[#247653] text-white flex flex-col items-center justify-center font-bold text-xs shrink-0 mt-0.5 sm:mt-0">
                             <span>OS</span>
                             <span>#{selectedOrderSummary.orderNumber}</span>
                           </div>
-                          <div className="text-xs space-y-1">
-                            <div className="flex items-center gap-2">
-                              <span className="mercosul-plate text-xs font-bold">
+                          <div className="text-xs space-y-1 min-w-0 flex-1">
+                            <div className="flex flex-wrap items-center gap-1.5">
+                              <span className="mercosul-plate text-xs font-bold shrink-0">
                                 {selectedOrderSummary.vehicle.plate}
                               </span>
-                              <span className="font-bold text-[#252B27]">
+                              <span className="font-bold text-[#252B27] break-words">
                                 {selectedOrderSummary.vehicle.brand
                                   ? `${selectedOrderSummary.vehicle.brand} `
                                   : ""}
@@ -745,7 +746,7 @@ export default function VistoriaPage() {
                                 ({selectedOrderSummary.vehicle.category})
                               </span>
                             </div>
-                            <div className="text-[#343C36] text-xs flex items-center gap-2">
+                            <div className="text-[#343C36] text-xs flex flex-wrap items-center gap-x-2 gap-y-0.5">
                               <span>
                                 Cliente:{" "}
                                 <strong className="text-[#252B27]">
@@ -771,7 +772,7 @@ export default function VistoriaPage() {
                             setSelectedOrderSummary(null);
                             setSelectedVehicleId("");
                           }}
-                          className="dp-btn-secondary text-xs py-1.5 px-2.5 cursor-pointer shrink-0"
+                          className="dp-btn-secondary text-xs py-1.5 px-3 cursor-pointer w-full sm:w-auto shrink-0 justify-center"
                         >
                           Trocar OS
                         </button>

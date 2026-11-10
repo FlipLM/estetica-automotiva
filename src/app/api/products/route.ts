@@ -14,6 +14,7 @@ const createProductSchema = z.object({
   costPrice: z.number().min(0).default(0),
   totalPaidInitial: z.number().min(0).optional(),
   supplier: z.string().nullable().optional(),
+  purchasedAt: z.string().nullish(),
 });
 
 export async function GET(request: NextRequest) {
@@ -237,6 +238,7 @@ export async function POST(request: NextRequest) {
           minStock: validated.minStock,
           costPrice: computedUnitCost,
           supplier: validated.supplier,
+          purchasedAt: validated.purchasedAt ? new Date(validated.purchasedAt) : null,
         },
       });
 

@@ -254,7 +254,7 @@ export function Inspection3D({
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 max-w-full overflow-hidden">
       {/* Barra de Ações Rápidas: Abertura das portas/capô e centralização da câmera */}
       <div className="flex flex-wrap items-center justify-between gap-2 bg-[#F8FAF8] border border-[#DFE2DF] p-3 rounded-2xl">
         <div className="flex flex-wrap items-center gap-1.5">

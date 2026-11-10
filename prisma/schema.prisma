@@ -381,6 +381,7 @@ model Product {
   minStock           Float    @default(5.0)
   costPrice          Float    @default(0.0)
   supplier           String?
+  purchasedAt        DateTime? // Data de aquisição / compra
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
 

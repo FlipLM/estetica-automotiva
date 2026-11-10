@@ -75,6 +75,8 @@ interface Product {
   costPrice: number;
   averageUnitCost: number;
   supplier?: string | null;
+  purchasedAt?: string | null;
+  createdAt: string;
   isLowStock: boolean;
   totalInventoryValue: number;
   stats: ProductStats;
@@ -145,6 +147,7 @@ export default function EstoquePage() {
     totalPaidInitial: "45.00",
     costPrice: "0.045",
     supplier: "",
+    purchasedAt: "",
   });
 
   // Modal de Nova Movimentação (Entrada com Valor Pago, Saída ou Perda)
@@ -301,6 +304,13 @@ export default function EstoquePage() {
     })}`;
   };
 
+  const fmtDate = (iso?: string | null) => {
+    if (!iso) return "Não informada";
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return "Não informada";
+    return d.toLocaleDateString("pt-BR");
+  };
+
   const fmtDateTime = (iso: string) => {
     const d = new Date(iso);
     return `${d.toLocaleDateString("pt-BR")} às ${d.toLocaleTimeString("pt-BR", {
@@ -321,6 +331,7 @@ export default function EstoquePage() {
       totalPaidInitial: "45.00",
       costPrice: "0.045",
       supplier: "",
+      purchasedAt: new Date().toISOString().split("T")[0],
     });
     setShowProductModal(true);
   };
@@ -328,6 +339,14 @@ export default function EstoquePage() {
   const handleOpenEditProduct = (product: Product, e?: React.MouseEvent) => {
     e?.stopPropagation();
     setEditingProduct(product);
+    let formattedPurchasedAt = "";
+    if (product.purchasedAt) {
+      try {
+        formattedPurchasedAt = new Date(product.purchasedAt)
+          .toISOString()
+          .split("T")[0];
+      } catch (err) {}
+    }
     setProductForm({
       name: product.name,
       category: product.category,
@@ -339,6 +358,7 @@ export default function EstoquePage() {
       ),
       costPrice: String(product.averageUnitCost),
       supplier: product.supplier || "",
+      purchasedAt: formattedPurchasedAt,
     });
     setShowProductModal(true);
   };
@@ -385,6 +405,7 @@ export default function EstoquePage() {
             minStock: parseFloat(productForm.minStock) || 0,
             costPrice: parseFloat(productForm.costPrice) || 0,
             supplier: productForm.supplier || null,
+            purchasedAt: productForm.purchasedAt || null,
           }),
         });
 
@@ -417,6 +438,7 @@ export default function EstoquePage() {
             costPrice: unitCostNum,
             totalPaidInitial: totalPaidNum,
             supplier: productForm.supplier || null,
+            purchasedAt: productForm.purchasedAt || null,
           }),
         });
 
@@ -973,19 +995,21 @@ export default function EstoquePage() {
                     <table className="w-full text-left text-sm">
                       <thead className="bg-[#F7F8F6] text-[#737D75] uppercase text-xs border-b border-[#E7EAE7]">
                         <tr>
-                          <th className="px-6 py-3 font-semibold">Produto / Insumo</th>
-                          <th className="px-6 py-3 font-semibold">Categoria</th>
-                          <th className="px-6 py-3 font-semibold">Saldo Atual</th>
-                          <th className="px-6 py-3 font-semibold">
+                          <th className="px-5 py-3 font-semibold">Produto / Insumo</th>
+                          <th className="px-5 py-3 font-semibold">Categoria</th>
+                          <th className="px-5 py-3 font-semibold">Aquisição / Compra</th>
+                          <th className="px-5 py-3 font-semibold">Registro no Estoque</th>
+                          <th className="px-5 py-3 font-semibold">Saldo Atual</th>
+                          <th className="px-5 py-3 font-semibold">
                             Valor Médio Unitário
                           </th>
-                          <th className="px-6 py-3 font-semibold">
+                          <th className="px-5 py-3 font-semibold">
                             Gasto em Entradas
                           </th>
-                          <th className="px-6 py-3 font-semibold">
+                          <th className="px-5 py-3 font-semibold">
                             Valor em Estoque
                           </th>
-                          <th className="px-6 py-3 font-semibold text-right">
+                          <th className="px-5 py-3 font-semibold text-right">
                             Ações (CRUD & Movimentar)
                           </th>
                         </tr>
@@ -1001,7 +1025,7 @@ export default function EstoquePage() {
                             className="hover:bg-[#E9F3EC]/35 transition-colors cursor-pointer group"
                             title="Clique para abrir o relatório de entradas, saídas e perdas deste produto"
                           >
-                            <td className="px-6 py-3.5">
+                            <td className="px-5 py-3.5">
                               <div className="font-semibold text-[#252B27] group-hover:text-[#247653] flex items-center gap-1.5">
                                 <span>{product.name}</span>
                                 <Eye className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 text-[#247653] transition-opacity" />
@@ -1013,10 +1037,26 @@ export default function EstoquePage() {
                                 • {product.stats.entriesCount} entrada(s)
                               </div>
                             </td>
-                            <td className="px-6 py-3.5">
+                            <td className="px-5 py-3.5">
                               <Badge variant="neutral" size="sm">
                                 {CATEGORY_NAMES[product.category] || product.category}
                               </Badge>
+                            </td>
+                            <td className="px-5 py-3.5 whitespace-nowrap">
+                              {product.purchasedAt ? (
+                                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-[#E9F3EC] text-[#247653] border border-[#247653]/20">
+                                  {fmtDate(product.purchasedAt)}
+                                </span>
+                              ) : (
+                                <span className="text-xs text-[#9CA49E] italic">
+                                  Não informada
+                                </span>
+                              )}
+                            </td>
+                            <td className="px-5 py-3.5 whitespace-nowrap">
+                              <span className="text-xs text-[#737D75]">
+                                {fmtDate(product.createdAt)}
+                              </span>
                             </td>
                             <td className="px-6 py-3.5">
                               <div className="flex items-center gap-2">
@@ -1534,6 +1574,32 @@ export default function EstoquePage() {
       >
         {reportProduct && (
           <div className="space-y-5">
+            {/* Informações de Cadastro e Datas */}
+            <div className="flex flex-wrap items-center gap-3 p-3 rounded-xl bg-[#F7F8F6] border border-[#E7EAE7] text-xs">
+              <div>
+                <span className="text-[#737D75]">Data de Aquisição: </span>
+                <strong className="text-[#247653]">
+                  {fmtDate(reportProduct.purchasedAt)}
+                </strong>
+              </div>
+              <span className="text-[#DFE2DF] hidden sm:inline">•</span>
+              <div>
+                <span className="text-[#737D75]">Registro no Estoque: </span>
+                <strong className="text-[#252B27]">
+                  {fmtDateTime(reportProduct.createdAt)}
+                </strong>
+              </div>
+              {reportProduct.supplier && (
+                <>
+                  <span className="text-[#DFE2DF] hidden sm:inline">•</span>
+                  <div>
+                    <span className="text-[#737D75]">Fornecedor: </span>
+                    <strong className="text-[#252B27]">{reportProduct.supplier}</strong>
+                  </div>
+                </>
+              )}
+            </div>
+
             {/* Resumo Financeiro e de Saldo do Item */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               <div className="p-3.5 rounded-xl bg-[#F7F8F6] border border-[#E7EAE7]">
@@ -1928,14 +1994,26 @@ export default function EstoquePage() {
             </div>
           )}
 
-          <Input
-            label="Fornecedor / Distribuidor (opcional)"
-            placeholder="Ex: Detailer Distribuidora, Vonixx Oficial"
-            value={productForm.supplier}
-            onChange={(e) =>
-              setProductForm({ ...productForm, supplier: e.target.value })
-            }
-          />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+            <Input
+              label="Data de Aquisição / Compra"
+              type="date"
+              value={productForm.purchasedAt}
+              onChange={(e) =>
+                setProductForm({ ...productForm, purchasedAt: e.target.value })
+              }
+              hint="Data da compra ou emissão da NF"
+            />
+
+            <Input
+              label="Fornecedor / Distribuidor (opcional)"
+              placeholder="Ex: Detailer Distribuidora, Vonixx"
+              value={productForm.supplier}
+              onChange={(e) =>
+                setProductForm({ ...productForm, supplier: e.target.value })
+              }
+            />
+          </div>
 
           <div className="flex justify-end gap-2.5 pt-4 border-t border-[#E7EAE7]">
             <Button
