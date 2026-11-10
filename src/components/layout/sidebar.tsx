@@ -408,78 +408,92 @@ export function Sidebar({ role, tenantName }: SidebarProps) {
       {/* =====================================================================
           NAVEGAÇÃO MOBILE INFERIOR + DRAWER COMPLETO
          ===================================================================== */}
-      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-[#E7EAE7] px-2 py-1.5 flex items-center justify-around shadow-dropdown">
+      <nav
+        aria-label="Navegação rápida mobile"
+        className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-[#E7EAE7] px-3 py-2 flex items-center justify-around shadow-dropdown pb-[calc(0.5rem+env(safe-area-inset-bottom))]"
+      >
         <Link
           href={role === "ADMIN" ? "/dashboard" : "/patio"}
           className={cn(
-            "flex flex-col items-center gap-0.5 px-2.5 py-1 rounded-[8px] text-[11px] font-medium",
+            "flex flex-col items-center gap-1 px-3 py-1 rounded-xl text-[11px] font-medium transition-colors",
             pathname === "/dashboard"
-              ? "text-[#247653] font-semibold"
-              : "text-[#737D75]"
+              ? "text-[#247653] font-bold bg-[#E9F3EC]"
+              : "text-[#737D75] hover:text-[#252B27]"
           )}
         >
-          <LayoutDashboard className="w-4 h-4" />
+          <LayoutDashboard className="w-5 h-5" />
           <span>Início</span>
         </Link>
 
         <Link
           href="/patio"
           className={cn(
-            "flex flex-col items-center gap-0.5 px-2.5 py-1 rounded-[8px] text-[11px] font-medium",
+            "flex flex-col items-center gap-1 px-3 py-1 rounded-xl text-[11px] font-medium transition-colors",
             pathname.startsWith("/patio")
-              ? "text-[#247653] font-semibold"
-              : "text-[#737D75]"
+              ? "text-[#247653] font-bold bg-[#E9F3EC]"
+              : "text-[#737D75] hover:text-[#252B27]"
           )}
         >
-          <Kanban className="w-4 h-4" />
+          <Kanban className="w-5 h-5" />
           <span>Pátio</span>
         </Link>
 
+        {/* Botão de Destaque Central: + Nova OS */}
         <Link
           href="/os/nova"
-          className="flex items-center justify-center w-10 h-10 rounded-full bg-[#247653] text-white shadow-sm -mt-3"
+          className="flex items-center justify-center w-12 h-12 rounded-full bg-[#247653] hover:bg-[#142D26] active:scale-95 text-white shadow-md -mt-5 transition-all"
           aria-label="Nova Ordem de Serviço"
+          title="Nova Ordem de Serviço"
         >
-          <Plus className="w-5 h-5" />
+          <Plus className="w-6 h-6" />
         </Link>
 
         <Link
           href="/vistoria"
           className={cn(
-            "flex flex-col items-center gap-0.5 px-2.5 py-1 rounded-[8px] text-[11px] font-medium",
+            "flex flex-col items-center gap-1 px-3 py-1 rounded-xl text-[11px] font-medium transition-colors",
             pathname.startsWith("/vistoria")
-              ? "text-[#247653] font-semibold"
-              : "text-[#737D75]"
+              ? "text-[#247653] font-bold bg-[#E9F3EC]"
+              : "text-[#737D75] hover:text-[#252B27]"
           )}
         >
-          <Camera className="w-4 h-4" />
+          <Camera className="w-5 h-5" />
           <span>Vistoria</span>
         </Link>
 
         <button
           type="button"
           onClick={() => setMobileMenuOpen(true)}
-          className="flex flex-col items-center gap-0.5 px-2.5 py-1 rounded-[8px] text-[11px] font-medium text-[#737D75] cursor-pointer"
+          className={cn(
+            "flex flex-col items-center gap-1 px-3 py-1 rounded-xl text-[11px] font-medium transition-colors cursor-pointer",
+            mobileMenuOpen
+              ? "text-[#247653] font-bold bg-[#E9F3EC]"
+              : "text-[#737D75] hover:text-[#252B27]"
+          )}
         >
-          <Menu className="w-4 h-4" />
+          <Menu className="w-5 h-5" />
           <span>Menu</span>
         </button>
-      </div>
+      </nav>
 
       {/* Drawer Mobile Completo */}
       {mobileMenuOpen && (
-        <div className="lg:hidden fixed inset-0 z-50 bg-[#142D26]/40 backdrop-blur-[2px] flex">
-          <div className="w-[280px] max-w-[85vw] bg-white h-full shadow-modal flex flex-col">
-            <div className="h-16 px-4 border-b border-[#E7EAE7] flex items-center justify-between">
+        <div
+          className="lg:hidden fixed inset-0 z-50 bg-[#142D26]/60 backdrop-blur-sm flex"
+          role="dialog"
+          aria-modal="true"
+        >
+          <div className="w-[300px] max-w-[85vw] bg-white h-full shadow-modal flex flex-col animate-in slide-in-from-left duration-200">
+            <div className="h-16 px-4 border-b border-[#E7EAE7] flex items-center justify-between shrink-0">
               <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-[8px] bg-[#142D26] flex items-center justify-center text-white">
-                  <Car className="w-4 h-4" />
+                <div className="w-9 h-9 rounded-xl bg-[#142D26] flex items-center justify-center text-white shadow-xs">
+                  <Car className="w-5 h-5 text-[#A7F3D0]" />
                 </div>
                 <div>
-                  <span className="font-bold text-[15px] text-[#142D26] block leading-none">
+                  <span className="font-bold text-[16px] text-[#142D26] block leading-none">
                     DetailPro
                   </span>
-                  <span className="text-[11px] text-[#737D75]">
+                  <span className="text-[11px] text-[#737D75] truncate max-w-[170px] block mt-0.5">
                     {tenantName || "Estética Automotiva"}
                   </span>
                 </div>
@@ -488,16 +502,39 @@ export function Sidebar({ role, tenantName }: SidebarProps) {
                 type="button"
                 onClick={() => setMobileMenuOpen(false)}
                 aria-label="Fechar menu"
-                className="p-1.5 rounded-[8px] text-[#737D75] hover:bg-[#F1F3F1]"
+                className="p-2 rounded-lg text-[#737D75] hover:text-[#252B27] hover:bg-[#F1F3F1] cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-3 space-y-4">
+            <div className="flex-1 overflow-y-auto p-3.5 space-y-4">
+              {/* Ocupação do Pátio no topo do Drawer */}
+              <div className="p-3 rounded-xl bg-[#F7F8F6] border border-[#E7EAE7]">
+                <div className="flex items-center justify-between text-xs mb-1.5">
+                  <span className="font-medium text-[#737D75]">Ocupação do Pátio</span>
+                  <span className="font-bold text-[#142D26]">
+                    {bayStats.occupiedCount}/{bayStats.totalCapacity} vagas
+                  </span>
+                </div>
+                <div className="w-full h-2 bg-[#E7EAE7] rounded-full overflow-hidden">
+                  <div
+                    className={cn(
+                      "h-full rounded-full transition-all duration-300",
+                      bayStats.percentOccupied >= 90
+                        ? "bg-[#DC4C4C]"
+                        : bayStats.percentOccupied >= 60
+                        ? "bg-[#D97706]"
+                        : "bg-[#247653]"
+                    )}
+                    style={{ width: `${Math.min(100, bayStats.percentOccupied)}%` }}
+                  />
+                </div>
+              </div>
+
               {groups.map((group) => (
                 <div key={group.title} className="space-y-1">
-                  <span className="px-2.5 text-[11px] font-semibold uppercase tracking-wider text-[#9CA49E]">
+                  <span className="px-3 text-[11px] font-bold uppercase tracking-wider text-[#9CA49E]">
                     {group.title}
                   </span>
                   {group.items.map((item) => {
@@ -509,16 +546,16 @@ export function Sidebar({ role, tenantName }: SidebarProps) {
                         href={item.href}
                         onClick={() => setMobileMenuOpen(false)}
                         className={cn(
-                          "flex items-center justify-between px-3 py-2.5 rounded-[8px] text-[14px]",
+                          "flex items-center justify-between px-3 py-2.5 rounded-xl text-[14px] transition-colors",
                           active
-                            ? "bg-[#E9F3EC] text-[#142D26] font-semibold"
+                            ? "bg-[#E9F3EC] text-[#142D26] font-bold"
                             : "text-[#737D75] hover:bg-[#F7F8F6] font-medium"
                         )}
                       >
                         <div className="flex items-center gap-3">
                           <Icon
                             className={cn(
-                              "w-4 h-4",
+                              "w-4 h-4 shrink-0",
                               active ? "text-[#247653]" : "text-[#737D75]"
                             )}
                           />
