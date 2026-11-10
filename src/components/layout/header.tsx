@@ -102,7 +102,7 @@ export function Header({ userName, userRole, tenantName }: HeaderProps) {
   const occupiedSlots = boxes.reduce((acc, b) => acc + (b.occupiedCount || 0), 0);
 
   return (
-    <header className="h-16 bg-white border-b border-[#E7EAE7] px-4 sm:px-6 flex items-center justify-between gap-4 sticky top-0 z-20">
+    <header className="h-16 bg-white border-b border-[#E7EAE7] px-4 sm:px-6 flex items-center justify-between gap-4 sticky top-0 z-20 print:hidden">
       {/* 1. Esquerda: Breadcrumb e Contexto */}
       <div className="flex items-center gap-2 min-w-0">
         <div className="flex items-center gap-1.5 text-[13px] text-[#737D75] truncate">

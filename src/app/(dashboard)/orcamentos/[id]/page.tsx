@@ -9,8 +9,11 @@ import {
   ArrowLeft,
   ArrowRight,
   Loader2,
+  FileDown,
+  Eye,
 } from "lucide-react";
 import { formatCurrency, formatDateTime } from "@/lib/utils";
+import { generateBudgetPdf } from "@/lib/pdf-generator";
 
 export default function BudgetDetailPage() {
   const params = useParams();
@@ -97,8 +100,28 @@ export default function BudgetDetailPage() {
     window.open(`https://wa.me/${formatted}?text=${text}`, "_blank");
   }
 
+  function handleDownloadPdf() {
+    try {
+      generateBudgetPdf(order, { download: true });
+    } catch (e) {
+      console.error("Erro ao gerar PDF:", e);
+      alert("Erro ao montar o documento PDF.");
+    }
+  }
+
+  function handleViewPdf() {
+    try {
+      const { doc } = generateBudgetPdf(order, { download: false });
+      const blobUrl = doc.output("bloburl");
+      window.open(blobUrl, "_blank");
+    } catch (e) {
+      console.error("Erro ao visualizar PDF:", e);
+      alert("Erro ao abrir visualização do PDF.");
+    }
+  }
+
   return (
-    <div className="max-w-4xl mx-auto space-y-6 pb-12">
+    <div className="max-w-4xl mx-auto space-y-6 pb-12 print:max-w-none print:w-full print:p-0 print:m-0">
       {/* Botões de Ação Topo (Ocultados na impressão) */}
       <div className="flex flex-wrap items-center justify-between gap-2 print:hidden">
         <Link
@@ -123,17 +146,37 @@ export default function BudgetDetailPage() {
           <button
             onClick={handleShareWhatsApp}
             className="px-3.5 py-2 rounded-lg bg-[#ECFDF5] hover:bg-[#D1FAE5] text-[#16A36A] border border-[#A7F3D0] text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer"
+            title="Enviar proposta no WhatsApp do cliente"
           >
             <Share2 className="w-3.5 h-3.5" />
-            <span>Compartilhar WhatsApp</span>
+            <span>WhatsApp</span>
+          </button>
+
+          <button
+            onClick={handleDownloadPdf}
+            className="px-3.5 py-2 rounded-lg bg-[#247653] hover:bg-[#1E6346] text-white text-xs font-semibold flex items-center gap-1.5 shadow-xs transition-all cursor-pointer"
+            title="Montar e baixar arquivo PDF vetorial oficial"
+          >
+            <FileDown className="w-3.5 h-3.5" />
+            <span>Baixar PDF (Oficial)</span>
+          </button>
+
+          <button
+            onClick={handleViewPdf}
+            className="px-3 py-2 rounded-lg bg-white hover:bg-[#F1F3F1] border border-[#E7EAE7] text-[#252B27] text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer"
+            title="Visualizar documento PDF em nova aba"
+          >
+            <Eye className="w-3.5 h-3.5 text-[#737D75]" />
+            <span>Visualizar</span>
           </button>
 
           <button
             onClick={() => window.print()}
-            className="dp-btn-secondary text-xs cursor-pointer"
+            className="px-3 py-2 rounded-lg bg-white hover:bg-[#F1F3F1] border border-[#E7EAE7] text-[#737D75] hover:text-[#252B27] text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer"
+            title="Imprimir na impressora"
           >
-            <Printer className="w-3.5 h-3.5 text-[#247653]" />
-            <span>Imprimir Proposta / PDF</span>
+            <Printer className="w-3.5 h-3.5" />
+            <span>Imprimir</span>
           </button>
         </div>
       </div>

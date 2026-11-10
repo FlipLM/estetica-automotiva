@@ -226,7 +226,7 @@ export function Sidebar({ role, tenantName }: SidebarProps) {
          ===================================================================== */}
       <aside
         className={cn(
-          "hidden lg:flex flex-col bg-white border-r border-[#E7EAE7] min-h-screen shrink-0 select-none transition-all duration-200 relative z-30",
+          "hidden lg:flex flex-col bg-white border-r border-[#E7EAE7] min-h-screen shrink-0 select-none transition-all duration-200 relative z-30 print:hidden",
           collapsed ? "w-[72px]" : "w-[240px]"
         )}
       >
@@ -410,7 +410,7 @@ export function Sidebar({ role, tenantName }: SidebarProps) {
          ===================================================================== */}
       <nav
         aria-label="Navegação rápida mobile"
-        className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-[#E7EAE7] px-3 py-2 flex items-center justify-around shadow-dropdown pb-[calc(0.5rem+env(safe-area-inset-bottom))]"
+        className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-[#E7EAE7] px-3 py-2 flex items-center justify-around shadow-dropdown pb-[calc(0.5rem+env(safe-area-inset-bottom))] print:hidden"
       >
         <Link
           href={role === "ADMIN" ? "/dashboard" : "/patio"}

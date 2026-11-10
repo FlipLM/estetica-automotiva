@@ -18,10 +18,13 @@ import {
   CheckCircle2,
   Clock,
   Receipt,
+  FileDown,
+  Printer,
 } from "lucide-react";
 import { formatCurrency, formatDateTime } from "@/lib/utils";
 import { ManageOrderServicesModal } from "@/components/modules/manage-order-services-modal";
 import { OrderStatusBadge } from "@/components/ui/badge";
+import { generateServiceOrderPdf } from "@/lib/pdf-generator";
 
 interface OrderDetail {
   id: string;
@@ -167,7 +170,7 @@ export default function OrderDetailPage() {
           <span>Voltar para Ordens de Serviço</span>
         </Link>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           {order.status !== "PAID" && (
             <button
               onClick={() => setIsServicesModalOpen(true)}
@@ -177,6 +180,39 @@ export default function OrderDetailPage() {
               <span>Adicionar Serviço à OS</span>
             </button>
           )}
+
+          <button
+            onClick={() => {
+              try {
+                generateServiceOrderPdf(order, { download: true });
+              } catch (e) {
+                console.error("Erro ao gerar PDF da OS:", e);
+                alert("Erro ao gerar PDF.");
+              }
+            }}
+            className="px-3.5 py-2 rounded-lg bg-[#247653] hover:bg-[#1E6346] text-white text-xs font-semibold flex items-center gap-1.5 shadow-xs transition-all cursor-pointer"
+            title="Baixar Ordem de Serviço em PDF Oficial"
+          >
+            <FileDown className="w-3.5 h-3.5" />
+            <span>Baixar PDF</span>
+          </button>
+
+          <button
+            onClick={() => {
+              try {
+                const { doc } = generateServiceOrderPdf(order, { download: false });
+                const blobUrl = doc.output("bloburl");
+                window.open(blobUrl, "_blank");
+              } catch (e) {
+                console.error("Erro ao visualizar PDF:", e);
+                alert("Erro ao visualizar PDF.");
+              }
+            }}
+            className="px-3 py-2 rounded-lg bg-white hover:bg-[#F1F3F1] border border-[#E7EAE7] text-[#252B27] text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer"
+            title="Visualizar OS em PDF"
+          >
+            <span>Visualizar</span>
+          </button>
 
           <Link
             href="/patio"

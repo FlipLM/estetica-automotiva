@@ -11,9 +11,12 @@ import {
   Camera,
   CheckCircle2,
   Loader2,
+  FileDown,
+  Eye,
 } from "lucide-react";
 import { VehicleSilhouette360, DamagePin } from "@/components/modules/vehicle-silhouette-360";
 import { formatDateTime } from "@/lib/utils";
+import { generateInspectionPdf } from "@/lib/pdf-generator";
 
 export default function ChecklistDetailPage() {
   const params = useParams();
@@ -94,6 +97,26 @@ export default function ChecklistDetailPage() {
     window.print();
   }
 
+  function handleDownloadPdf() {
+    try {
+      generateInspectionPdf(checklist, { download: true });
+    } catch (e) {
+      console.error("Erro ao gerar PDF de vistoria:", e);
+      alert("Erro ao montar o laudo PDF.");
+    }
+  }
+
+  function handleViewPdf() {
+    try {
+      const { doc } = generateInspectionPdf(checklist, { download: false });
+      const blobUrl = doc.output("bloburl");
+      window.open(blobUrl, "_blank");
+    } catch (e) {
+      console.error("Erro ao visualizar laudo PDF:", e);
+      alert("Erro ao abrir visualização do PDF.");
+    }
+  }
+
   function handleShareWhatsApp() {
     const phone = customer.whatsapp || customer.phone;
     if (!phone) {
@@ -107,9 +130,9 @@ export default function ChecklistDetailPage() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6 pb-12">
+    <div className="max-w-4xl mx-auto space-y-6 pb-12 print:max-w-none print:w-full print:p-0 print:m-0">
       {/* Botões de Ação Topo (Ocultados na impressão) */}
-      <div className="flex items-center justify-between print:hidden">
+      <div className="flex flex-wrap items-center justify-between gap-2 print:hidden">
         <Link
           href="/vistoria"
           className="text-xs font-semibold text-[#737D75] hover:text-[#252B27] flex items-center gap-1.5 transition-colors"
@@ -118,21 +141,41 @@ export default function ChecklistDetailPage() {
           <span>Voltar para Vistorias</span>
         </Link>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <button
             onClick={handleShareWhatsApp}
             className="px-3.5 py-2 rounded-lg bg-[#ECFDF5] hover:bg-[#D1FAE5] text-[#16A36A] border border-[#A7F3D0] text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer"
+            title="Enviar no WhatsApp do cliente"
           >
             <Share2 className="w-3.5 h-3.5" />
-            <span>Compartilhar WhatsApp</span>
+            <span>WhatsApp</span>
+          </button>
+
+          <button
+            onClick={handleDownloadPdf}
+            className="px-3.5 py-2 rounded-lg bg-[#247653] hover:bg-[#1E6346] text-white text-xs font-semibold flex items-center gap-1.5 shadow-xs transition-all cursor-pointer"
+            title="Montar e baixar arquivo PDF oficial do Laudo de Vistoria"
+          >
+            <FileDown className="w-3.5 h-3.5" />
+            <span>Baixar Laudo PDF (Oficial)</span>
+          </button>
+
+          <button
+            onClick={handleViewPdf}
+            className="px-3 py-2 rounded-lg bg-white hover:bg-[#F1F3F1] border border-[#E7EAE7] text-[#252B27] text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer"
+            title="Visualizar documento PDF em nova aba"
+          >
+            <Eye className="w-3.5 h-3.5 text-[#737D75]" />
+            <span>Visualizar</span>
           </button>
 
           <button
             onClick={handlePrint}
-            className="dp-btn-primary text-xs cursor-pointer"
+            className="px-3 py-2 rounded-lg bg-white hover:bg-[#F1F3F1] border border-[#E7EAE7] text-[#737D75] hover:text-[#252B27] text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer"
+            title="Imprimir na impressora"
           >
             <Printer className="w-3.5 h-3.5" />
-            <span>Imprimir Comprovante / PDF</span>
+            <span>Imprimir</span>
           </button>
         </div>
       </div>
