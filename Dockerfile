@@ -4,8 +4,9 @@ WORKDIR /app
 
 # 1. Dependências
 FROM base AS deps
+ENV NODE_ENV=development
 COPY package.json package-lock.json ./
-RUN npm ci
+RUN npm ci --include=dev
 
 # 2. Build do Next.js
 FROM base AS builder
