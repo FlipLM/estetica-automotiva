@@ -1,0 +1,421 @@
+// Prisma Schema — SaaS de Gestão para Estética Automotiva & Detailing
+// Multi-tenant nativo com isolamento por tenantId em todas as entidades operacionais.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// -------------------------------------------------------------
+// 1. TENANCY & AUTENTICAÇÃO
+// -------------------------------------------------------------
+
+model Tenant {
+  id             String   @id @default(uuid())
+  name           String   // Razão Social ou Nome do Estabelecimento
+  tradingName    String?  // Nome Fantasia
+  document       String?  // CNPJ ou CPF
+  phone          String?
+  whatsapp       String?
+  email          String?
+  address        String?
+  logoUrl        String?
+  active         Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  users          User[]
+  customers      Customer[]
+  vehicles       Vehicle[]
+  customerVehicles CustomerVehicle[]
+  services       Service[]
+  serviceOrders  ServiceOrder[]
+  workBays       WorkBay[]
+  expenses       Expense[]
+  products       Product[]
+  auditLogs      AuditLog[]
+
+  @@map("tenants")
+}
+
+model User {
+  id             String   @id @default(uuid())
+  tenantId       String
+  name           String
+  email          String
+  passwordHash   String
+  role           String   @default("OPERATOR") // ADMIN | OPERATOR
+  phone          String?
+  commissionRate Float?   // Comissão padrão percentual (ex: 15.0)
+  active         Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  tenant         Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  commissions    Commission[]
+  assignedOrders ServiceOrder[] @relation("AssignedOperator")
+  auditLogs      AuditLog[]
+
+  @@unique([tenantId, email])
+  @@index([tenantId])
+  @@map("users")
+}
+
+// -------------------------------------------------------------
+// 2. CLIENTES E VEÍCULOS
+// -------------------------------------------------------------
+
+model Customer {
+  id             String    @id @default(uuid())
+  tenantId       String
+  name           String
+  document       String?   // CPF ou CNPJ
+  phone          String?
+  whatsapp       String?
+  email          String?
+  birthDate      DateTime?
+  address        String?
+  notes          String?
+  totalSpent     Float     @default(0.0)
+  visitsCount    Int       @default(0)
+  lastVisitAt    DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  tenant         Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  vehicles       Vehicle[]
+  customerVehicles CustomerVehicle[]
+
+  @@index([tenantId])
+  @@index([tenantId, name])
+  @@index([tenantId, whatsapp])
+  @@map("customers")
+}
+
+model Vehicle {
+  id             String   @id @default(uuid())
+  tenantId       String
+  customerId     String?
+  plate          String   // Placa em caixa alta
+  brand          String?  // Ex: Toyota, Honda, VW
+  model          String   // Ex: Corolla, Civic, Gol
+  color          String?  // Ex: Preto, Prata, Branco
+  year           Int?
+  category       String   @default("SEDAN") // HATCH | SEDAN | SUV_PICKUP | MOTORCYCLE | SPECIAL_UTILITY
+  notes          String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  tenant         Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  customer       Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  customerVehicles CustomerVehicle[]
+  serviceOrders  ServiceOrder[]
+
+  @@unique([tenantId, plate])
+  @@index([tenantId])
+  @@index([tenantId, plate])
+  @@map("vehicles")
+}
+
+// Relação N:N — Um cliente pode ter vários veículos, um veículo pode ter vários clientes
+model CustomerVehicle {
+  id             String   @id @default(uuid())
+  tenantId       String
+  customerId     String
+  vehicleId      String
+  isPrimary      Boolean  @default(false)
+  createdAt      DateTime @default(now())
+
+  tenant         Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  customer       Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  vehicle        Vehicle  @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+
+  @@unique([customerId, vehicleId])
+  @@index([tenantId])
+  @@index([customerId])
+  @@index([vehicleId])
+  @@map("customer_vehicles")
+}
+
+// -------------------------------------------------------------
+// 3. CATÁLOGO DE SERVIÇOS & MATRIZ DE PREÇOS
+// -------------------------------------------------------------
+
+model Service {
+  id                 String   @id @default(uuid())
+  tenantId           String
+  name               String   // Ex: Lavagem Técnica, Polimento Comercial, Vitrificação 9H
+  description        String?
+  category           String   @default("LAVAGEM") // LAVAGEM | HIGIENIZACAO | POLIMENTO | PROTECAO | OUTROS
+  estimatedMinutes   Int      @default(60)
+  
+  // Matriz de Preços por Porte do Veículo
+  priceHatch         Float    @default(80.0)
+  priceSedan         Float    @default(100.0)
+  priceSuvPickup     Float    @default(130.0)
+  priceMotorcycle    Float    @default(50.0)
+  priceSpecial       Float    @default(150.0)
+
+  estimatedCost      Float    @default(0.0) // Custo de insumos
+  defaultCommission  Float    @default(10.0) // Percentual padrão
+  active             Boolean  @default(true)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  tenant             Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  orderItems         ServiceOrderItem[]
+
+  @@index([tenantId])
+  @@map("services")
+}
+
+// -------------------------------------------------------------
+// 4. ORDENS DE SERVIÇO & ORÇAMENTOS (PÁTIO KANBAN)
+// -------------------------------------------------------------
+
+model ServiceOrder {
+  id                 String    @id @default(uuid())
+  tenantId           String
+  orderNumber        Int       // Número sequencial legível da OS (1001, 1002...)
+  vehicleId          String
+  assignedUserId     String?   // Colaborador responsável principal
+  
+  // Status do Ciclo Operacional & Comercial:
+  // BUDGET_PENDING | BUDGET_APPROVED | TODO | IN_PROGRESS | DONE | PAID | CANCELLED
+  status             String    @default("TODO")
+  
+  // Valores Financeiros (Imutabilidade após fechamento)
+  subtotal           Float     @default(0.0)
+  discount           Float     @default(0.0)
+  totalAmount        Float     @default(0.0)
+  paidAmount         Float     @default(0.0)
+  
+  // Prazos e Agendamento
+  scheduledFor       DateTime?
+  startedAt          DateTime?
+  completedAt        DateTime?
+  paidAt             DateTime?
+  
+  mileage            Int?      // KM do veículo na entrada
+  box                String?   // Ex: Box 1, Rampa 2, Detailing Room
+  notes              String?
+  
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  tenant             Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  vehicle            Vehicle   @relation(fields: [vehicleId], references: [id], onDelete: Restrict)
+  assignedUser       User?     @relation("AssignedOperator", fields: [assignedUserId], references: [id], onDelete: SetNull)
+  
+  items              ServiceOrderItem[]
+  checklist          Checklist?
+  payments           Payment[]
+  commissions        Commission[]
+
+  @@index([tenantId])
+  @@index([tenantId, status])
+  @@index([tenantId, createdAt])
+  @@map("service_orders")
+}
+
+// Boxes, Rampas e Baias da Oficina
+model WorkBay {
+  id                 String   @id @default(uuid())
+  tenantId           String
+  name               String   // Ex: Box 01 - Lavagem Técnica, Box 02 - Polimento, Rampa 01, Estufa
+  description        String?
+  type               String   @default("GERAL") // LAVAGEM | POLIMENTO | HIGIENIZACAO | RAMPA | GERAL
+  color              String?  // Ex: #a3e635, #3b82f6
+  capacity           Int      @default(1) // Quantidade de vagas simultâneas no box
+  active             Boolean  @default(true)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  tenant             Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, name])
+  @@index([tenantId])
+  @@map("work_bays")
+}
+
+
+model ServiceOrderItem {
+  id                 String       @id @default(uuid())
+  serviceOrderId     String
+  serviceId          String
+  serviceName        String       // Congelado no momento da venda
+  unitPrice          Float        // Congelado conforme a categoria do carro no momento
+  quantity           Int          @default(1)
+  totalPrice         Float
+  commissionRate     Float        @default(0.0) // Taxa de comissão aplicada
+  commissionAmount   Float        @default(0.0) // Valor da comissão calculada
+  completed          Boolean      @default(false)
+
+  serviceOrder       ServiceOrder @relation(fields: [serviceOrderId], references: [id], onDelete: Cascade)
+  service            Service      @relation(fields: [serviceId], references: [id], onDelete: Restrict)
+
+  @@map("service_order_items")
+}
+
+// -------------------------------------------------------------
+// 5. RECEPÇÃO & VISTORIA DIGITAL 360º
+// -------------------------------------------------------------
+
+model Checklist {
+  id                 String       @id @default(uuid())
+  serviceOrderId     String       @unique
+  fuelLevel          Int          @default(50) // Porcentagem de 0 a 100
+  valuablesLeft      String?      // Objetos de valor declarados no interior
+  photosUrls         String?      // JSON string array de URLs/caminhos de fotos
+  customerConfirmed  Boolean      @default(false)
+  confirmedAt        DateTime?
+  notes              String?
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
+
+  serviceOrder       ServiceOrder @relation(fields: [serviceOrderId], references: [id], onDelete: Cascade)
+  damageRecords      DamageRecord[]
+
+  @@map("checklists")
+}
+
+model DamageRecord {
+  id                 String    @id @default(uuid())
+  checklistId        String
+  // Área da silhueta: FRONT | REAR | LEFT_SIDE | RIGHT_SIDE | ROOF | GLASS
+  area               String
+  // Tipo: SCRATCH (risco) | DENT (amassado) | CHIP (trinca) | PAINT_BURN (queimadura) | OTHER
+  damageType         String
+  coordinateX        Float?    // Posição percentual X na silhueta (0-100)
+  coordinateY        Float?    // Posição percentual Y na silhueta (0-100)
+  description        String?
+  photoUrl           String?
+  photosUrls         String?   // JSON array de múltiplas URLs de fotos da mesma avaria
+  createdAt          DateTime  @default(now())
+
+  checklist          Checklist @relation(fields: [checklistId], references: [id], onDelete: Cascade)
+
+  @@map("damage_records")
+}
+
+// -------------------------------------------------------------
+// 6. FINANCEIRO, DESPESAS E PAGAMENTOS
+// -------------------------------------------------------------
+
+model Payment {
+  id                 String       @id @default(uuid())
+  serviceOrderId     String
+  amount             Float
+  // Método: PIX | CREDIT_CARD | DEBIT_CARD | CASH | TRANSFER
+  method             String
+  paidAt             DateTime     @default(now())
+  notes              String?
+
+  serviceOrder       ServiceOrder @relation(fields: [serviceOrderId], references: [id], onDelete: Cascade)
+
+  @@map("payments")
+}
+
+model Expense {
+  id                 String   @id @default(uuid())
+  tenantId           String
+  description        String
+  amount             Float
+  // Categoria: PRODUCTS | SALARY | COMMISSION | RENT | UTILITIES | MAINTENANCE | MARKETING | OTHER
+  category           String
+  dueDate            DateTime
+  paid               Boolean  @default(true)
+  paidAt             DateTime?
+  paymentMethod      String?
+  notes              String?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  tenant             Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([tenantId, dueDate])
+  @@map("expenses")
+}
+
+model Commission {
+  id                 String       @id @default(uuid())
+  serviceOrderId     String
+  userId             String
+  amount             Float
+  status             String       @default("PENDING") // PENDING | PAID
+  paidAt             DateTime?
+  createdAt          DateTime     @default(now())
+
+  serviceOrder       ServiceOrder @relation(fields: [serviceOrderId], references: [id], onDelete: Cascade)
+  user               User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("commissions")
+}
+
+// -------------------------------------------------------------
+// 7. ESTOQUE & INSUMOS QUÍMICOS
+// -------------------------------------------------------------
+
+model Product {
+  id                 String   @id @default(uuid())
+  tenantId           String
+  name               String   // Ex: Carnaúba Tok Final, Vonixx V-Floc, Menzerna 400
+  category           String   @default("CHEMICAL") // CHEMICAL | ACCESSORY | TOOL
+  unit               String   @default("ML") // ML | L | G | KG | UN
+  currentStock       Float    @default(0.0)
+  minStock           Float    @default(5.0)
+  costPrice          Float    @default(0.0)
+  supplier           String?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  tenant             Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  movements          StockMovement[]
+
+  @@index([tenantId])
+  @@map("products")
+}
+
+model StockMovement {
+  id                 String   @id @default(uuid())
+  productId          String
+  // Tipo: IN (entrada) | OUT (saída manual) | OS_CONSUMPTION (gasto em OS) | LOSS (perda/avaria)
+  type               String
+  quantity           Float
+  reason             String?
+  createdAt          DateTime @default(now())
+
+  product            Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@map("stock_movements")
+}
+
+// -------------------------------------------------------------
+// 8. AUDITORIA & SEGURANÇA
+// -------------------------------------------------------------
+
+model AuditLog {
+  id                 String   @id @default(uuid())
+  tenantId           String
+  userId             String?
+  action             String   // Ex: LOGIN | CREATE_OS | UPDATE_PRICE | DELETE_CUSTOMER
+  entity             String   // Ex: ServiceOrder | Customer | Expense
+  entityId           String?
+  details            String?  // JSON com snapshot do antes/depois
+  ipAddress          String?
+  createdAt          DateTime @default(now())
+
+  tenant             Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user               User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId])
+  @@index([tenantId, createdAt])
+  @@map("audit_logs")
+}
+
