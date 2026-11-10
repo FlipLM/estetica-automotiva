@@ -46,3 +46,4 @@ Todas as 6 suítes de testes automatizados foram executadas contra o banco de da
    - Rótulos técnicos ou jargões em inglês foram substituídos por termos diretos em português (ex.: *"Para Fazer"*, *"Em Serviço"*, *"Concluídos"*, *"Registrar Pagamento"*, *"Informações salvas com sucesso!"*).
 4. **Permissões RBAC (`ADMIN` vs `OPERATOR`):**
    - O perfil `OPERATOR` não visualiza links de módulos financeiros na Sidebar nem indicadores de faturamento/lucro no Dashboard ou no Kanban do Pátio.
+

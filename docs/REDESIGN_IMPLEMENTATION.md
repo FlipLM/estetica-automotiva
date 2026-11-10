@@ -57,7 +57,30 @@ A reformulação visual e de experiência do **DetailPro SaaS** reconstruiu inte
 - `servicos/page.tsx`: Catálogo técnico e matriz de preços em 5 categorias de porte.
 - `financeiro/page.tsx`: Contas a pagar e DRE contábil gerencial em tempo real.
 - `comissoes/page.tsx`: Extrato de comissões da equipe e liquidação em lote integrada ao DRE.
-- `estoque/page.tsx`: Inventário de produtos químicos com alertas de estoque crítico e movimentação atômica (`IN`, `OUT`, `LOSS`).
+- `estoque/page.tsx`: Gestão completa de estoque e gastos com insumos organizada em 4 abas (`Geral`, `Entradas`, `Saídas`, `Perdas`), relatórios de gastos, CRUD completo de produtos, cálculo automático de Valor Médio Unitário ponderado, histórico detalhado por item com data/hora, bloqueio de edição de saídas e recuperação de perdas reencontradas.
 - `crm/page.tsx`: Campanhas de retenção (Dias de Chuva, Sem Retorno 45+ dias, Garantia de Vitrificação, Pós-Venda e Curva ABC) com disparo para WhatsApp.
 - `funcionarios/page.tsx`: Gestão de colaboradores, perfis RBAC e taxas de comissão.
 - `configuracoes/page.tsx`: Dados cadastrais da estética automotiva.
+
+---
+
+## 3. Arquitetura Avançada do Módulo de Estoque (`/estoque`)
+
+### 3.1. Extensão do Schema Prisma (`StockMovement`)
+- `unitCost Float?`: Custo unitário do lote/movimentação no momento do registro.
+- `totalCost Float?`: Valor total pago na entrada (`IN`) ou valor financeiro correspondente à saída/perda.
+- `recovered Boolean @default(false)`: Indica se um item registrado em `LOSS` (perda/extravio) foi reencontrado e devolvido ao saldo.
+- `recoveredAt DateTime?`: Data e hora exata em que o item perdido retornou ao estoque.
+
+### 3.2. Regras de Negócio e Endpoints (`src/app/api/products/*`)
+1. **Organização em 4 Abas (`src/app/(dashboard)/estoque/page.tsx`):**
+   - **Geral (`GERAL`):** Exibe KPIs financeiros de estoque, **Relatório de Gastos por Categoria** (`Químicos`, `Acessórios`, `Ferramentas`), **Ranking dos Principais Gastos com Insumos** (barras comparativas de investimento acumulado, custo médio e consumo) e a tabela completa de produtos com **CRUD integral** (`Cadastrar`, `Editar`, `Excluir`) e **Valor Médio Unitário**.
+   - **Entradas (`ENTRADAS`):** Histórico cronológico (`dd/MM/yyyy às HH:mm`) de todas as compras e reposições (`IN`), exibindo o **Valor Pago no Lote** (`totalCost`), custo unitário daquela entrada e opção de editar a entrada com recálculo automático de saldo e média ponderada.
+   - **Saídas (`SAIDAS`):** Histórico de consumos operacionais (`OUT` e `OS_CONSUMPTION`) com **bloqueio estrito de edição** tanto na interface (badge `Edição Bloqueada`) quanto na API (`HTTP 403 Forbidden` em `PATCH /api/products/[id]/movement`).
+   - **Perdas (`PERDAS`):** Controle de avarias e extravios (`LOSS`) com botão **"Reencontrado (Retornar ao Estoque)"** (`action: "RECOVER_LOSS"`), que devolve atomicamente a quantidade ao `currentStock` do produto e registra `recoveredAt`.
+2. **Relatório Individual por Produto (Clique na Linha):**
+   - Ao clicar em qualquer item da tabela de produtos (ou no ranking de gastos), abre-se um modal detalhado com filtro por tipo (`Todas`, `Entradas`, `Saídas`, `Perdas`), resumo financeiro do insumo e linha do tempo completa com **data e hora** (`dd/MM/yyyy às HH:mm`).
+3. **Cálculo do Valor Médio Unitário Ponderado:**
+   - Calculado dinamicamente a partir de todas as entradas (`IN`) do produto: $\text{Custo Médio} = \frac{\sum \text{totalCost}_{\text{IN}}}{\sum \text{quantity}_{\text{IN}}}$, atualizando também o `costPrice` de referência do produto a cada nova entrada ou edição de entrada.
+
+

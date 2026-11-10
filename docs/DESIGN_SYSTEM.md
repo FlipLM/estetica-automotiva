@@ -98,3 +98,4 @@ Todos os componentes são exportados centralizadamente por `src/components/ui/in
 - `PageHeader` e `Breadcrumbs`: Cabeçalho padronizado no topo de todas as páginas.
 - `Tabs`: Navegação horizontal em abas com contador opcional.
 - `TableContainer`, `Table`, `TableHead`, `TableBody`, `TableRow`, `TableHeaderCell`, `TableCell`, `Pagination`.
+

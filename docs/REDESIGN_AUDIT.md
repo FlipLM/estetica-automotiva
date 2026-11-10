@@ -95,3 +95,4 @@ Todos os endpoints residem em `src/app/api/` e serão **100% preservados em seus
 - [ ] **FASE 5:** Revisão de responsividade (Desktop, Tablet, Mobile) e acessibilidade (foco, contraste, linguagem clara para leigos).
 - [ ] **FASE 6:** Execução das 6 suítes de testes automatizados (`test_phase1.ts` a `test_phase6.ts`), checagem TypeScript (`tsc --noEmit`) e build de produção.
 - [ ] **FASE 7:** Documentação final (`docs/DESIGN_SYSTEM.md`, `docs/REDESIGN_IMPLEMENTATION.md`, `docs/REDESIGN_QA_REPORT.md`, `IMPLEMENTATION_CHECKLIST.md`, `PROJECT_STATUS.md`).
+

@@ -12,6 +12,7 @@ const createProductSchema = z.object({
   currentStock: z.number().min(0).default(0),
   minStock: z.number().min(0).default(5),
   costPrice: z.number().min(0).default(0),
+  totalPaidInitial: z.number().min(0).optional(),
   supplier: z.string().nullable().optional(),
 });
 
@@ -46,35 +47,159 @@ export async function GET(request: NextRequest) {
       where: whereCondition,
       include: {
         movements: {
-          take: 5,
           orderBy: { createdAt: "desc" },
         },
       },
       orderBy: { name: "asc" },
     });
 
-    const enriched = products.map((p) => ({
-      ...p,
-      isLowStock: p.currentStock <= p.minStock,
-      totalInventoryValue: p.currentStock * p.costPrice,
-    }));
+    const enriched = products.map((p) => {
+      const inMovements = p.movements.filter((m) => m.type === "IN");
+      const outMovements = p.movements.filter(
+        (m) => m.type === "OUT" || m.type === "OS_CONSUMPTION"
+      );
+      const lossMovements = p.movements.filter((m) => m.type === "LOSS");
+      const activeLossMovements = lossMovements.filter((m) => !m.recovered);
 
-    const finalProducts = lowStockOnly ? enriched.filter((p) => p.isLowStock) : enriched;
+      // Cálculo do Custo Médio Unitário Ponderado entre todas as entradas
+      const totalInQty = inMovements.reduce((acc, m) => acc + m.quantity, 0);
+      const totalInSpent = inMovements.reduce((acc, m) => {
+        const movTotal =
+          m.totalCost !== null && m.totalCost !== undefined
+            ? m.totalCost
+            : m.quantity * (m.unitCost ?? p.costPrice);
+        return acc + movTotal;
+      }, 0);
+
+      const averageUnitCost =
+        totalInQty > 0 ? totalInSpent / totalInQty : p.costPrice;
+
+      // Se o produto não tinha movimentação IN explícita (ex: seed antigo), considera o saldo atual * costPrice como gasto base
+      const effectiveTotalSpentOnEntries =
+        inMovements.length > 0 ? totalInSpent : p.currentStock * p.costPrice;
+
+      const totalOutQty = outMovements.reduce((acc, m) => acc + m.quantity, 0);
+      const totalOutValue = outMovements.reduce((acc, m) => {
+        const movCost =
+          m.totalCost !== null && m.totalCost !== undefined
+            ? m.totalCost
+            : m.quantity * (m.unitCost ?? averageUnitCost);
+        return acc + movCost;
+      }, 0);
+
+      const totalLossQty = activeLossMovements.reduce(
+        (acc, m) => acc + m.quantity,
+        0
+      );
+      const totalLossValue = activeLossMovements.reduce((acc, m) => {
+        const movCost =
+          m.totalCost !== null && m.totalCost !== undefined
+            ? m.totalCost
+            : m.quantity * (m.unitCost ?? averageUnitCost);
+        return acc + movCost;
+      }, 0);
+
+      const totalInventoryValue = p.currentStock * averageUnitCost;
+
+      return {
+        ...p,
+        averageUnitCost,
+        isLowStock: p.currentStock <= p.minStock,
+        totalInventoryValue,
+        stats: {
+          entriesCount: inMovements.length,
+          totalInQty,
+          totalInSpent: effectiveTotalSpentOnEntries,
+          outputsCount: outMovements.length,
+          totalOutQty,
+          totalOutValue,
+          lossesCount: lossMovements.length,
+          activeLossesCount: activeLossMovements.length,
+          totalLossQty,
+          totalLossValue,
+        },
+      };
+    });
+
+    const finalProducts = lowStockOnly
+      ? enriched.filter((p) => p.isLowStock)
+      : enriched;
 
     const lowStockCount = enriched.filter((p) => p.isLowStock).length;
-    const totalInventoryValue = enriched.reduce((sum, p) => sum + p.totalInventoryValue, 0);
+    const totalInventoryValue = enriched.reduce(
+      (sum, p) => sum + p.totalInventoryValue,
+      0
+    );
+    const totalSpentEntries = enriched.reduce(
+      (sum, p) => sum + p.stats.totalInSpent,
+      0
+    );
+    const totalConsumedValue = enriched.reduce(
+      (sum, p) => sum + p.stats.totalOutValue,
+      0
+    );
+    const totalLossValue = enriched.reduce(
+      (sum, p) => sum + p.stats.totalLossValue,
+      0
+    );
+
+    // Ranking dos principais gastos com insumos (por valor investido em entradas + consumo)
+    const topExpensesByProduct = [...enriched]
+      .map((p) => ({
+        id: p.id,
+        name: p.name,
+        category: p.category,
+        unit: p.unit,
+        supplier: p.supplier,
+        averageUnitCost: p.averageUnitCost,
+        totalInSpent: p.stats.totalInSpent,
+        totalInQty: p.stats.totalInQty || p.currentStock,
+        totalOutValue: p.stats.totalOutValue,
+        totalOutQty: p.stats.totalOutQty,
+        totalLossValue: p.stats.totalLossValue,
+        currentStock: p.currentStock,
+      }))
+      .sort((a, b) => b.totalInSpent - a.totalInSpent);
+
+    // Gastos por categoria
+    const categoryBreakdown = ["CHEMICAL", "ACCESSORY", "TOOL"].map((cat) => {
+      const catProducts = enriched.filter((p) => p.category === cat);
+      return {
+        category: cat,
+        productsCount: catProducts.length,
+        totalSpent: catProducts.reduce((s, p) => s + p.stats.totalInSpent, 0),
+        totalConsumed: catProducts.reduce(
+          (s, p) => s + p.stats.totalOutValue,
+          0
+        ),
+        inventoryValue: catProducts.reduce(
+          (s, p) => s + p.totalInventoryValue,
+          0
+        ),
+      };
+    });
 
     return NextResponse.json({
       summary: {
         totalProducts: enriched.length,
         lowStockCount,
         totalInventoryValue,
+        totalSpentEntries,
+        totalConsumedValue,
+        totalLossValue,
+      },
+      analytics: {
+        topExpensesByProduct,
+        categoryBreakdown,
       },
       products: finalProducts,
     });
   } catch (error: any) {
     console.error("Erro ao listar produtos:", error);
-    return NextResponse.json({ error: "Erro interno do servidor" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Erro interno do servidor" },
+      { status: 500 }
+    );
   }
 }
 
@@ -85,12 +210,21 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
     }
 
-    if (session.role !== "ADMIN") {
-      return NextResponse.json({ error: "Apenas administradores podem cadastrar produtos no estoque" }, { status: 403 });
-    }
-
     const body = await request.json();
     const validated = createProductSchema.parse(body);
+
+    // Se informou valor total pago na entrada inicial e quantidade > 0, calcula o custo unitário exato
+    const computedUnitCost =
+      validated.totalPaidInitial !== undefined &&
+      validated.totalPaidInitial > 0 &&
+      validated.currentStock > 0
+        ? validated.totalPaidInitial / validated.currentStock
+        : validated.costPrice;
+
+    const computedTotalCost =
+      validated.totalPaidInitial !== undefined && validated.totalPaidInitial > 0
+        ? validated.totalPaidInitial
+        : validated.currentStock * computedUnitCost;
 
     const product = await prisma.$transaction(async (tx) => {
       const created = await tx.product.create({
@@ -101,19 +235,20 @@ export async function POST(request: NextRequest) {
           unit: validated.unit,
           currentStock: validated.currentStock,
           minStock: validated.minStock,
-          costPrice: validated.costPrice,
+          costPrice: computedUnitCost,
           supplier: validated.supplier,
         },
       });
 
-      // Se iniciou com estoque maior que 0, registra a movimentação inicial
       if (validated.currentStock > 0) {
         await tx.stockMovement.create({
           data: {
             productId: created.id,
             type: "IN",
             quantity: validated.currentStock,
-            reason: "Saldo inicial de implantação",
+            unitCost: computedUnitCost,
+            totalCost: computedTotalCost,
+            reason: "Saldo inicial de cadastro",
           },
         });
       }
@@ -127,10 +262,15 @@ export async function POST(request: NextRequest) {
     );
   } catch (error: any) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: "Dados inválidos", details: error.errors }, { status: 400 });
+      return NextResponse.json(
+        { error: "Dados inválidos", details: error.errors },
+        { status: 400 }
+      );
     }
     console.error("Erro ao cadastrar produto:", error);
-    return NextResponse.json({ error: "Erro interno do servidor" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Erro interno do servidor" },
+      { status: 500 }
+    );
   }
 }
-

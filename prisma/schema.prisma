@@ -383,16 +383,22 @@ model Product {
 }
 
 model StockMovement {
-  id                 String   @id @default(uuid())
+  id                 String    @id @default(uuid())
   productId          String
   // Tipo: IN (entrada) | OUT (saída manual) | OS_CONSUMPTION (gasto em OS) | LOSS (perda/avaria)
   type               String
   quantity           Float
+  unitCost           Float?    // Custo unitário praticado nesta movimentação
+  totalCost          Float?    // Valor total pago (na entrada) ou custo estimado (saída/perda)
   reason             String?
-  createdAt          DateTime @default(now())
+  recovered          Boolean   @default(false) // Indica se um item em LOSS foi reencontrado e retornado ao estoque
+  recoveredAt        DateTime?
+  createdAt          DateTime  @default(now())
 
-  product            Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  product            Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
 
+  @@index([productId])
+  @@index([type])
   @@map("stock_movements")
 }
 
