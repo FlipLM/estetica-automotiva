@@ -2,18 +2,21 @@
 
 import { useState, useEffect } from "react";
 import {
-  Settings,
   Building2,
-  Phone,
-  Mail,
-  MapPin,
   Save,
-  CheckCircle2,
   Users,
   Car,
   Wrench,
   ClipboardList,
 } from "lucide-react";
+import {
+  Button,
+  StatCard,
+  PageHeader,
+  Alert,
+  LoadingState,
+  Input,
+} from "@/components/ui";
 
 interface TenantData {
   id: string;
@@ -108,213 +111,137 @@ export default function ConfiguracoesPage() {
   };
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center p-12 text-slate-400">
-        Carregando dados da empresa...
-      </div>
-    );
+    return <LoadingState message="Carregando dados da empresa..." />;
   }
 
   return (
     <div className="space-y-6 max-w-5xl">
-      {/* Top Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-slate-100 flex items-center gap-2">
-          <Settings className="w-7 h-7 text-cyan-400" />
-          Configurações da Empresa & Tenant
-        </h1>
-        <p className="text-slate-400 text-sm">
-          Personalize as informações cadastrais que aparecem nos orçamentos, vistorias em PDF e mensagens aos clientes.
-        </p>
-      </div>
+      <PageHeader
+        title="Configurações da Empresa"
+        description="Personalize os dados cadastrais exibidos em orçamentos, laudos de vistoria em PDF e comunicações com clientes."
+      />
 
       {savedSuccess && (
-        <div className="bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 p-4 rounded-xl flex items-center gap-3">
-          <CheckCircle2 className="w-5 h-5 shrink-0" />
-          <span>Configurações salvas e atualizadas com sucesso!</span>
-        </div>
+        <Alert
+          variant="success"
+          title="Informações salvas com sucesso!"
+          description="Os dados da sua estética foram atualizados em todo o sistema."
+        />
       )}
 
       {/* Métricas do Tenant */}
       {tenant?._count && (
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-          <div className="bg-slate-900 border border-slate-800 rounded-xl p-4">
-            <div className="text-xs text-slate-400 mb-1 flex items-center gap-1.5">
-              <Users className="w-3.5 h-3.5 text-cyan-400" />
-              Equipe
-            </div>
-            <div className="text-lg font-bold text-slate-100">
-              {tenant._count.users} usuários
-            </div>
-          </div>
-
-          <div className="bg-slate-900 border border-slate-800 rounded-xl p-4">
-            <div className="text-xs text-slate-400 mb-1 flex items-center gap-1.5">
-              <Building2 className="w-3.5 h-3.5 text-purple-400" />
-              Clientes
-            </div>
-            <div className="text-lg font-bold text-slate-100">
-              {tenant._count.customers} ativos
-            </div>
-          </div>
-
-          <div className="bg-slate-900 border border-slate-800 rounded-xl p-4">
-            <div className="text-xs text-slate-400 mb-1 flex items-center gap-1.5">
-              <Car className="w-3.5 h-3.5 text-amber-400" />
-              Veículos
-            </div>
-            <div className="text-lg font-bold text-slate-100">
-              {tenant._count.vehicles} frotas
-            </div>
-          </div>
-
-          <div className="bg-slate-900 border border-slate-800 rounded-xl p-4">
-            <div className="text-xs text-slate-400 mb-1 flex items-center gap-1.5">
-              <Wrench className="w-3.5 h-3.5 text-emerald-400" />
-              Catálogo
-            </div>
-            <div className="text-lg font-bold text-slate-100">
-              {tenant._count.services} serviços
-            </div>
-          </div>
-
-          <div className="bg-slate-900 border border-slate-800 rounded-xl p-4">
-            <div className="text-xs text-slate-400 mb-1 flex items-center gap-1.5">
-              <ClipboardList className="w-3.5 h-3.5 text-cyan-400" />
-              Total de OS
-            </div>
-            <div className="text-lg font-bold text-slate-100">
-              {tenant._count.serviceOrders} ordens
-            </div>
-          </div>
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3.5">
+          <StatCard
+            label="Equipe"
+            value={`${tenant._count.users} usuários`}
+            icon={<Users className="w-4 h-4" />}
+            variant="brand"
+          />
+          <StatCard
+            label="Clientes"
+            value={`${tenant._count.customers} ativos`}
+            icon={<Building2 className="w-4 h-4" />}
+            variant="info"
+          />
+          <StatCard
+            label="Veículos"
+            value={`${tenant._count.vehicles} cadastrados`}
+            icon={<Car className="w-4 h-4" />}
+            variant="warning"
+          />
+          <StatCard
+            label="Catálogo"
+            value={`${tenant._count.services} serviços`}
+            icon={<Wrench className="w-4 h-4" />}
+            variant="success"
+          />
+          <StatCard
+            label="Total de OS"
+            value={`${tenant._count.serviceOrders} ordens`}
+            icon={<ClipboardList className="w-4 h-4" />}
+            variant="default"
+          />
         </div>
       )}
 
       {/* Formulário de Configuração */}
-      <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-sm">
+      <div className="bg-white border border-[#E7EAE7] rounded-xl p-6 shadow-xs">
         <form onSubmit={handleSubmit} className="space-y-5">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-medium text-slate-300 mb-1">
-                Razão Social / Nome Oficial da Empresa *
-              </label>
-              <input
-                type="text"
-                required
-                value={form.name}
-                onChange={(e) => setForm({ ...form, name: e.target.value })}
-                className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100 outline-none focus:border-cyan-500"
-              />
-            </div>
+            <Input
+              label="Razão Social / Nome Oficial da Empresa"
+              required
+              value={form.name}
+              onChange={(e) => setForm({ ...form, name: e.target.value })}
+            />
 
-            <div>
-              <label className="block text-xs font-medium text-slate-300 mb-1">
-                Nome Fantasia (Marca visível aos clientes)
-              </label>
-              <input
-                type="text"
-                value={form.tradingName}
-                onChange={(e) => setForm({ ...form, tradingName: e.target.value })}
-                className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100 outline-none focus:border-cyan-500"
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <label className="block text-xs font-medium text-slate-300 mb-1">
-                CNPJ ou CPF
-              </label>
-              <input
-                type="text"
-                placeholder="00.000.000/0001-00"
-                value={form.document}
-                onChange={(e) => setForm({ ...form, document: e.target.value })}
-                className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100 outline-none focus:border-cyan-500"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-medium text-slate-300 mb-1">
-                Telefone Comercial
-              </label>
-              <input
-                type="text"
-                placeholder="(11) 4002-8922"
-                value={form.phone}
-                onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100 outline-none focus:border-cyan-500"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-medium text-slate-300 mb-1">
-                WhatsApp Oficial de Atendimento
-              </label>
-              <input
-                type="text"
-                placeholder="(11) 98765-4321"
-                value={form.whatsapp}
-                onChange={(e) => setForm({ ...form, whatsapp: e.target.value })}
-                className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100 outline-none focus:border-cyan-500"
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-medium text-slate-300 mb-1">
-                E-mail de Contato
-              </label>
-              <input
-                type="email"
-                placeholder="contato@detailpro.com.br"
-                value={form.email}
-                onChange={(e) => setForm({ ...form, email: e.target.value })}
-                className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100 outline-none focus:border-cyan-500"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-medium text-slate-300 mb-1">
-                Endereço Completo da Estética
-              </label>
-              <input
-                type="text"
-                placeholder="Av. dos Bandeirantes, 1500 - São Paulo, SP"
-                value={form.address}
-                onChange={(e) => setForm({ ...form, address: e.target.value })}
-                className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100 outline-none focus:border-cyan-500"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-xs font-medium text-slate-300 mb-1">
-              URL da Logo da Empresa (Cabeçalho de PDF e Vistorias)
-            </label>
-            <input
-              type="text"
-              placeholder="https://exemplo.com/logo.png"
-              value={form.logoUrl}
-              onChange={(e) => setForm({ ...form, logoUrl: e.target.value })}
-              className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100 outline-none focus:border-cyan-500"
+            <Input
+              label="Nome Fantasia (Marca visível aos clientes)"
+              value={form.tradingName}
+              onChange={(e) => setForm({ ...form, tradingName: e.target.value })}
             />
           </div>
 
-          <div className="flex justify-end pt-4 border-t border-slate-800">
-            <button
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Input
+              label="CNPJ ou CPF"
+              placeholder="00.000.000/0001-00"
+              value={form.document}
+              onChange={(e) => setForm({ ...form, document: e.target.value })}
+            />
+
+            <Input
+              label="Telefone Comercial"
+              placeholder="(11) 4002-8922"
+              value={form.phone}
+              onChange={(e) => setForm({ ...form, phone: e.target.value })}
+            />
+
+            <Input
+              label="WhatsApp Oficial de Atendimento"
+              placeholder="(11) 98765-4321"
+              value={form.whatsapp}
+              onChange={(e) => setForm({ ...form, whatsapp: e.target.value })}
+            />
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Input
+              label="E-mail de Contato"
+              type="email"
+              placeholder="contato@detailpro.com.br"
+              value={form.email}
+              onChange={(e) => setForm({ ...form, email: e.target.value })}
+            />
+
+            <Input
+              label="Endereço Completo da Estética"
+              placeholder="Av. dos Bandeirantes, 1500 - São Paulo, SP"
+              value={form.address}
+              onChange={(e) => setForm({ ...form, address: e.target.value })}
+            />
+          </div>
+
+          <Input
+            label="URL da Logo da Empresa (Cabeçalho de PDF e Vistorias)"
+            placeholder="https://exemplo.com/logo.png"
+            value={form.logoUrl}
+            onChange={(e) => setForm({ ...form, logoUrl: e.target.value })}
+          />
+
+          <div className="flex justify-end pt-4 border-t border-[#E7EAE7]">
+            <Button
               type="submit"
-              disabled={saving}
-              className="bg-cyan-600 hover:bg-cyan-500 text-white font-medium px-5 py-2.5 rounded-lg text-sm transition-colors flex items-center gap-2 shadow-lg shadow-cyan-600/20 disabled:opacity-50"
+              variant="primary"
+              isLoading={saving}
+              leftIcon={<Save className="w-4 h-4" />}
             >
-              <Save className="w-4 h-4" />
-              {saving ? "Salvando..." : "Salvar Configurações"}
-            </button>
+              Salvar Alterações
+            </Button>
           </div>
         </form>
       </div>
     </div>
   );
 }
-

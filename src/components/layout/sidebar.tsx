@@ -5,25 +5,27 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
-  Kanban,
-  ClipboardList,
+  Calendar,
   Camera,
-  Users,
-  Car,
+  ClipboardList,
+  Kanban,
+  Layers,
   FileSpreadsheet,
+  Users,
   Wrench,
-  Package,
   CircleDollarSign,
   Award,
+  Package,
   Sparkles,
-  Settings,
-  Palette,
-  ChevronRight,
-  Activity,
-  Cpu,
-  Layers,
-  Gauge,
   UserCheck,
+  Palette,
+  Settings,
+  ChevronLeft,
+  ChevronRight,
+  Menu,
+  X,
+  Plus,
+  Car,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -32,82 +34,99 @@ interface SidebarProps {
   tenantName?: string;
 }
 
+interface NavItem {
+  name: string;
+  href: string;
+  icon: any;
+  badge?: string;
+}
+
+interface NavGroup {
+  title: string;
+  items: NavItem[];
+}
+
 export function Sidebar({ role, tenantName }: SidebarProps) {
   const pathname = usePathname();
-  const [bayStats, setBayStats] = useState<{
-    totalCapacity: number;
-    occupiedCount: number;
-    activeBoxesCount: number;
-    percentOccupied: number;
-  }>({
+  const [collapsed, setCollapsed] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [bayStats, setBayStats] = useState({
     totalCapacity: 5,
     occupiedCount: 0,
-    activeBoxesCount: 0,
     percentOccupied: 0,
   });
 
   useEffect(() => {
+    setMobileMenuOpen(false);
     async function loadBayStats() {
       try {
         const res = await fetch("/api/boxes");
         if (res.ok) {
           const json = await res.json();
-          const boxesList: Array<{ capacity: number; occupiedCount: number }> =
+          const list: Array<{ capacity: number; occupiedCount: number }> =
             json.boxes || [];
-          const total = boxesList.reduce((acc, b) => acc + (b.capacity || 1), 0);
-          const occupied = boxesList.reduce(
+          const total = list.reduce((acc, b) => acc + (b.capacity || 1), 0);
+          const occupied = list.reduce(
             (acc, b) => acc + (b.occupiedCount || 0),
             0
           );
-          const activeBoxes = boxesList.filter((b) => (b.occupiedCount || 0) > 0).length;
           const pct = total > 0 ? Math.round((occupied / total) * 100) : 0;
           setBayStats({
             totalCapacity: Math.max(1, total),
             occupiedCount: occupied,
-            activeBoxesCount: activeBoxes,
             percentOccupied: pct,
           });
         }
-      } catch (err) {
-        // Fallback silencioso
+      } catch {
+        // Ignora silenciosamente
       }
     }
     loadBayStats();
   }, [pathname]);
 
-  // Matriz de navegação estruturada em Setores da Oficina (100% em Português)
-  const navigation = [
+  const groups: NavGroup[] = [
     {
-      sector: "SETOR 01",
-      title: "Operações do Pátio",
+      title: "PRINCIPAL",
       items: [
         ...(role === "ADMIN"
           ? [
               {
-                name: "Painel Geral",
+                name: "Dashboard",
                 href: "/dashboard",
                 icon: LayoutDashboard,
-                tag: "INÍCIO",
               },
             ]
           : []),
         {
-          name: "Pátio da Oficina",
-          href: "/patio",
-          icon: Kanban,
-          tag: "AO VIVO",
+          name: "Agenda",
+          href: "/agenda",
+          icon: Calendar,
+        },
+      ],
+    },
+    {
+      title: "OPERAÇÃO",
+      items: [
+        {
+          name: "Recepção / Vistoria",
+          href: "/vistoria",
+          icon: Camera,
         },
         {
           name: "Ordens de Serviço",
           href: "/os",
           icon: ClipboardList,
-          tag: "OS",
         },
         {
-          name: "Vistoria Digital 360º",
-          href: "/vistoria",
-          icon: Camera,
-          tag: "FOTOS",
+          name: "Kanban do Pátio",
+          href: "/patio",
+          icon: Kanban,
+          badge: "Ao vivo",
+        },
+        {
+          name: "Boxes e Vagas",
+          href: "/boxes",
+          icon: Layers,
         },
         {
           name: "Orçamentos",
@@ -117,253 +136,412 @@ export function Sidebar({ role, tenantName }: SidebarProps) {
       ],
     },
     {
-      sector: "SETOR 02",
-      title: "Cadastros & Infraestrutura",
+      title: "CADASTROS",
       items: [
         {
-          name: "Clientes & Carros",
+          name: "Clientes e Veículos",
           href: "/clientes",
           icon: Users,
         },
+        ...(role === "ADMIN"
+          ? [
+              {
+                name: "Catálogo de Serviços",
+                href: "/servicos",
+                icon: Wrench,
+              },
+            ]
+          : []),
+      ],
+    },
+    {
+      title: "GESTÃO",
+      items: [
+        ...(role === "ADMIN"
+          ? [
+              {
+                name: "Financeiro e DRE",
+                href: "/financeiro",
+                icon: CircleDollarSign,
+              },
+            ]
+          : []),
         {
-          name: "Boxes & Baias do Pátio",
-          href: "/boxes",
-          icon: Gauge,
-          tag: "BOXES",
+          name: "Comissões",
+          href: "/comissoes",
+          icon: Award,
         },
         {
-          name: "Funcionários & Equipe",
-          href: "/funcionarios",
-          icon: UserCheck,
-          tag: "EQUIPE",
-        },
-        {
-          name: "Catálogo de Serviços",
-          href: "/servicos",
-          icon: Wrench,
-        },
-        {
-          name: "Estoque & Insumos",
+          name: "Estoque",
           href: "/estoque",
           icon: Package,
         },
+        ...(role === "ADMIN"
+          ? [
+              {
+                name: "CRM e Retenção",
+                href: "/crm",
+                icon: Sparkles,
+              },
+            ]
+          : []),
       ],
     },
     ...(role === "ADMIN"
       ? [
           {
-            sector: "SETOR 03",
-            title: "Gestão Financeira & Ajustes",
+            title: "SISTEMA",
             items: [
               {
-                name: "Financeiro & DRE",
-                href: "/financeiro",
-                icon: CircleDollarSign,
-                tag: "DRE",
+                name: "Equipe",
+                href: "/funcionarios",
+                icon: UserCheck,
               },
               {
-                name: "Comissões da Equipe",
-                href: "/comissoes",
-                icon: Award,
+                name: "Design System",
+                href: "/design-system",
+                icon: Palette,
               },
               {
-                name: "CRM & Retenção de Clientes",
-                href: "/crm",
-                icon: Sparkles,
-              },
-              {
-                name: "Configurações da Oficina",
+                name: "Configurações",
                 href: "/configuracoes",
                 icon: Settings,
               },
             ],
           },
         ]
-      : [
-          {
-            sector: "SETOR 03",
-            title: "Minha Produção",
-            items: [
-              {
-                name: "Minhas Comissões",
-                href: "/comissoes",
-                icon: Award,
-              },
-            ],
-          },
-        ]),
+      : []),
   ];
 
+  const isRouteActive = (href: string) => {
+    if (pathname === href) return true;
+    if (href !== "/dashboard" && pathname.startsWith(`${href}/`)) return true;
+    return false;
+  };
+
   return (
-    <aside className="w-64 shrink-0 billet-rail flex flex-col h-screen sticky top-0 select-none z-40">
-      {/* 1. LOGO E IDENTIFICAÇÃO DA OFICINA */}
-      <div className="p-3.5 border-b border-carbon-700/80 bg-carbon-900/60 relative overflow-hidden">
-        <div className="flex items-center gap-3">
-          {/* Logo Billet Hexagonal */}
-          <div className="w-10 h-10 rounded-lg bg-carbon-800 border border-carbon-700 flex items-center justify-center relative shadow-inner group">
-            <div className="absolute inset-0 bg-lime-400/10 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity" />
-            <Car className="w-5 h-5 text-lime-400" />
-            <span className="absolute -bottom-0.5 -right-0.5 w-2 h-2 bg-lime-400 rounded-full border-2 border-carbon-900" />
-          </div>
-
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-1.5">
-              <h1 className="font-display font-extrabold text-sm tracking-wide text-white uppercase truncate">
-                APEX <span className="text-lime-400">//</span> ESTÉTICA
-              </h1>
+    <>
+      {/* =====================================================================
+          SIDEBAR DESKTOP (240px expandida / 72px recolhida)
+         ===================================================================== */}
+      <aside
+        className={cn(
+          "hidden lg:flex flex-col bg-white border-r border-[#E7EAE7] min-h-screen shrink-0 select-none transition-all duration-200 relative z-30",
+          collapsed ? "w-[72px]" : "w-[240px]"
+        )}
+      >
+        {/* 1. Identidade da Marca */}
+        <div
+          className={cn(
+            "h-16 border-b border-[#E7EAE7] flex items-center justify-between px-4",
+            collapsed && "justify-center px-2"
+          )}
+        >
+          <Link
+            href={role === "ADMIN" ? "/dashboard" : "/patio"}
+            className="flex items-center gap-2.5 min-w-0"
+          >
+            <div className="w-9 h-9 rounded-[10px] bg-[#142D26] flex items-center justify-center text-white shrink-0 shadow-xs">
+              <Car className="w-5 h-5 text-[#E9F3EC]" />
             </div>
-            <p className="text-[10px] font-mono text-slate-400 truncate tracking-tight">
-              {tenantName || "SISTEMA OPERACIONAL"}
-            </p>
+            {!collapsed && (
+              <div className="min-w-0">
+                <div className="flex items-center gap-1.5">
+                  <span className="font-bold text-[15px] text-[#142D26] tracking-tight truncate">
+                    DetailPro
+                  </span>
+                  <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-[#E9F3EC] text-[#247653]">
+                    PRO
+                  </span>
+                </div>
+                <p className="text-[11px] text-[#737D75] truncate">
+                  {tenantName || "Centro de Estética"}
+                </p>
+              </div>
+            )}
+          </Link>
+
+          {!collapsed && (
+            <button
+              type="button"
+              onClick={() => setCollapsed(true)}
+              aria-label="Recolher barra lateral"
+              title="Recolher menu"
+              className="p-1.5 rounded-[8px] text-[#737D75] hover:text-[#252B27] hover:bg-[#F1F3F1] transition-colors cursor-pointer"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+          )}
+        </div>
+
+        {/* Botão para expandir quando recolhida */}
+        {collapsed && (
+          <div className="flex justify-center py-2 border-b border-[#F1F3F1]">
+            <button
+              type="button"
+              onClick={() => setCollapsed(false)}
+              aria-label="Expandir barra lateral"
+              title="Expandir menu"
+              className="p-1.5 rounded-[8px] text-[#737D75] hover:text-[#252B27] hover:bg-[#F1F3F1] transition-colors cursor-pointer"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
           </div>
+        )}
+
+        {/* 2. Botão de Ação Principal */}
+        <div className={cn("px-3 pt-3 pb-1", collapsed && "px-2")}>
+          <Link
+            href="/os/nova"
+            title="Nova Ordem de Serviço"
+            className={cn(
+              "flex items-center justify-center gap-2 bg-[#247653] hover:bg-[#318B63] text-white font-semibold text-[13px] rounded-[8px] h-9 transition-all shadow-xs",
+              collapsed ? "px-0 w-full" : "px-3 w-full"
+            )}
+          >
+            <Plus className="w-4 h-4 shrink-0" />
+            {!collapsed && <span>Nova Ordem de Serviço</span>}
+          </Link>
         </div>
 
-        {/* Status de Operação */}
-        <div className="mt-3 pt-2.5 border-t border-carbon-800/80 flex items-center justify-between text-[10px] font-mono">
-          <div className="flex items-center gap-1.5 text-slate-300">
-            <span className="led-pulse-lime" />
-            <span className="tracking-widest uppercase text-lime-400 font-bold">SISTEMA ATIVO</span>
-          </div>
-          <span className="text-slate-500 text-[9px]">VERSÃO 2026.1</span>
-        </div>
-      </div>
+        {/* 3. Navegação Organizada por Grupos */}
+        <nav className="flex-1 overflow-y-auto px-3 py-3 space-y-5">
+          {groups.map((group) => (
+            <div key={group.title} className="space-y-1">
+              {!collapsed && (
+                <div className="px-2.5 pb-1">
+                  <span className="text-[11px] font-semibold uppercase tracking-wider text-[#9CA49E]">
+                    {group.title}
+                  </span>
+                </div>
+              )}
 
-      {/* 2. MEDIDOR DE CAPACIDADE DO PÁTIO */}
-      <div className="mx-3 mt-3 p-2.5 rounded-lg bg-carbon-850/80 border border-carbon-700/70 text-slate-300">
-        <div className="flex items-center justify-between text-[10px] font-mono mb-1.5">
-          <span className="text-slate-400 uppercase tracking-wider flex items-center gap-1">
-            <Activity className="w-3 h-3 text-lime-400" />
-            CAPACIDADE DO PÁTIO
-          </span>
-          <span className="text-lime-400 font-bold">
-            {bayStats.occupiedCount}/{bayStats.totalCapacity} VAGAS
-          </span>
-        </div>
-
-        {/* Barra de Segmentos em Billet */}
-        <div className="grid grid-cols-10 gap-0.5 h-1.5 bg-carbon-950 p-0.5 rounded border border-carbon-700">
-          {Array.from({ length: 10 }).map((_, i) => {
-            const filledCount = Math.round((bayStats.percentOccupied / 100) * 10);
-            const isFilled = i < filledCount;
-            const isHigh = bayStats.percentOccupied >= 90;
-            return (
-              <div
-                key={`segment-${i}`}
-                className={`rounded-xs transition-colors duration-300 ${
-                  isFilled
-                    ? isHigh
-                      ? "bg-rose-500"
-                      : "bg-lime-400"
-                    : "bg-carbon-700/40"
-                }`}
-              />
-            );
-          })}
-        </div>
-
-        <div className="flex items-center justify-between text-[9px] font-mono text-slate-500 mt-1.5">
-          <span>
-            {bayStats.activeBoxesCount > 0
-              ? `${bayStats.activeBoxesCount} BOX(ES) EM ATIVIDADE`
-              : "BOXES DISPONÍVEIS"}
-          </span>
-          <span className="text-slate-400">{bayStats.percentOccupied}% OCUPADO</span>
-        </div>
-      </div>
-
-      {/* 3. NAVEGAÇÃO DOS SETORES */}
-      <nav className="flex-1 overflow-y-auto px-2 py-3 space-y-4">
-        {navigation.map((group) => (
-          <div key={group.sector} className="space-y-1">
-            {/* Título do Setor */}
-            <div className="px-2 py-1 flex items-center justify-between">
-              <span className="font-mono text-[9px] uppercase tracking-widest text-slate-500">
-                <span className="text-lime-400/70 font-bold">{group.sector}</span> // {group.title}
-              </span>
-            </div>
-
-            {/* Itens do Setor */}
-            <div className="space-y-0.5">
               {group.items.map((item) => {
-                const isActive = pathname === item.href;
+                const active = isRouteActive(item.href);
+                const Icon = item.icon;
+
                 return (
                   <Link
-                    key={item.href}
+                    key={item.name}
                     href={item.href}
+                    title={collapsed ? item.name : undefined}
                     className={cn(
-                      "flex items-center justify-between px-2.5 py-1.5 rounded text-xs transition-all duration-150 group",
-                      isActive
-                        ? "tactical-active-tab font-semibold"
-                        : "text-slate-400 hover:text-slate-100 hover:bg-carbon-800/60"
+                      "flex items-center justify-between px-2.5 py-2 rounded-[8px] text-[13px] transition-all duration-150 group",
+                      collapsed && "justify-center px-0 py-2.5",
+                      active
+                        ? "bg-[#E9F3EC] text-[#142D26] font-semibold"
+                        : "text-[#737D75] hover:text-[#252B27] hover:bg-[#F7F8F6] font-medium"
                     )}
                   >
                     <div className="flex items-center gap-2.5 min-w-0">
-                      {/* Ícone */}
-                      <item.icon
+                      <Icon
                         className={cn(
-                          "w-4 h-4 shrink-0 transition-colors",
-                          isActive
-                            ? "text-lime-400"
-                            : "text-slate-500 group-hover:text-slate-300"
+                          "w-[18px] h-[18px] shrink-0 transition-colors",
+                          active
+                            ? "text-[#247653]"
+                            : "text-[#737D75] group-hover:text-[#252B27]"
                         )}
                       />
-
-                      {/* Nome do Módulo */}
-                      <span className="truncate">{item.name}</span>
+                      {!collapsed && (
+                        <span className="truncate">{item.name}</span>
+                      )}
                     </div>
 
-                    {/* Tag de Destaque */}
-                    {item.tag ? (
+                    {!collapsed && item.badge && (
                       <span
                         className={cn(
-                          "text-[9px] font-mono uppercase px-1.5 py-0.2 rounded tracking-wider border",
-                          isActive
-                            ? "bg-lime-400/20 text-lime-300 border-lime-400/40"
-                            : "bg-carbon-900 text-slate-500 border-carbon-700 group-hover:text-slate-300"
+                          "text-[10px] font-semibold px-1.5 py-0.5 rounded-full",
+                          active
+                            ? "bg-[#247653] text-white"
+                            : "bg-[#F1F3F1] text-[#737D75]"
                         )}
                       >
-                        {item.tag}
+                        {item.badge}
                       </span>
-                    ) : isActive ? (
-                      <ChevronRight className="w-3.5 h-3.5 text-lime-400 opacity-80" />
-                    ) : null}
+                    )}
                   </Link>
                 );
               })}
             </div>
-          </div>
-        ))}
-      </nav>
+          ))}
+        </nav>
 
-      {/* 4. IDENTIFICAÇÃO DO USUÁRIO LOGADO */}
-      <div className="p-3 border-t border-carbon-700/80 bg-carbon-900/90">
-        <div className="flex items-center justify-between bg-carbon-950 p-2 rounded border border-carbon-800">
-          <div className="flex items-center gap-2 min-w-0">
-            <div className="w-6 h-6 rounded bg-carbon-800 border border-carbon-700 flex items-center justify-center shrink-0">
-              <Cpu className="w-3.5 h-3.5 text-lime-400" />
+        {/* 4. Medidor Compacto de Ocupação do Pátio */}
+        {!collapsed ? (
+          <div className="p-3 m-3 rounded-[10px] bg-[#F7F8F6] border border-[#E7EAE7]">
+            <div className="flex items-center justify-between text-[12px] mb-1.5">
+              <span className="font-medium text-[#737D75]">Vagas do Pátio</span>
+              <span className="font-semibold text-[#142D26]">
+                {bayStats.occupiedCount}/{bayStats.totalCapacity} ocupadas
+              </span>
             </div>
-            <div className="min-w-0">
-              <p className="text-[10px] font-mono font-bold text-slate-200 truncate leading-none">
-                {role === "ADMIN" ? "ADMINISTRADOR" : "OPERADOR"}
-              </p>
-              <p className="text-[9px] font-mono text-slate-500 truncate mt-0.5">
-                CONEXÃO ESTÁVEL // 14MS
-              </p>
+            <div className="w-full h-1.5 bg-[#E7EAE7] rounded-full overflow-hidden">
+              <div
+                className={cn(
+                  "h-full rounded-full transition-all duration-300",
+                  bayStats.percentOccupied >= 90
+                    ? "bg-[#DC4C4C]"
+                    : bayStats.percentOccupied >= 60
+                    ? "bg-[#D97706]"
+                    : "bg-[#247653]"
+                )}
+                style={{ width: `${Math.min(100, bayStats.percentOccupied)}%` }}
+              />
+            </div>
+            <div className="mt-1.5 flex items-center justify-between text-[11px] text-[#737D75]">
+              <span>Ocupação atual</span>
+              <span>{bayStats.percentOccupied}%</span>
             </div>
           </div>
-
-          <span
-            className={cn(
-              "text-[9px] font-mono font-bold px-1.5 py-0.5 rounded border uppercase",
-              role === "ADMIN"
-                ? "bg-lime-400/10 text-lime-400 border-lime-400/30"
-                : "bg-blue-400/10 text-blue-400 border-blue-400/30"
-            )}
+        ) : (
+          <div
+            className="p-2 m-2 rounded-[8px] bg-[#F7F8F6] border border-[#E7EAE7] text-center"
+            title={`Vagas do Pátio: ${bayStats.occupiedCount}/${bayStats.totalCapacity}`}
           >
-            {role === "ADMIN" ? "ADM" : "OP"}
-          </span>
-        </div>
+            <span className="text-[11px] font-bold text-[#247653]">
+              {bayStats.occupiedCount}/{bayStats.totalCapacity}
+            </span>
+          </div>
+        )}
+      </aside>
+
+      {/* =====================================================================
+          NAVEGAÇÃO MOBILE INFERIOR + DRAWER COMPLETO
+         ===================================================================== */}
+      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-[#E7EAE7] px-2 py-1.5 flex items-center justify-around shadow-dropdown">
+        <Link
+          href={role === "ADMIN" ? "/dashboard" : "/patio"}
+          className={cn(
+            "flex flex-col items-center gap-0.5 px-2.5 py-1 rounded-[8px] text-[11px] font-medium",
+            pathname === "/dashboard"
+              ? "text-[#247653] font-semibold"
+              : "text-[#737D75]"
+          )}
+        >
+          <LayoutDashboard className="w-4 h-4" />
+          <span>Início</span>
+        </Link>
+
+        <Link
+          href="/patio"
+          className={cn(
+            "flex flex-col items-center gap-0.5 px-2.5 py-1 rounded-[8px] text-[11px] font-medium",
+            pathname.startsWith("/patio")
+              ? "text-[#247653] font-semibold"
+              : "text-[#737D75]"
+          )}
+        >
+          <Kanban className="w-4 h-4" />
+          <span>Pátio</span>
+        </Link>
+
+        <Link
+          href="/os/nova"
+          className="flex items-center justify-center w-10 h-10 rounded-full bg-[#247653] text-white shadow-sm -mt-3"
+          aria-label="Nova Ordem de Serviço"
+        >
+          <Plus className="w-5 h-5" />
+        </Link>
+
+        <Link
+          href="/vistoria"
+          className={cn(
+            "flex flex-col items-center gap-0.5 px-2.5 py-1 rounded-[8px] text-[11px] font-medium",
+            pathname.startsWith("/vistoria")
+              ? "text-[#247653] font-semibold"
+              : "text-[#737D75]"
+          )}
+        >
+          <Camera className="w-4 h-4" />
+          <span>Vistoria</span>
+        </Link>
+
+        <button
+          type="button"
+          onClick={() => setMobileMenuOpen(true)}
+          className="flex flex-col items-center gap-0.5 px-2.5 py-1 rounded-[8px] text-[11px] font-medium text-[#737D75] cursor-pointer"
+        >
+          <Menu className="w-4 h-4" />
+          <span>Menu</span>
+        </button>
       </div>
-    </aside>
+
+      {/* Drawer Mobile Completo */}
+      {mobileMenuOpen && (
+        <div className="lg:hidden fixed inset-0 z-50 bg-[#142D26]/40 backdrop-blur-[2px] flex">
+          <div className="w-[280px] max-w-[85vw] bg-white h-full shadow-modal flex flex-col">
+            <div className="h-16 px-4 border-b border-[#E7EAE7] flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-[8px] bg-[#142D26] flex items-center justify-center text-white">
+                  <Car className="w-4 h-4" />
+                </div>
+                <div>
+                  <span className="font-bold text-[15px] text-[#142D26] block leading-none">
+                    DetailPro
+                  </span>
+                  <span className="text-[11px] text-[#737D75]">
+                    {tenantName || "Estética Automotiva"}
+                  </span>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setMobileMenuOpen(false)}
+                aria-label="Fechar menu"
+                className="p-1.5 rounded-[8px] text-[#737D75] hover:bg-[#F1F3F1]"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-3 space-y-4">
+              {groups.map((group) => (
+                <div key={group.title} className="space-y-1">
+                  <span className="px-2.5 text-[11px] font-semibold uppercase tracking-wider text-[#9CA49E]">
+                    {group.title}
+                  </span>
+                  {group.items.map((item) => {
+                    const active = isRouteActive(item.href);
+                    const Icon = item.icon;
+                    return (
+                      <Link
+                        key={item.name}
+                        href={item.href}
+                        onClick={() => setMobileMenuOpen(false)}
+                        className={cn(
+                          "flex items-center justify-between px-3 py-2.5 rounded-[8px] text-[14px]",
+                          active
+                            ? "bg-[#E9F3EC] text-[#142D26] font-semibold"
+                            : "text-[#737D75] hover:bg-[#F7F8F6] font-medium"
+                        )}
+                      >
+                        <div className="flex items-center gap-3">
+                          <Icon
+                            className={cn(
+                              "w-4 h-4",
+                              active ? "text-[#247653]" : "text-[#737D75]"
+                            )}
+                          />
+                          <span>{item.name}</span>
+                        </div>
+                        {item.badge && (
+                          <span className="text-[11px] px-2 py-0.5 rounded-full bg-[#E9F3EC] text-[#247653] font-semibold">
+                            {item.badge}
+                          </span>
+                        )}
+                      </Link>
+                    );
+                  })}
+                </div>
+              ))}
+            </div>
+          </div>
+          <div
+            className="flex-1"
+            onClick={() => setMobileMenuOpen(false)}
+          />
+        </div>
+      )}
+    </>
   );
 }

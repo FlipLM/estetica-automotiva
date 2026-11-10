@@ -8,8 +8,6 @@ import {
   Share2,
   ArrowLeft,
   ArrowRight,
-  FileSpreadsheet,
-  CheckCircle2,
   Loader2,
 } from "lucide-react";
 import { formatCurrency, formatDateTime } from "@/lib/utils";
@@ -41,9 +39,9 @@ export default function BudgetDetailPage() {
 
   if (loading) {
     return (
-      <div className="h-96 flex flex-col items-center justify-center gap-3 text-slate-400">
-        <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
-        <p className="text-sm">Carregando proposta comercial...</p>
+      <div className="h-96 flex flex-col items-center justify-center gap-3 text-[#737D75]">
+        <Loader2 className="w-8 h-8 animate-spin text-[#247653]" />
+        <p className="text-sm font-medium">Carregando proposta comercial...</p>
       </div>
     );
   }
@@ -51,8 +49,8 @@ export default function BudgetDetailPage() {
   if (!order) {
     return (
       <div className="p-8 text-center space-y-4">
-        <p className="text-slate-400 text-sm">Orçamento não encontrado.</p>
-        <Link href="/orcamentos" className="text-blue-400 text-xs underline">
+        <p className="text-[#737D75] text-sm">Orçamento não encontrado.</p>
+        <Link href="/orcamentos" className="text-[#247653] text-xs font-semibold underline">
           Voltar para Orçamentos
         </Link>
       </div>
@@ -102,20 +100,20 @@ export default function BudgetDetailPage() {
   return (
     <div className="max-w-4xl mx-auto space-y-6 pb-12">
       {/* Botões de Ação Topo (Ocultados na impressão) */}
-      <div className="flex items-center justify-between print:hidden">
+      <div className="flex flex-wrap items-center justify-between gap-2 print:hidden">
         <Link
           href="/orcamentos"
-          className="text-xs text-slate-400 hover:text-white flex items-center gap-1.5 transition-colors"
+          className="text-xs font-semibold text-[#737D75] hover:text-[#252B27] flex items-center gap-1.5 transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
           <span>Voltar para Orçamentos</span>
         </Link>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           {isBudget && (
             <button
               onClick={handleConvert}
-              className="px-3.5 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-medium flex items-center gap-1.5 shadow-md shadow-blue-600/20 transition-all cursor-pointer"
+              className="dp-btn-primary text-xs cursor-pointer"
             >
               <ArrowRight className="w-3.5 h-3.5" />
               <span>Converter em OS (Mover p/ Pátio)</span>
@@ -124,7 +122,7 @@ export default function BudgetDetailPage() {
 
           <button
             onClick={handleShareWhatsApp}
-            className="px-3.5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-medium flex items-center gap-1.5 shadow-md shadow-emerald-600/20 transition-all cursor-pointer"
+            className="px-3.5 py-2 rounded-lg bg-[#ECFDF5] hover:bg-[#D1FAE5] text-[#16A36A] border border-[#A7F3D0] text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer"
           >
             <Share2 className="w-3.5 h-3.5" />
             <span>Compartilhar WhatsApp</span>
@@ -132,27 +130,27 @@ export default function BudgetDetailPage() {
 
           <button
             onClick={() => window.print()}
-            className="px-3.5 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-white text-xs font-medium flex items-center gap-1.5 border border-slate-700 transition-all cursor-pointer"
+            className="dp-btn-secondary text-xs cursor-pointer"
           >
-            <Printer className="w-3.5 h-3.5" />
+            <Printer className="w-3.5 h-3.5 text-[#247653]" />
             <span>Imprimir Proposta / PDF</span>
           </button>
         </div>
       </div>
 
       {/* DOCUMENTO DA PROPOSTA EM FORMATO FOLHA / IMPRESSÃO */}
-      <div className="bg-[#111827] border border-slate-800 rounded-2xl p-6 sm:p-8 space-y-6 shadow-2xl print:bg-white print:text-black print:border-none print:shadow-none print:p-0">
+      <div className="bg-white border border-[#E7EAE7] rounded-2xl p-6 sm:p-8 space-y-6 shadow-xs print:border-none print:shadow-none print:p-0">
         {/* Cabeçalho */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between pb-6 border-b border-slate-800 print:border-slate-300 gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between pb-6 border-b border-[#E7EAE7] gap-4">
           <div>
-            <h1 className="text-xl font-bold text-white print:text-black">
+            <h1 className="text-xl font-bold text-[#252B27]">
               {tenant.tradingName || tenant.name}
             </h1>
-            <p className="text-xs text-slate-400 print:text-slate-600 mt-0.5">
+            <p className="text-xs text-[#737D75] mt-0.5">
               {tenant.address || "Estética Automotiva & Detailing"}
             </p>
             {tenant.document && (
-              <p className="text-[11px] text-slate-500 print:text-slate-500">
+              <p className="text-[11px] text-[#737D75]">
                 CNPJ/CPF: {tenant.document} | Contato: {tenant.phone || tenant.whatsapp || "-"}
               </p>
             )}
@@ -160,113 +158,115 @@ export default function BudgetDetailPage() {
 
           <div className="text-left sm:text-right">
             <span
-              className={`text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border ${
+              className={`text-[11px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full border ${
                 isBudget
-                  ? "bg-amber-500/10 text-amber-400 border-amber-500/30 print:text-amber-800 print:border-amber-700"
-                  : "bg-emerald-500/10 text-emerald-400 border-emerald-500/30 print:text-emerald-800 print:border-emerald-700"
+                  ? "bg-[#FFFBEB] text-[#B45309] border-[#FDE68A]"
+                  : "bg-[#ECFDF5] text-[#16A36A] border-[#A7F3D0]"
               }`}
             >
               {isBudget ? "Proposta de Orçamento" : "Ordem de Serviço"}
             </span>
-            <p className="font-mono text-sm font-bold text-white print:text-black mt-1">
+            <p className="text-sm font-bold text-[#252B27] mt-1">
               #{order.orderNumber}
             </p>
-            <p className="text-[10px] text-slate-400 print:text-slate-600">
+            <p className="text-xs text-[#737D75]">
               Emissão: {formatDateTime(order.createdAt)}
             </p>
           </div>
         </div>
 
         {/* Dados do Cliente e do Veículo */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 rounded-xl bg-slate-900/60 print:bg-slate-50 border border-slate-800 print:border-slate-200 text-xs">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 rounded-xl bg-[#F7F8F6] border border-[#E7EAE7] text-xs">
           <div>
-            <p className="text-[10px] uppercase tracking-wider font-semibold text-slate-500 print:text-slate-600">
+            <p className="text-[10px] uppercase tracking-wider font-bold text-[#737D75]">
               Dados do Cliente
             </p>
-            <p className="text-sm font-bold text-white print:text-black mt-0.5">{customer.name}</p>
-            <p className="text-slate-300 print:text-slate-700">
+            <p className="text-sm font-bold text-[#252B27] mt-0.5">{customer.name}</p>
+            <p className="text-[#343C36]">
               Telefone: {customer.whatsapp || customer.phone || "Não informado"}
             </p>
             {customer.document && (
-              <p className="text-slate-400 print:text-slate-600 text-[11px]">CPF: {customer.document}</p>
+              <p className="text-[#737D75] text-[11px]">CPF/CNPJ: {customer.document}</p>
             )}
           </div>
 
           <div>
-            <p className="text-[10px] uppercase tracking-wider font-semibold text-slate-500 print:text-slate-600">
+            <p className="text-[10px] uppercase tracking-wider font-bold text-[#737D75]">
               Dados do Veículo
             </p>
-            <p className="text-sm font-bold text-white print:text-black mt-0.5">
+            <p className="text-sm font-bold text-[#252B27] mt-0.5">
               {vehicle.plate} — {vehicle.brand} {vehicle.model}
             </p>
-            <p className="text-slate-300 print:text-slate-700">
-              Porte / Categoria: <strong className="text-blue-400 print:text-blue-800">{vehicle.category}</strong>
+            <p className="text-[#343C36]">
+              Porte / Categoria: <strong className="text-[#247653]">{vehicle.category}</strong>
             </p>
             {order.mileage && (
-              <p className="text-slate-400 print:text-slate-600 text-[11px]">KM: {order.mileage} km</p>
+              <p className="text-[#737D75] text-[11px]">KM: {order.mileage} km</p>
             )}
           </div>
         </div>
 
         {/* Tabela de Serviços */}
         <div className="space-y-3">
-          <h2 className="text-xs font-bold uppercase tracking-wider text-slate-400 print:text-slate-600">
+          <h2 className="text-xs font-bold uppercase tracking-wider text-[#737D75]">
             Discriminação de Serviços Inclusos
           </h2>
 
-          <table className="w-full text-left text-xs">
-            <thead className="bg-slate-900/80 print:bg-slate-100 text-slate-400 print:text-slate-700 uppercase tracking-wider text-[10px] border-b border-slate-800 print:border-slate-300">
-              <tr>
-                <th className="py-2.5 px-3">Item / Serviço</th>
-                <th className="py-2.5 px-3 text-center">Qtd</th>
-                <th className="py-2.5 px-3 text-right">Valor Unitário</th>
-                <th className="py-2.5 px-3 text-right">Subtotal</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-800 print:divide-slate-200">
-              {items.map((it: any, idx: number) => (
-                <tr key={idx} className="print:text-black">
-                  <td className="py-3 px-3 font-medium text-white print:text-black">{it.serviceName}</td>
-                  <td className="py-3 px-3 text-center text-slate-400 print:text-slate-700">{it.quantity || 1}</td>
-                  <td className="py-3 px-3 text-right text-slate-300 print:text-slate-700">
-                    {it.unitPrice !== null ? formatCurrency(it.unitPrice) : "-"}
-                  </td>
-                  <td className="py-3 px-3 text-right font-semibold text-white print:text-black">
-                    {it.totalPrice !== null ? formatCurrency(it.totalPrice) : "-"}
-                  </td>
+          <div className="border border-[#E7EAE7] rounded-xl overflow-hidden">
+            <table className="w-full text-left text-xs">
+              <thead className="bg-[#F7F8F6] text-[#737D75] uppercase tracking-wider text-[11px] font-semibold border-b border-[#E7EAE7]">
+                <tr>
+                  <th className="py-2.5 px-3">Item / Serviço</th>
+                  <th className="py-2.5 px-3 text-center">Qtd</th>
+                  <th className="py-2.5 px-3 text-right">Valor Unitário</th>
+                  <th className="py-2.5 px-3 text-right">Subtotal</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-[#E7EAE7]">
+                {items.map((it: any, idx: number) => (
+                  <tr key={idx}>
+                    <td className="py-3 px-3 font-semibold text-[#252B27]">{it.serviceName}</td>
+                    <td className="py-3 px-3 text-center text-[#737D75]">{it.quantity || 1}</td>
+                    <td className="py-3 px-3 text-right text-[#343C36]">
+                      {it.unitPrice !== null ? formatCurrency(it.unitPrice) : "-"}
+                    </td>
+                    <td className="py-3 px-3 text-right font-bold text-[#247653]">
+                      {it.totalPrice !== null ? formatCurrency(it.totalPrice) : "-"}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
 
         {/* Resumo Financeiro */}
-        <div className="pt-4 border-t border-slate-800 print:border-slate-300 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 text-xs">
+        <div className="pt-4 border-t border-[#E7EAE7] flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 text-xs">
           <div>
             {order.notes && (
-              <div className="text-[11px] text-slate-400 print:text-slate-700 max-w-md">
-                <span className="font-semibold text-slate-300 print:text-black">Observações / Condições: </span>
+              <div className="text-xs text-[#737D75] max-w-md">
+                <span className="font-semibold text-[#252B27]">Observações / Condições: </span>
                 {order.notes}
               </div>
             )}
           </div>
 
           <div className="space-y-1.5 text-right w-full sm:w-64">
-            <div className="flex justify-between text-slate-400 print:text-slate-700">
+            <div className="flex justify-between text-[#737D75]">
               <span>Subtotal:</span>
-              <span className="font-medium text-slate-200 print:text-black">
+              <span className="font-semibold text-[#252B27]">
                 {order.subtotal !== null ? formatCurrency(order.subtotal) : "-"}
               </span>
             </div>
 
             {order.discount > 0 && (
-              <div className="flex justify-between text-red-400">
+              <div className="flex justify-between text-[#D97706] font-medium">
                 <span>Desconto Especial:</span>
                 <span>-{formatCurrency(order.discount)}</span>
               </div>
             )}
 
-            <div className="flex justify-between text-base font-bold text-emerald-400 print:text-black pt-2 border-t border-slate-800 print:border-slate-300">
+            <div className="flex justify-between text-base font-extrabold text-[#142D26] pt-2 border-t border-[#E7EAE7]">
               <span>Valor Total:</span>
               <span>{order.totalAmount !== null ? formatCurrency(order.totalAmount) : "-"}</span>
             </div>
@@ -274,11 +274,10 @@ export default function BudgetDetailPage() {
         </div>
 
         {/* Rodapé Institucional */}
-        <div className="pt-8 text-center text-[10px] text-slate-500 print:text-slate-600 border-t border-slate-800/80 print:border-slate-300">
-          Proposta emitida pelo Detailing OS — Gestão Profissional de Estética Automotiva.
+        <div className="pt-8 text-center text-[11px] text-[#737D75] border-t border-[#E7EAE7]">
+          Proposta emitida pelo DetailPro SaaS — Gestão Profissional de Estética Automotiva.
         </div>
       </div>
     </div>
   );
 }
-

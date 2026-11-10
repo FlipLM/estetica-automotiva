@@ -8,18 +8,14 @@ import {
   Car,
   Phone,
   Mail,
-  Calendar,
   AlertCircle,
   Loader2,
   Trash2,
   X,
-  FileText,
   FileCheck,
   Pencil,
-  Check,
-  MapPin,
 } from "lucide-react";
-import { formatCurrency, formatDate } from "@/lib/utils";
+import { formatCurrency } from "@/lib/utils";
 import { CustomerChecklistHistoryModal } from "@/components/modules/customer-checklist-history-modal";
 
 interface Vehicle {
@@ -66,7 +62,6 @@ export default function CustomersPage() {
   const [error, setError] = useState<string | null>(null);
   const [selectedCustomerForHistory, setSelectedCustomerForHistory] = useState<Customer | null>(null);
 
-  // Form State - Novo Cliente com múltiplos veículos
   const [formData, setFormData] = useState({
     name: "",
     document: "",
@@ -88,7 +83,6 @@ export default function CustomersPage() {
     ] as VehicleDraft[],
   });
 
-  // Modal State - Editar Cliente
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
   const [editFormData, setEditFormData] = useState({
@@ -101,7 +95,6 @@ export default function CustomersPage() {
     notes: "",
   });
 
-  // Modal State - Adicionar Veículo para Cliente Existente
   const [isAddVehicleModalOpen, setIsAddVehicleModalOpen] = useState(false);
   const [targetCustomerForVehicle, setTargetCustomerForVehicle] = useState<Customer | null>(null);
   const [vehicleFormData, setVehicleFormData] = useState<VehicleDraft>({
@@ -134,7 +127,6 @@ export default function CustomersPage() {
     return () => clearTimeout(timer);
   }, [search]);
 
-  // Funções de manipulação de múltiplos veículos no Novo Cliente
   function handleAddVehicleDraft() {
     setFormData((prev) => ({
       ...prev,
@@ -167,7 +159,6 @@ export default function CustomersPage() {
     });
   }
 
-  // 1. Cadastrar Novo Cliente
   async function handleCreateCustomer(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true);
@@ -193,7 +184,6 @@ export default function CustomersPage() {
         throw new Error(customerData.error || "Erro ao salvar cliente.");
       }
 
-      // Cadastra os veículos informados
       if (formData.addVehicle && formData.vehicles.length > 0) {
         for (const vDraft of formData.vehicles) {
           if (!vDraft.plate.trim() || !vDraft.model.trim()) continue;
@@ -247,7 +237,6 @@ export default function CustomersPage() {
     }
   }
 
-  // 2. Abrir Modal de Edição de Cliente
   function handleOpenEditCustomer(c: Customer) {
     setEditingCustomer(c);
     setEditFormData({
@@ -263,7 +252,6 @@ export default function CustomersPage() {
     setIsEditModalOpen(true);
   }
 
-  // Salvar Edição do Cliente
   async function handleUpdateCustomer(e: React.FormEvent) {
     e.preventDefault();
     if (!editingCustomer) return;
@@ -301,7 +289,6 @@ export default function CustomersPage() {
     }
   }
 
-  // 3. Abrir Modal de Adicionar Veículo para Cliente
   function handleOpenAddVehicle(c: Customer) {
     setTargetCustomerForVehicle(c);
     setVehicleFormData({
@@ -316,7 +303,6 @@ export default function CustomersPage() {
     setIsAddVehicleModalOpen(true);
   }
 
-  // Salvar Novo Veículo no Cliente
   async function handleSaveVehicleToCustomer(e: React.FormEvent) {
     e.preventDefault();
     if (!targetCustomerForVehicle) return;
@@ -387,18 +373,17 @@ export default function CustomersPage() {
   return (
     <div className="space-y-5">
       {/* Top Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 rounded carbon-card border-carbon-700 bg-carbon-900/80">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded bg-carbon-800 border border-carbon-700 flex items-center justify-center text-lime-400">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-5 rounded-xl bg-white border border-[#E7EAE7] shadow-xs">
+        <div className="flex items-center gap-3.5">
+          <div className="w-10 h-10 rounded-xl bg-[#E9F3EC] flex items-center justify-center text-[#247653]">
             <Users className="w-5 h-5" />
           </div>
           <div>
-            <h1 className="text-base sm:text-lg font-display font-extrabold tracking-wide text-white uppercase flex items-center gap-2">
-              <span>Gestão de Clientes & Veículos</span>
-              <span className="led-pulse-lime" />
+            <h1 className="text-[22px] font-bold tracking-tight text-[#252B27]">
+              Clientes e Veículos
             </h1>
-            <p className="text-[11px] font-mono text-slate-400 mt-0.5">
-              BASE CADASTRAL INTEGRADA // RELACIONAMENTO MULTI-VEÍCULO E HISTÓRICO
+            <p className="text-xs text-[#737D75] mt-0.5">
+              Base cadastral integrada, múltiplos veículos vinculados e histórico de vistorias
             </p>
           </div>
         </div>
@@ -408,141 +393,139 @@ export default function CustomersPage() {
             setError(null);
             setModalOpen(true);
           }}
-          className="btn-engine-start px-3.5 py-2 rounded text-xs flex items-center gap-1.5 shadow-md"
+          className="dp-btn-primary text-xs cursor-pointer"
         >
-          <Plus className="w-4 h-4 stroke-[3]" />
-          <span>+ NOVO CLIENTE / CARRO</span>
+          <Plus className="w-4 h-4" />
+          <span>Novo Cliente / Veículo</span>
         </button>
       </div>
 
-      {/* Barra de Busca e Filtro */}
-      <div className="flex items-center gap-3 font-mono">
+      {/* Barra de Busca */}
+      <div className="flex items-center gap-3">
         <div className="relative flex-1">
-          <Search className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+          <Search className="w-4 h-4 text-[#9CA49E] absolute left-3.5 top-1/2 -translate-y-1/2" />
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="SCAN CLIENTE POR NOME, PLACA DO CARRO, TELEFONE OU CPF..."
-            className="w-full pl-10 pr-4 py-2 rounded bg-carbon-900 border border-carbon-700 hover:border-carbon-600 text-white placeholder-slate-600 text-xs focus:outline-none focus:ring-1 focus:ring-lime-400/50 focus:border-lime-400 transition-all uppercase"
+            placeholder="Buscar cliente por nome, placa do carro, telefone ou CPF..."
+            className="dp-input pl-10"
           />
         </div>
       </div>
 
       {/* Tabela de Clientes */}
-      <div className="carbon-card overflow-hidden">
+      <div className="bg-white border border-[#E7EAE7] rounded-xl overflow-hidden shadow-xs">
         {loading ? (
-          <div className="h-64 flex flex-col items-center justify-center gap-2 text-slate-400 font-mono">
-            <Loader2 className="w-7 h-7 animate-spin text-lime-400" />
-            <p className="text-xs uppercase tracking-wider">CARREGANDO BASE DE CLIENTES...</p>
+          <div className="h-64 flex flex-col items-center justify-center gap-2 text-[#737D75]">
+            <Loader2 className="w-7 h-7 animate-spin text-[#247653]" />
+            <p className="text-xs font-medium">Carregando base de clientes...</p>
           </div>
         ) : customers.length === 0 ? (
-          <div className="p-12 text-center text-slate-500 font-mono text-xs">
-            // NENHUM CLIENTE ENCONTRADO COM OS CRITÉRIOS DE BUSCA
+          <div className="p-12 text-center text-[#737D75] text-xs space-y-2">
+            <Users className="w-8 h-8 text-[#9CA49E] mx-auto" />
+            <p className="font-semibold text-[#252B27]">Nenhum cliente encontrado</p>
+            <p>Verifique os termos de busca ou cadastre um novo cliente acima.</p>
           </div>
         ) : (
-          <div className="overflow-x-auto font-mono">
+          <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
-              <thead className="bg-carbon-950/80 text-slate-500 uppercase tracking-wider text-[10px] border-b border-carbon-800 font-bold">
+              <thead className="bg-[#F7F8F6] text-[#737D75] uppercase tracking-wider text-[11px] border-b border-[#E7EAE7] font-semibold">
                 <tr>
-                  <th className="py-3 px-4">CLIENTE</th>
-                  <th className="py-3 px-4">CONTATO</th>
-                  <th className="py-3 px-4">VEÍCULOS VINCULADOS</th>
-                  <th className="py-3 px-4 text-center">PASSAGENS</th>
-                  <th className="py-3 px-4 text-right">TOTAL GASTO</th>
-                  <th className="py-3 px-4 text-right">AÇÕES</th>
+                  <th className="py-3 px-4">Cliente</th>
+                  <th className="py-3 px-4">Contato</th>
+                  <th className="py-3 px-4">Veículos Vinculados</th>
+                  <th className="py-3 px-4 text-center">Passagens</th>
+                  <th className="py-3 px-4 text-right">Total Gasto</th>
+                  <th className="py-3 px-4 text-right">Ações</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-carbon-800/70">
+              <tbody className="divide-y divide-[#E7EAE7]">
                 {customers.map((c) => (
-                  <tr key={c.id} className="hover:bg-carbon-800/40 transition-colors">
-                    <td className="py-3 px-4">
-                      <div className="font-semibold text-white">{c.name}</div>
-                      {c.document && <div className="text-[10px] text-slate-400">{c.document}</div>}
+                  <tr key={c.id} className="hover:bg-[#F7F8F6] transition-colors">
+                    <td className="py-3.5 px-4">
+                      <div className="font-semibold text-[#252B27]">{c.name}</div>
+                      {c.document && <div className="text-[11px] text-[#737D75]">{c.document}</div>}
                     </td>
-                    <td className="py-3 px-4 text-slate-300">
-                      <div className="flex items-center gap-1.5">
-                        <Phone className="w-3 h-3 text-emerald-400" />
+                    <td className="py-3.5 px-4 text-[#343C36]">
+                      <div className="flex items-center gap-1.5 font-medium">
+                        <Phone className="w-3.5 h-3.5 text-[#247653]" />
                         <span>{c.whatsapp || c.phone || "Não informado"}</span>
                       </div>
                       {c.email && (
-                        <div className="flex items-center gap-1.5 text-[10px] text-slate-400 mt-0.5">
-                          <Mail className="w-3 h-3 text-slate-500" />
-                          <span className="truncate max-w-[150px]">{c.email}</span>
+                        <div className="flex items-center gap-1.5 text-[11px] text-[#737D75] mt-0.5">
+                          <Mail className="w-3 h-3 text-[#9CA49E]" />
+                          <span className="truncate max-w-[160px]">{c.email}</span>
                         </div>
                       )}
                     </td>
-                    <td className="py-3 px-4">
+                    <td className="py-3.5 px-4">
                       <div className="flex flex-wrap items-center gap-1.5">
                         {c.vehicles.length === 0 ? (
-                          <span className="text-slate-500 text-[11px] italic">// Sem veículos</span>
+                          <span className="text-[#9CA49E] text-xs italic">Sem veículos</span>
                         ) : (
                           c.vehicles.map((v) => (
                             <span
                               key={v.id}
-                              className="inline-flex items-center gap-1.5 px-2 py-1 rounded bg-carbon-900 border border-carbon-700 text-[11px]"
+                              className="inline-flex items-center gap-1.5 px-2 py-1 rounded-lg bg-[#F7F8F6] border border-[#E7EAE7] text-xs"
                             >
                               <span className="mercosul-plate text-xs font-bold">
                                 {v.plate}
                               </span>
-                              <span className="text-slate-300 font-bold">
+                              <span className="text-[#252B27] font-semibold">
                                 {v.model}
                               </span>
-                              <span className="text-slate-500 text-[9px] uppercase">
+                              <span className="text-[#737D75] text-[10px]">
                                 ({categoryLabels[v.category] || v.category})
                               </span>
                             </span>
                           ))
                         )}
 
-                        {/* Botão para Adicionar Outro Carro diretamente ao Cliente */}
                         <button
                           onClick={() => handleOpenAddVehicle(c)}
-                          className="inline-flex items-center gap-1 px-2 py-1 rounded bg-lime-400/10 hover:bg-lime-400/20 text-lime-400 border border-lime-400/30 text-[10px] font-bold transition cursor-pointer uppercase"
+                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#E9F3EC] hover:bg-[#d5eadb] text-[#142D26] text-[11px] font-semibold transition cursor-pointer"
                           title="Adicionar mais um veículo para este cliente"
                         >
-                          <Plus className="w-3 h-3" />
-                          <span>+ Carro</span>
+                          <Plus className="w-3 h-3 text-[#247653]" />
+                          <span>Novo carro</span>
                         </button>
                       </div>
                     </td>
-                    <td className="py-3 px-4 text-center">
-                      <span className="inline-block px-2 py-0.5 rounded text-[10px] font-bold bg-carbon-900 text-slate-300 border border-carbon-700">
+                    <td className="py-3.5 px-4 text-center">
+                      <span className="inline-block px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-[#F7F8F6] text-[#343C36] border border-[#E7EAE7]">
                         {c.visitsCount} {c.visitsCount === 1 ? "visita" : "visitas"}
                       </span>
                     </td>
-                    <td className="py-3 px-4 text-right font-bold text-lime-400">
+                    <td className="py-3.5 px-4 text-right font-bold text-[#247653]">
                       {formatCurrency(c.totalSpent)}
                     </td>
-                    <td className="py-3 px-4 text-right">
+                    <td className="py-3.5 px-4 text-right">
                       <div className="flex items-center justify-end gap-1.5">
-                        {/* Botão HISTÓRICO DE VISTORIAS */}
                         <button
                           onClick={() => setSelectedCustomerForHistory(c)}
                           title="Ver histórico de vistorias deste cliente"
-                          className="px-2 py-1 rounded bg-carbon-800 hover:bg-carbon-700 text-lime-400 hover:text-white transition-colors cursor-pointer flex items-center gap-1 text-[11px] font-bold border border-carbon-600 uppercase"
+                          className="px-2.5 py-1.5 rounded-lg bg-[#F7F8F6] hover:bg-[#E9F3EC] text-[#343C36] hover:text-[#142D26] transition-colors cursor-pointer flex items-center gap-1 text-xs font-medium border border-[#E7EAE7]"
                         >
-                          <FileCheck className="w-3 h-3 text-lime-400" />
+                          <FileCheck className="w-3.5 h-3.5 text-[#247653]" />
                           <span>Vistorias</span>
                         </button>
 
-                        {/* Botão EDITAR CLIENTE */}
                         <button
                           onClick={() => handleOpenEditCustomer(c)}
                           title="Editar dados cadastrais do cliente"
-                          className="px-2 py-1 rounded bg-carbon-800 hover:bg-carbon-700 text-slate-300 hover:text-white transition-colors cursor-pointer flex items-center gap-1 text-[11px] font-bold border border-carbon-600 uppercase"
+                          className="px-2.5 py-1.5 rounded-lg bg-[#F7F8F6] hover:bg-[#F1F3F1] text-[#343C36] transition-colors cursor-pointer flex items-center gap-1 text-xs font-medium border border-[#E7EAE7]"
                         >
-                          <Pencil className="w-3 h-3 text-lime-400" />
+                          <Pencil className="w-3.5 h-3.5 text-[#737D75]" />
                           <span>Editar</span>
                         </button>
 
-                        {/* Botão EXCLUIR */}
                         <button
                           onClick={() => handleDelete(c.id, c.name)}
                           title="Remover cliente"
-                          className="p-1.5 rounded hover:bg-carbon-800 text-slate-500 hover:text-red-400 transition-colors cursor-pointer border border-transparent hover:border-carbon-700"
+                          className="p-1.5 rounded-lg hover:bg-[#FEF2F2] text-[#9CA49E] hover:text-[#DC4C4C] transition-colors cursor-pointer"
                         >
-                          <Trash2 className="w-3.5 h-3.5" />
+                          <Trash2 className="w-4 h-4" />
                         </button>
                       </div>
                     </td>
@@ -556,23 +539,23 @@ export default function CustomersPage() {
 
       {/* MODAL 1: CADASTRAR NOVO CLIENTE (COM MÚLTIPLOS VEÍCULOS) */}
       {modalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
-          <div className="carbon-card w-full max-w-lg p-5 sm:p-6 shadow-2xl space-y-4 max-h-[92vh] overflow-y-auto bg-carbon-900 border-carbon-700">
-            <div className="flex items-center justify-between pb-3 border-b border-carbon-700">
-              <h2 className="text-base font-display font-extrabold text-white uppercase flex items-center gap-2">
-                <Users className="w-4 h-4 text-lime-400" />
+        <div className="fixed inset-0 z-50 bg-[#142D26]/45 backdrop-blur-[2px] flex items-center justify-center p-3 sm:p-4">
+          <div className="bg-white border border-[#E7EAE7] rounded-2xl w-full max-w-lg p-5 sm:p-6 shadow-xl space-y-4 max-h-[92vh] overflow-y-auto">
+            <div className="flex items-center justify-between pb-3 border-b border-[#E7EAE7]">
+              <h2 className="text-base font-bold text-[#252B27] flex items-center gap-2">
+                <Users className="w-4 h-4 text-[#247653]" />
                 <span>Cadastrar Novo Cliente</span>
               </h2>
               <button
                 onClick={() => setModalOpen(false)}
-                className="text-slate-400 hover:text-white p-1 rounded hover:bg-carbon-800 transition"
+                className="text-[#737D75] hover:text-[#252B27] p-1 rounded-lg hover:bg-[#F7F8F6] transition"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
             {error && (
-              <div className="p-3 rounded bg-red-500/10 border border-red-500/40 text-red-400 text-xs font-mono flex items-center gap-2">
+              <div className="p-3 rounded-lg bg-[#FEF2F2] border border-[#FECACA] text-[#DC4C4C] text-xs font-medium flex items-center gap-2">
                 <AlertCircle className="w-4 h-4 shrink-0" />
                 <span>{error}</span>
               </div>
@@ -580,23 +563,23 @@ export default function CustomersPage() {
 
             <form onSubmit={handleCreateCustomer} className="space-y-4">
               <div>
-                <label className="form-label-carbon">
-                  Nome Completo *
+                <label className="block text-xs font-semibold text-[#343C36] mb-1">
+                  Nome Completo <span className="text-[#DC4C4C]">*</span>
                 </label>
                 <input
                   type="text"
                   required
-                  placeholder="Nome do cliente"
+                  placeholder="Nome completo do cliente"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="form-input-carbon w-full"
+                  className="dp-input"
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="form-label-carbon">
-                    WhatsApp / Celular *
+                  <label className="block text-xs font-semibold text-[#343C36] mb-1">
+                    WhatsApp / Celular <span className="text-[#DC4C4C]">*</span>
                   </label>
                   <input
                     type="text"
@@ -606,12 +589,12 @@ export default function CustomersPage() {
                     onChange={(e) =>
                       setFormData({ ...formData, phone: e.target.value, whatsapp: e.target.value })
                     }
-                    className="form-input-carbon w-full font-mono"
+                    className="dp-input"
                   />
                 </div>
 
                 <div>
-                  <label className="form-label-carbon">
+                  <label className="block text-xs font-semibold text-[#343C36] mb-1">
                     CPF ou CNPJ
                   </label>
                   <input
@@ -619,14 +602,14 @@ export default function CustomersPage() {
                     placeholder="000.000.000-00"
                     value={formData.document}
                     onChange={(e) => setFormData({ ...formData, document: e.target.value })}
-                    className="form-input-carbon w-full font-mono"
+                    className="dp-input"
                   />
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="form-label-carbon">
+                  <label className="block text-xs font-semibold text-[#343C36] mb-1">
                     E-mail (opcional)
                   </label>
                   <input
@@ -634,12 +617,12 @@ export default function CustomersPage() {
                     placeholder="cliente@email.com"
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    className="form-input-carbon w-full"
+                    className="dp-input"
                   />
                 </div>
 
                 <div>
-                  <label className="form-label-carbon">
+                  <label className="block text-xs font-semibold text-[#343C36] mb-1">
                     Endereço / Bairro (opcional)
                   </label>
                   <input
@@ -647,26 +630,26 @@ export default function CustomersPage() {
                     placeholder="Ex: Águas Claras, DF"
                     value={formData.address}
                     onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                    className="form-input-carbon w-full"
+                    className="dp-input"
                   />
                 </div>
               </div>
 
-              {/* SEÇÃO VEÍCULOS (SUPORTA MÚLTIPLOS VEÍCULOS) */}
-              <div className="pt-3 border-t border-carbon-700/80 space-y-3">
+              {/* SEÇÃO VEÍCULOS */}
+              <div className="pt-3 border-t border-[#E7EAE7] space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-white flex items-center gap-1.5 uppercase font-mono">
-                    <Car className="w-3.5 h-3.5 text-lime-400" />
+                  <span className="text-xs font-bold text-[#252B27] flex items-center gap-1.5">
+                    <Car className="w-3.5 h-3.5 text-[#247653]" />
                     <span>Veículos do Cliente</span>
                   </span>
-                  <label className="text-[11px] font-mono text-slate-400 flex items-center gap-1.5 cursor-pointer">
+                  <label className="text-xs text-[#343C36] font-medium flex items-center gap-1.5 cursor-pointer">
                     <input
                       type="checkbox"
                       checked={formData.addVehicle}
                       onChange={(e) => setFormData({ ...formData, addVehicle: e.target.checked })}
-                      className="form-checkbox-carbon"
+                      className="rounded accent-[#247653]"
                     />
-                    <span>Cadastrar carro(s) agora</span>
+                    <span>Cadastrar veículo(s) agora</span>
                   </label>
                 </div>
 
@@ -675,10 +658,10 @@ export default function CustomersPage() {
                     {formData.vehicles.map((vDraft, idx) => (
                       <div
                         key={idx}
-                        className="p-3 bg-carbon-950 border border-carbon-800 rounded space-y-2.5 relative"
+                        className="p-3.5 bg-[#F7F8F6] border border-[#E7EAE7] rounded-xl space-y-2.5 relative"
                       >
-                        <div className="flex items-center justify-between pb-1.5 border-b border-carbon-800 text-xs font-mono">
-                          <span className="font-bold text-lime-400 flex items-center gap-1">
+                        <div className="flex items-center justify-between pb-1.5 border-b border-[#E7EAE7] text-xs">
+                          <span className="font-bold text-[#247653] flex items-center gap-1">
                             <Car className="w-3.5 h-3.5" />
                             <span>Veículo #{idx + 1} {idx === 0 ? "(Principal)" : ""}</span>
                           </span>
@@ -686,7 +669,7 @@ export default function CustomersPage() {
                             <button
                               type="button"
                               onClick={() => handleRemoveVehicleDraft(idx)}
-                              className="text-slate-500 hover:text-red-400 text-[11px] flex items-center gap-0.5 cursor-pointer"
+                              className="text-[#737D75] hover:text-[#DC4C4C] text-[11px] flex items-center gap-0.5 cursor-pointer"
                             >
                               <X className="w-3 h-3" />
                               <span>Remover</span>
@@ -696,8 +679,8 @@ export default function CustomersPage() {
 
                         <div className="grid grid-cols-2 gap-2.5">
                           <div>
-                            <label className="form-label-carbon">
-                              Placa do Carro *
+                            <label className="block text-[11px] font-semibold text-[#343C36] mb-1">
+                              Placa do Carro <span className="text-[#DC4C4C]">*</span>
                             </label>
                             <input
                               type="text"
@@ -711,20 +694,20 @@ export default function CustomersPage() {
                                   e.target.value.toUpperCase().replace("-", "")
                                 )
                               }
-                              className="form-input-carbon w-full font-mono font-bold uppercase tracking-wider"
+                              className="dp-input font-mono font-bold uppercase tracking-wider"
                             />
                           </div>
 
                           <div>
-                            <label className="form-label-carbon">
-                              Categoria de Porte *
+                            <label className="block text-[11px] font-semibold text-[#343C36] mb-1">
+                              Categoria de Porte <span className="text-[#DC4C4C]">*</span>
                             </label>
                             <select
                               value={vDraft.category}
                               onChange={(e) =>
                                 handleUpdateVehicleDraft(idx, "category", e.target.value as any)
                               }
-                              className="form-select-carbon w-full font-mono text-xs"
+                              className="dp-input text-xs"
                             >
                               <option value="HATCH">Pequeno / Hatch (Onix, Gol, Polo)</option>
                               <option value="SEDAN">Médio / Sedan (Corolla, Civic, Cruze)</option>
@@ -737,34 +720,36 @@ export default function CustomersPage() {
 
                         <div className="grid grid-cols-3 gap-2">
                           <div>
-                            <label className="form-label-carbon">Marca</label>
+                            <label className="block text-[11px] font-semibold text-[#343C36] mb-1">Marca</label>
                             <input
                               type="text"
                               placeholder="Ex: Honda"
                               value={vDraft.brand}
                               onChange={(e) => handleUpdateVehicleDraft(idx, "brand", e.target.value)}
-                              className="form-input-carbon w-full text-xs"
+                              className="dp-input text-xs"
                             />
                           </div>
                           <div>
-                            <label className="form-label-carbon">Modelo *</label>
+                            <label className="block text-[11px] font-semibold text-[#343C36] mb-1">
+                              Modelo <span className="text-[#DC4C4C]">*</span>
+                            </label>
                             <input
                               type="text"
                               required={formData.addVehicle}
                               placeholder="Ex: Civic"
                               value={vDraft.model}
                               onChange={(e) => handleUpdateVehicleDraft(idx, "model", e.target.value)}
-                              className="form-input-carbon w-full text-xs"
+                              className="dp-input text-xs"
                             />
                           </div>
                           <div>
-                            <label className="form-label-carbon">Cor</label>
+                            <label className="block text-[11px] font-semibold text-[#343C36] mb-1">Cor</label>
                             <input
                               type="text"
                               placeholder="Ex: Preto"
                               value={vDraft.color}
                               onChange={(e) => handleUpdateVehicleDraft(idx, "color", e.target.value)}
-                              className="form-input-carbon w-full text-xs"
+                              className="dp-input text-xs"
                             />
                           </div>
                         </div>
@@ -774,27 +759,27 @@ export default function CustomersPage() {
                     <button
                       type="button"
                       onClick={handleAddVehicleDraft}
-                      className="w-full py-2 px-3 rounded border border-dashed border-carbon-700 hover:border-lime-400 text-slate-300 hover:text-white text-xs font-bold font-mono flex items-center justify-center gap-1.5 transition cursor-pointer bg-carbon-950 hover:bg-carbon-900 uppercase"
+                      className="w-full py-2 px-3 rounded-xl border border-dashed border-[#9CA49E] hover:border-[#247653] text-[#343C36] hover:text-[#247653] text-xs font-semibold flex items-center justify-center gap-1.5 transition cursor-pointer bg-[#F7F8F6]"
                     >
-                      <Plus className="w-3.5 h-3.5 text-lime-400" />
-                      <span>+ Adicionar outro veículo para este cliente</span>
+                      <Plus className="w-3.5 h-3.5 text-[#247653]" />
+                      <span>Adicionar outro veículo para este cliente</span>
                     </button>
                   </div>
                 )}
               </div>
 
-              <div className="pt-3 border-t border-carbon-700 flex items-center justify-end gap-2 font-mono text-xs">
+              <div className="pt-3 border-t border-[#E7EAE7] flex items-center justify-end gap-2">
                 <button
                   type="button"
                   onClick={() => setModalOpen(false)}
-                  className="px-3.5 py-2 rounded bg-carbon-800 hover:bg-carbon-700 text-slate-400 hover:text-white transition cursor-pointer"
+                  className="dp-btn-secondary text-xs cursor-pointer"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
                   disabled={saving}
-                  className="btn-engine-start px-4 py-2 rounded flex items-center gap-1.5 transition-all disabled:opacity-50 cursor-pointer"
+                  className="dp-btn-primary text-xs cursor-pointer"
                 >
                   {saving && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                   <span>Salvar Cadastro</span>
@@ -807,46 +792,46 @@ export default function CustomersPage() {
 
       {/* MODAL 2: EDITAR CLIENTE */}
       {isEditModalOpen && editingCustomer && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
-          <div className="carbon-card w-full max-w-lg p-5 sm:p-6 shadow-2xl space-y-4 max-h-[92vh] overflow-y-auto bg-carbon-900 border-carbon-700">
-            <div className="flex items-center justify-between pb-3 border-b border-carbon-700">
-              <h2 className="text-base font-display font-extrabold text-white uppercase flex items-center gap-2">
-                <Pencil className="w-4 h-4 text-lime-400" />
+        <div className="fixed inset-0 z-50 bg-[#142D26]/45 backdrop-blur-[2px] flex items-center justify-center p-3 sm:p-4">
+          <div className="bg-white border border-[#E7EAE7] rounded-2xl w-full max-w-lg p-5 sm:p-6 shadow-xl space-y-4 max-h-[92vh] overflow-y-auto">
+            <div className="flex items-center justify-between pb-3 border-b border-[#E7EAE7]">
+              <h2 className="text-base font-bold text-[#252B27] flex items-center gap-2">
+                <Pencil className="w-4 h-4 text-[#247653]" />
                 <span>Editar Dados do Cliente</span>
               </h2>
               <button
                 onClick={() => setIsEditModalOpen(false)}
-                className="text-slate-400 hover:text-white p-1 rounded hover:bg-carbon-800 transition"
+                className="text-[#737D75] hover:text-[#252B27] p-1 rounded-lg hover:bg-[#F7F8F6] transition"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
             {error && (
-              <div className="p-3 rounded bg-red-500/10 border border-red-500/40 text-red-400 text-xs font-mono flex items-center gap-2">
+              <div className="p-3 rounded-lg bg-[#FEF2F2] border border-[#FECACA] text-[#DC4C4C] text-xs font-medium flex items-center gap-2">
                 <AlertCircle className="w-4 h-4 shrink-0" />
                 <span>{error}</span>
               </div>
             )}
 
-            <form onSubmit={handleUpdateCustomer} className="space-y-4 font-mono">
+            <form onSubmit={handleUpdateCustomer} className="space-y-4">
               <div>
-                <label className="form-label-carbon">
-                  Nome Completo *
+                <label className="block text-xs font-semibold text-[#343C36] mb-1">
+                  Nome Completo <span className="text-[#DC4C4C]">*</span>
                 </label>
                 <input
                   type="text"
                   required
                   value={editFormData.name}
                   onChange={(e) => setEditFormData({ ...editFormData, name: e.target.value })}
-                  className="form-input-carbon w-full"
+                  className="dp-input"
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="form-label-carbon">
-                    WhatsApp / Celular *
+                  <label className="block text-xs font-semibold text-[#343C36] mb-1">
+                    WhatsApp / Celular <span className="text-[#DC4C4C]">*</span>
                   </label>
                   <input
                     type="text"
@@ -859,51 +844,51 @@ export default function CustomersPage() {
                         phone: e.target.value,
                       })
                     }
-                    className="form-input-carbon w-full"
+                    className="dp-input"
                   />
                 </div>
 
                 <div>
-                  <label className="form-label-carbon">
+                  <label className="block text-xs font-semibold text-[#343C36] mb-1">
                     CPF ou CNPJ
                   </label>
                   <input
                     type="text"
                     value={editFormData.document}
                     onChange={(e) => setEditFormData({ ...editFormData, document: e.target.value })}
-                    className="form-input-carbon w-full"
+                    className="dp-input"
                   />
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="form-label-carbon">
+                  <label className="block text-xs font-semibold text-[#343C36] mb-1">
                     E-mail
                   </label>
                   <input
                     type="email"
                     value={editFormData.email}
                     onChange={(e) => setEditFormData({ ...editFormData, email: e.target.value })}
-                    className="form-input-carbon w-full"
+                    className="dp-input"
                   />
                 </div>
 
                 <div>
-                  <label className="form-label-carbon">
+                  <label className="block text-xs font-semibold text-[#343C36] mb-1">
                     Endereço / Bairro
                   </label>
                   <input
                     type="text"
                     value={editFormData.address}
                     onChange={(e) => setEditFormData({ ...editFormData, address: e.target.value })}
-                    className="form-input-carbon w-full"
+                    className="dp-input"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="form-label-carbon">
+                <label className="block text-xs font-semibold text-[#343C36] mb-1">
                   Notas / Preferências do Cliente
                 </label>
                 <textarea
@@ -911,15 +896,15 @@ export default function CustomersPage() {
                   value={editFormData.notes}
                   onChange={(e) => setEditFormData({ ...editFormData, notes: e.target.value })}
                   placeholder="Ex: Prefere aroma cítrico, cliente detalhista..."
-                  className="form-input-carbon w-full resize-none"
+                  className="dp-input resize-none"
                 />
               </div>
 
-              {/* VEÍCULOS VINCULADOS AO CLIENTE */}
-              <div className="pt-3 border-t border-carbon-700 space-y-2">
+              {/* VEÍCULOS VINCULADOS */}
+              <div className="pt-3 border-t border-[#E7EAE7] space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-white flex items-center gap-1.5 uppercase">
-                    <Car className="w-3.5 h-3.5 text-lime-400" />
+                  <span className="text-xs font-bold text-[#252B27] flex items-center gap-1.5">
+                    <Car className="w-3.5 h-3.5 text-[#247653]" />
                     <span>Veículos Deste Cliente ({editingCustomer.vehicles?.length || 0})</span>
                   </span>
                   <button
@@ -928,10 +913,10 @@ export default function CustomersPage() {
                       setIsEditModalOpen(false);
                       handleOpenAddVehicle(editingCustomer);
                     }}
-                    className="inline-flex items-center gap-1 text-[11px] text-lime-400 hover:text-lime-300 font-bold uppercase cursor-pointer"
+                    className="inline-flex items-center gap-1 text-xs text-[#247653] hover:text-[#142D26] font-semibold cursor-pointer"
                   >
                     <Plus className="w-3 h-3" />
-                    <span>+ Adicionar outro veículo</span>
+                    <span>Adicionar outro veículo</span>
                   </button>
                 </div>
 
@@ -940,33 +925,33 @@ export default function CustomersPage() {
                     editingCustomer.vehicles.map((v) => (
                       <span
                         key={v.id}
-                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-carbon-950 border border-carbon-700 text-xs"
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#F7F8F6] border border-[#E7EAE7] text-xs"
                       >
                         <span className="mercosul-plate text-xs font-bold">{v.plate}</span>
-                        <span className="text-slate-300 font-bold">{v.model}</span>
-                        <span className="text-slate-500 text-[10px]">
+                        <span className="text-[#252B27] font-semibold">{v.model}</span>
+                        <span className="text-[#737D75] text-[10px]">
                           ({categoryLabels[v.category] || v.category})
                         </span>
                       </span>
                     ))
                   ) : (
-                    <span className="text-slate-500 text-xs italic">// Nenhum veículo cadastrado ainda.</span>
+                    <span className="text-[#737D75] text-xs italic">Nenhum veículo cadastrado ainda.</span>
                   )}
                 </div>
               </div>
 
-              <div className="pt-3 border-t border-carbon-700 flex items-center justify-end gap-2 text-xs">
+              <div className="pt-3 border-t border-[#E7EAE7] flex items-center justify-end gap-2">
                 <button
                   type="button"
                   onClick={() => setIsEditModalOpen(false)}
-                  className="px-3.5 py-2 rounded bg-carbon-800 hover:bg-carbon-700 text-slate-400 hover:text-white transition cursor-pointer"
+                  className="dp-btn-secondary text-xs cursor-pointer"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
                   disabled={saving}
-                  className="btn-engine-start px-4 py-2 rounded flex items-center gap-1.5 transition-all disabled:opacity-50 cursor-pointer"
+                  className="dp-btn-primary text-xs cursor-pointer"
                 >
                   {saving && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                   <span>Salvar Alterações</span>
@@ -979,37 +964,37 @@ export default function CustomersPage() {
 
       {/* MODAL 3: ADICIONAR VEÍCULO AO CLIENTE */}
       {isAddVehicleModalOpen && targetCustomerForVehicle && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
-          <div className="carbon-card w-full max-w-md p-5 sm:p-6 shadow-2xl space-y-4 bg-carbon-900 border-carbon-700">
-            <div className="flex items-center justify-between pb-3 border-b border-carbon-700">
-              <h2 className="text-base font-display font-extrabold text-white uppercase flex items-center gap-2">
-                <Car className="w-4 h-4 text-lime-400" />
-                <span>Adicionar Veículo // Cliente</span>
+        <div className="fixed inset-0 z-50 bg-[#142D26]/45 backdrop-blur-[2px] flex items-center justify-center p-3 sm:p-4">
+          <div className="bg-white border border-[#E7EAE7] rounded-2xl w-full max-w-md p-5 sm:p-6 shadow-xl space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-[#E7EAE7]">
+              <h2 className="text-base font-bold text-[#252B27] flex items-center gap-2">
+                <Car className="w-4 h-4 text-[#247653]" />
+                <span>Adicionar Veículo ao Cliente</span>
               </h2>
               <button
                 onClick={() => setIsAddVehicleModalOpen(false)}
-                className="text-slate-400 hover:text-white p-1 rounded hover:bg-carbon-800 transition"
+                className="text-[#737D75] hover:text-[#252B27] p-1 rounded-lg hover:bg-[#F7F8F6] transition"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            <div className="p-2.5 rounded bg-carbon-950 border border-carbon-800 text-xs font-mono text-slate-300">
-              Vinculando veículo ao cliente: <strong className="text-lime-400">{targetCustomerForVehicle.name}</strong>
+            <div className="p-3 rounded-xl bg-[#E9F3EC]/60 border border-[#C6E2D0] text-xs text-[#142D26]">
+              Vinculando veículo ao cliente: <strong>{targetCustomerForVehicle.name}</strong>
             </div>
 
             {error && (
-              <div className="p-3 rounded bg-red-500/10 border border-red-500/40 text-red-400 text-xs font-mono flex items-center gap-2">
+              <div className="p-3 rounded-lg bg-[#FEF2F2] border border-[#FECACA] text-[#DC4C4C] text-xs font-medium flex items-center gap-2">
                 <AlertCircle className="w-4 h-4 shrink-0" />
                 <span>{error}</span>
               </div>
             )}
 
-            <form onSubmit={handleSaveVehicleToCustomer} className="space-y-3 font-mono">
+            <form onSubmit={handleSaveVehicleToCustomer} className="space-y-3.5">
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="form-label-carbon">
-                    Placa do Veículo *
+                  <label className="block text-xs font-semibold text-[#343C36] mb-1">
+                    Placa do Veículo <span className="text-[#DC4C4C]">*</span>
                   </label>
                   <input
                     type="text"
@@ -1022,13 +1007,13 @@ export default function CustomersPage() {
                         plate: e.target.value.toUpperCase().replace("-", ""),
                       })
                     }
-                    className="form-input-carbon w-full font-bold uppercase tracking-wider"
+                    className="dp-input font-mono font-bold uppercase tracking-wider"
                   />
                 </div>
 
                 <div>
-                  <label className="form-label-carbon">
-                    Porte / Categoria *
+                  <label className="block text-xs font-semibold text-[#343C36] mb-1">
+                    Porte / Categoria <span className="text-[#DC4C4C]">*</span>
                   </label>
                   <select
                     value={vehicleFormData.category}
@@ -1038,7 +1023,7 @@ export default function CustomersPage() {
                         category: e.target.value as Vehicle["category"],
                       })
                     }
-                    className="form-select-carbon w-full text-xs"
+                    className="dp-input text-xs"
                   >
                     <option value="HATCH">Hatch (Pequeno)</option>
                     <option value="SEDAN">Sedan (Médio)</option>
@@ -1051,8 +1036,8 @@ export default function CustomersPage() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="form-label-carbon">
-                    Modelo *
+                  <label className="block text-xs font-semibold text-[#343C36] mb-1">
+                    Modelo <span className="text-[#DC4C4C]">*</span>
                   </label>
                   <input
                     type="text"
@@ -1062,12 +1047,12 @@ export default function CustomersPage() {
                     onChange={(e) =>
                       setVehicleFormData({ ...vehicleFormData, model: e.target.value })
                     }
-                    className="form-input-carbon w-full text-xs"
+                    className="dp-input"
                   />
                 </div>
 
                 <div>
-                  <label className="form-label-carbon">
+                  <label className="block text-xs font-semibold text-[#343C36] mb-1">
                     Marca
                   </label>
                   <input
@@ -1077,14 +1062,14 @@ export default function CustomersPage() {
                     onChange={(e) =>
                       setVehicleFormData({ ...vehicleFormData, brand: e.target.value })
                     }
-                    className="form-input-carbon w-full text-xs"
+                    className="dp-input"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="form-label-carbon">
+                  <label className="block text-xs font-semibold text-[#343C36] mb-1">
                     Cor
                   </label>
                   <input
@@ -1094,12 +1079,12 @@ export default function CustomersPage() {
                     onChange={(e) =>
                       setVehicleFormData({ ...vehicleFormData, color: e.target.value })
                     }
-                    className="form-input-carbon w-full text-xs"
+                    className="dp-input"
                   />
                 </div>
 
                 <div>
-                  <label className="form-label-carbon">
+                  <label className="block text-xs font-semibold text-[#343C36] mb-1">
                     Ano
                   </label>
                   <input
@@ -1109,26 +1094,26 @@ export default function CustomersPage() {
                     onChange={(e) =>
                       setVehicleFormData({ ...vehicleFormData, year: e.target.value })
                     }
-                    className="form-input-carbon w-full text-xs"
+                    className="dp-input"
                   />
                 </div>
               </div>
 
-              <div className="pt-3 border-t border-carbon-700 flex items-center justify-end gap-2 text-xs">
+              <div className="pt-3 border-t border-[#E7EAE7] flex items-center justify-end gap-2">
                 <button
                   type="button"
                   onClick={() => setIsAddVehicleModalOpen(false)}
-                  className="px-3.5 py-2 rounded bg-carbon-800 hover:bg-carbon-700 text-slate-400 hover:text-white transition cursor-pointer"
+                  className="dp-btn-secondary text-xs cursor-pointer"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
                   disabled={saving}
-                  className="btn-engine-start px-4 py-2 rounded flex items-center gap-1.5 transition-all disabled:opacity-50 cursor-pointer"
+                  className="dp-btn-primary text-xs cursor-pointer"
                 >
                   {saving && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-                  <span>Adicionar Carro</span>
+                  <span>Adicionar Veículo</span>
                 </button>
               </div>
             </form>

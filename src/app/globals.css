@@ -1,94 +1,220 @@
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700;800&family=Chakra+Petch:wght@600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
-  --background: #060709;
-  --foreground: #f3f4f6;
-  --carbon-dark: #090a0d;
-  --carbon-surface: #101217;
-  --carbon-elevated: #161922;
-  --carbon-border: #1f2430;
-  --acid-lime: #a3e635;
-  --acid-lime-glow: rgba(163, 230, 53, 0.25);
+  /* Paleta Oficial — DetailPro Clean Professional */
+  --brand-deep: #142D26;
+  --brand-primary: #247653;
+  --brand-secondary: #318B63;
+  --brand-soft: #E9F3EC;
+
+  --bg-app: #F7F8F6;
+  --bg-surface: #FFFFFF;
+  --bg-muted: #F1F3F1;
+  --border-default: #E7EAE7;
+  --border-strong: #D5DBD5;
+
+  --text-primary: #252B27;
+  --text-secondary: #737D75;
+  --text-muted: #9CA49E;
+  --text-graphite: #343C36;
+
+  /* Cores Semânticas */
+  --color-success: #16A36A;
+  --color-info: #2563EB;
+  --color-warning: #D97706;
+  --color-error: #DC4C4C;
+
+  /* Raios e Sombras */
+  --radius-card: 12px;
+  --radius-btn: 8px;
+  --radius-input: 8px;
+  --radius-modal: 16px;
 }
 
 body {
-  background-color: var(--background);
-  color: var(--foreground);
-  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  background-color: var(--bg-app);
+  color: var(--text-primary);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
   min-height: 100vh;
-  letter-spacing: -0.01em;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-/* Utilitários Visuais Exclusivos - Anti-AI Design */
+/* ==========================================================================
+   SISTEMA DE COMPONENTES — DETAILPRO CLEAN PROFESSIONAL
+   ========================================================================== */
 
-/* Cartão com chanfro usinado em CNC (corte angular 45° no canto superior direito) */
+/* Superfícies & Cards (12px radius, sem clip-path) */
+.dp-card,
 .carbon-card {
-  background-color: #0d0f14;
-  border: 1px solid #1c2230;
-  position: relative;
-  clip-path: polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 0 100%);
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-card);
+  box-shadow: 0 1px 3px 0 rgba(20, 45, 38, 0.04), 0 1px 2px -1px rgba(20, 45, 38, 0.03);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
-.carbon-card::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  right: 0;
-  width: 14px;
-  height: 14px;
-  background: linear-gradient(135deg, transparent 50%, #1c2230 50%);
-  pointer-events: none;
-}
-
+.dp-card-interactive:hover,
 .carbon-card:hover {
-  border-color: #2e384d;
+  border-color: #D5DBD5;
 }
 
-/* Cartão com foco e borda ativa Verde-Lima */
 .carbon-card-active {
-  border-color: rgba(163, 230, 53, 0.5) !important;
-  box-shadow: 0 0 25px rgba(163, 230, 53, 0.08);
+  border-color: var(--brand-primary) !important;
+  box-shadow: 0 0 0 2px rgba(36, 118, 83, 0.12);
 }
 
-/* Botão estilo "Start Engine" / Ignição Automotiva */
+/* Botão Principal — Verde DetailPro (#247653, 8px radius) */
+.dp-btn-primary,
 .btn-engine-start {
-  background: #a3e635;
-  color: #050608;
-  font-family: 'Chakra Petch', sans-serif;
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
-  box-shadow: 0 0 20px rgba(163, 230, 53, 0.35);
-  transition: all 0.15s ease-out;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background-color: var(--brand-primary);
+  color: #FFFFFF;
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  font-size: 0.875rem;
+  border-radius: var(--radius-btn);
+  padding: 0.5625rem 1rem;
+  border: 1px solid transparent;
+  box-shadow: 0 1px 2px rgba(20, 45, 38, 0.08);
+  transition: background-color 0.15s ease, transform 0.1s ease, box-shadow 0.15s ease;
+  cursor: pointer;
 }
 
+.dp-btn-primary:hover,
 .btn-engine-start:hover {
-  background: #bef264;
-  box-shadow: 0 0 30px rgba(163, 230, 53, 0.55);
-  transform: translateY(-1px);
+  background-color: var(--brand-secondary);
 }
 
-/* Placa Mercosul Estilizada e Realista */
+.dp-btn-primary:active,
+.btn-engine-start:active {
+  background-color: var(--brand-deep);
+}
+
+.dp-btn-primary:disabled,
+.btn-engine-start:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* Botão Secundário / Outline */
+.dp-btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background-color: #FFFFFF;
+  color: var(--text-primary);
+  font-family: 'Inter', sans-serif;
+  font-weight: 500;
+  font-size: 0.875rem;
+  border-radius: var(--radius-btn);
+  padding: 0.5625rem 1rem;
+  border: 1px solid var(--border-default);
+  box-shadow: 0 1px 2px rgba(20, 45, 38, 0.03);
+  transition: all 0.15s ease;
+  cursor: pointer;
+}
+
+.dp-btn-secondary:hover {
+  background-color: var(--bg-muted);
+  border-color: var(--border-strong);
+}
+
+/* Formulários Padronizados (8px radius) */
+.dp-input,
+.form-input-carbon {
+  background-color: #FFFFFF;
+  border: 1px solid var(--border-default);
+  color: var(--text-primary);
+  border-radius: var(--radius-input);
+  padding: 0.5625rem 0.75rem;
+  font-size: 0.875rem;
+  font-family: 'Inter', sans-serif;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.dp-input::placeholder,
+.form-input-carbon::placeholder {
+  color: var(--text-muted);
+}
+
+.dp-input:hover,
+.form-input-carbon:hover {
+  border-color: var(--border-strong);
+}
+
+.dp-input:focus,
+.form-input-carbon:focus {
+  outline: none;
+  border-color: var(--brand-primary);
+  box-shadow: 0 0 0 3px rgba(36, 118, 83, 0.14);
+}
+
+.dp-select,
+.form-select-carbon {
+  background-color: #FFFFFF;
+  border: 1px solid var(--border-default);
+  color: var(--text-primary);
+  border-radius: var(--radius-input);
+  padding: 0.5625rem 0.75rem;
+  font-size: 0.875rem;
+  font-family: 'Inter', sans-serif;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.dp-select:focus,
+.form-select-carbon:focus {
+  outline: none;
+  border-color: var(--brand-primary);
+  box-shadow: 0 0 0 3px rgba(36, 118, 83, 0.14);
+}
+
+.dp-label,
+.form-label-carbon {
+  display: block;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin-bottom: 0.375rem;
+  font-family: 'Inter', sans-serif;
+}
+
+.form-checkbox-carbon {
+  width: 1rem;
+  height: 1rem;
+  border-radius: 4px;
+  background-color: #FFFFFF;
+  border: 1px solid var(--border-strong);
+  accent-color: var(--brand-primary);
+  cursor: pointer;
+}
+
+/* Placa Veicular Mercosul Clean */
 .mercosul-plate {
   display: inline-flex;
   align-items: center;
-  background: #ffffff;
-  color: #000000;
-  border: 1.5px solid #000000;
-  border-radius: 4px;
+  background: #FFFFFF;
+  color: #142D26;
+  border: 1.5px solid #343C36;
+  border-radius: 5px;
   font-family: 'JetBrains Mono', monospace;
-  font-weight: 800;
-  padding: 1px 6px 1px 4px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
-  letter-spacing: 0.05em;
+  font-weight: 700;
+  padding: 4px 8px 1px 8px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+  letter-spacing: 0.06em;
   position: relative;
   overflow: hidden;
+  line-height: 1.2;
 }
 
 .mercosul-plate::before {
@@ -98,164 +224,51 @@ body {
   left: 0;
   right: 0;
   height: 5px;
-  background: #003399;
-  color: #ffffff;
+  background: #1D4ED8;
+  color: #FFFFFF;
   font-size: 3.5px;
-  font-weight: 900;
+  font-weight: 800;
   text-align: center;
   line-height: 5px;
   letter-spacing: 0.5px;
 }
 
-/* Telemetry Grid Line */
-.telemetry-header {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 9px;
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
-  color: #64748b;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.telemetry-header::after {
-  content: "";
-  flex: 1;
-  height: 1px;
-  background: #1c2230;
-}
-
-/* Scrollbars customizadas estilo cockpit */
-::-webkit-scrollbar {
-  width: 5px;
-  height: 5px;
-}
-
-::-webkit-scrollbar-track {
-  background: #060709;
-}
-
-::-webkit-scrollbar-thumb {
-  background: #1c2230;
-  border-radius: 2px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: #a3e635;
-}
-
-/* Fundo liso em carbono forjado escuro (sem malha quadriculada) */
-.cockpit-grid-bg {
-  background-color: #07090e;
-  background-image: none;
-}
-
-/* Identidade Visual de Formulários de Alta Performance */
-.form-input-carbon {
-  background-color: #0c0f16;
-  border: 1px solid #1c2333;
-  color: #f3f4f6;
-  border-radius: 6px;
-  padding: 0.5rem 0.75rem;
-  font-size: 0.8125rem;
-  transition: all 0.15s ease-in-out;
-}
-
-.form-input-carbon:hover {
-  border-color: #2b354c;
-}
-
-.form-input-carbon:focus {
-  outline: none;
-  border-color: #a3e635;
-  box-shadow: 0 0 0 1px rgba(163, 230, 53, 0.35);
-  background-color: #0f131c;
-}
-
-.form-label-carbon {
-  display: block;
-  font-size: 0.6875rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: #94a3b8;
-  margin-bottom: 0.375rem;
-  font-family: 'JetBrains Mono', monospace;
-}
-
-.form-select-carbon {
-  background-color: #0c0f16;
-  border: 1px solid #1c2333;
-  color: #f3f4f6;
-  border-radius: 6px;
-  padding: 0.5rem 0.75rem;
-  font-size: 0.8125rem;
-  transition: all 0.15s ease-in-out;
-}
-
-.form-select-carbon:focus {
-  outline: none;
-  border-color: #a3e635;
-  box-shadow: 0 0 0 1px rgba(163, 230, 53, 0.35);
-}
-
-.form-checkbox-carbon {
-  width: 1rem;
-  height: 1rem;
-  border-radius: 4px;
-  background-color: #0c0f16;
-  border: 1px solid #1c2333;
-  accent-color: #a3e635;
-  cursor: pointer;
-}
-
-/* LED de Telemetria com halo pulsante */
+/* Indicadores Visuais Discretos */
 .led-pulse-lime {
   display: inline-block;
-  width: 6px;
-  height: 6px;
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
-  background: #a3e635;
-  box-shadow: 0 0 8px #a3e635;
-  animation: ledPulse 2s infinite ease-in-out;
+  background: var(--color-success);
 }
 
 .led-pulse-amber {
   display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-warning);
+}
+
+.cockpit-grid-bg {
+  background-color: var(--bg-app);
+}
+
+/* Scrollbars Limpas e Discretas */
+::-webkit-scrollbar {
   width: 6px;
   height: 6px;
-  border-radius: 50%;
-  background: #fbbf24;
-  box-shadow: 0 0 8px #fbbf24;
-  animation: ledPulse 2s infinite ease-in-out;
 }
 
-@keyframes ledPulse {
-
-  0%,
-  100% {
-    opacity: 1;
-    transform: scale(1);
-  }
-
-  50% {
-    opacity: 0.45;
-    transform: scale(0.85);
-  }
+::-webkit-scrollbar-track {
+  background: var(--bg-app);
 }
 
-/* Bloco Billet Usinado */
-.billet-rail {
-  background: linear-gradient(180deg, #0d0f14 0%, #08090d 100%);
-  border-right: 1px solid #1a202c;
-  box-shadow: inset -1px 0 0 rgba(255, 255, 255, 0.02);
+::-webkit-scrollbar-thumb {
+  background: #D5DBD5;
+  border-radius: 9999px;
 }
 
-/* Indicador de Seleção Estilo Gauge de Corrida */
-.tactical-active-tab {
-  background: linear-gradient(90deg, rgba(163, 230, 53, 0.14) 0%, rgba(163, 230, 53, 0.02) 100%);
-  border-left: 3px solid #a3e635;
-  color: #a3e635 !important;
-  box-shadow: inset 4px 0 12px rgba(163, 230, 53, 0.1);
+::-webkit-scrollbar-thumb:hover {
+  background: #9CA49E;
 }

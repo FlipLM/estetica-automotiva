@@ -2,8 +2,9 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Detailing SaaS — Gestão para Estética Automotiva & Lava-Jatos",
-  description: "Sistema completo de gestão de pátio, vistoria 360, ordens de serviço e DRE para estética automotiva.",
+  title: "DetailPro SaaS — Gestão Profissional para Estética Automotiva",
+  description:
+    "Sistema completo de gestão operacional, vistoria 360º, ordens de serviço, pátio Kanban e financeiro para estética automotiva.",
 };
 
 export default function RootLayout({
@@ -13,10 +14,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="pt-BR">
-      <body className="bg-[#090d16] text-slate-100 antialiased selection:bg-blue-600 selection:text-white">
+      <body className="bg-[#F7F8F6] text-[#252B27] antialiased selection:bg-[#247653] selection:text-white">
         {children}
       </body>
     </html>
   );
 }
-

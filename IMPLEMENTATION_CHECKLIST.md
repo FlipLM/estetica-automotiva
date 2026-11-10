@@ -68,3 +68,14 @@
 - [x] Pós-venda para avaliação de satisfação (1 a 3 dias)
 - [x] Curva ABC automática de clientes baseada em LTV (Classes A, B e C)
 - [x] Disparo direto para WhatsApp Web / App com textos personalizados
+
+## Módulo 11 — Redesign Completo: DetailPro Clean Professional (`design/novos-designs`)
+- [x] Auditoria completa de rotas, APIs e componentes (`docs/REDESIGN_AUDIT.md`)
+- [x] Design Tokens oficiais e paleta clara (`#142D26`, `#247653`, `#318B63`, `#E9F3EC`, `#F7F8F6`, `#FFFFFF`)
+- [x] Biblioteca centralizada de componentes UI (`src/components/ui/*`)
+- [x] Catálogo interativo e protótipos navegáveis em `/design-system`
+- [x] Nova página de Agenda Operacional (`/agenda`) com visões Dia, Semana e Mês
+- [x] Navegação global redesenhada (Sidebar colapsável Desktop + Bottom Bar & Drawer Mobile)
+- [x] Kanban Dual-View no Pátio (Visão por Status + Visão por Box Físico e Vagas)
+- [x] Correção definitiva de modais aninhados via React Portal (`createPortal`) sem `clip-path`
+- [x] Reformulação integral de todas as 24 páginas e modais preservando 100% das regras de negócio e testes

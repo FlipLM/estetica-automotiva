@@ -12,23 +12,25 @@ import {
   MapPin,
   Plus,
   RefreshCw,
-  Loader2,
   ArrowRight,
-  DollarSign,
-  X,
-  CreditCard,
-  Gauge,
-  AlertTriangle,
   Kanban,
   Layers,
   ArrowRightLeft,
   Sparkles,
   Droplets,
-  HelpCircle,
+  Eye,
 } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 import { ManageOrderServicesModal } from "@/components/modules/manage-order-services-modal";
 import { TransferOrderBoxModal } from "@/components/modules/transfer-order-box-modal";
+import {
+  Button,
+  Badge,
+  StatusBadge,
+  PageHeader,
+  Modal,
+  LoadingState,
+} from "@/components/ui";
 
 interface WorkBay {
   id: string;
@@ -264,191 +266,174 @@ export default function PatioKanbanPage() {
     title: string;
     description: string;
     icon: any;
-    color: string;
-    badgeColor: string;
+    iconBg: string;
+    iconColor: string;
+    badgeVariant: "warning" | "info" | "success" | "brand";
   }> = [
     {
       id: "TODO",
       title: "1. Para Fazer",
       description: "Aguardando início",
       icon: Clock,
-      color: "text-amber-400",
-      badgeColor: "bg-amber-500/10 text-amber-400 border-amber-500/30",
+      iconBg: "bg-[#FFFBEB]",
+      iconColor: "text-[#D97706]",
+      badgeVariant: "warning",
     },
     {
       id: "IN_PROGRESS",
       title: "2. Em Serviço",
       description: "Lavagem / Detailing",
       icon: Wrench,
-      color: "text-blue-400",
-      badgeColor: "bg-blue-500/10 text-blue-400 border-blue-500/30",
+      iconBg: "bg-[#EFF6FF]",
+      iconColor: "text-[#2563EB]",
+      badgeVariant: "info",
     },
     {
       id: "DONE",
       title: "3. Concluídos",
-      description: "Aguardando retirada",
+      description: "Pronto para entrega",
       icon: CheckCircle2,
-      color: "text-emerald-400",
-      badgeColor: "bg-emerald-500/10 text-emerald-400 border-emerald-500/30",
+      iconBg: "bg-[#ECFDF5]",
+      iconColor: "text-[#16A36A]",
+      badgeVariant: "success",
     },
     {
       id: "PAID",
-      title: "4. Pagos / Baixados",
+      title: "4. Pagos / Entregues",
       description: "Atendimento encerrado",
       icon: Receipt,
-      color: "text-purple-400",
-      badgeColor: "bg-purple-500/10 text-purple-400 border-purple-500/30",
+      iconBg: "bg-[#E9F3EC]",
+      iconColor: "text-[#247653]",
+      badgeVariant: "brand",
     },
   ];
 
   return (
-    <div className="space-y-5">
-      {/* Top Header */}
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 p-4 rounded carbon-card border-carbon-700 bg-carbon-900/80">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded bg-carbon-800 border border-carbon-700 flex items-center justify-center text-lime-400">
-            <Car className="w-5 h-5" />
-          </div>
-          <div>
-            <h1 className="text-base sm:text-lg font-display font-extrabold tracking-wide text-white uppercase flex items-center gap-2">
-              <span>Pátio Operacional // Telemetria em Tempo Real</span>
-              <span className="led-pulse-lime" />
-            </h1>
-            <p className="text-[11px] font-mono text-slate-400 mt-0.5">
-              GESTÃO DE ESTAÇÕES FÍSICAS, VAGAS DE BOXES E FLUXO KANBAN
-            </p>
-          </div>
-        </div>
+    <div className="space-y-6">
+      <PageHeader
+        title="Kanban do Pátio"
+        description="Acompanhe os veículos em atendimento por etapa do serviço ou por box físico de trabalho."
+        actions={
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Alternador de Visão */}
+            <div className="inline-flex items-center p-1 rounded-lg bg-[#F1F3F1] border border-[#E7EAE7]">
+              <button
+                type="button"
+                onClick={() => setViewMode("STATUS")}
+                className={`px-3 py-1.5 rounded-md text-xs font-medium flex items-center gap-1.5 transition-all cursor-pointer ${
+                  viewMode === "STATUS"
+                    ? "bg-white text-[#252B27] shadow-xs font-semibold"
+                    : "text-[#737D75] hover:text-[#252B27]"
+                }`}
+              >
+                <Kanban className="w-3.5 h-3.5" />
+                <span>Por Status</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode("BOXES")}
+                className={`px-3 py-1.5 rounded-md text-xs font-medium flex items-center gap-1.5 transition-all cursor-pointer ${
+                  viewMode === "BOXES"
+                    ? "bg-white text-[#252B27] shadow-xs font-semibold"
+                    : "text-[#737D75] hover:text-[#252B27]"
+                }`}
+              >
+                <Layers className="w-3.5 h-3.5" />
+                <span>Por Box e Vagas</span>
+                {boxes.some((b) => b.isFull) && (
+                  <span className="w-2 h-2 rounded-full bg-[#DC4C4C]" />
+                )}
+              </button>
+            </div>
 
-        {/* Alternador de Modo de Visão e Ações Rápidas */}
-        <div className="flex flex-wrap items-center gap-2 font-mono">
-          <div className="flex items-center bg-carbon-950 p-1 rounded-lg border border-carbon-700 text-xs">
-            <button
-              onClick={() => setViewMode("STATUS")}
-              className={`px-3 py-1.5 rounded flex items-center gap-1.5 transition-all font-bold cursor-pointer ${
-                viewMode === "STATUS"
-                  ? "bg-lime-400 text-black shadow"
-                  : "text-slate-400 hover:text-white"
-              }`}
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={loadPatio}
+              disabled={loading}
+              leftIcon={<RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />}
             >
-              <Kanban className="w-3.5 h-3.5" />
-              <span>VISÃO POR STATUS</span>
-            </button>
-            <button
-              onClick={() => setViewMode("BOXES")}
-              className={`px-3 py-1.5 rounded flex items-center gap-1.5 transition-all font-bold cursor-pointer ${
-                viewMode === "BOXES"
-                  ? "bg-lime-400 text-black shadow"
-                  : "text-slate-400 hover:text-white"
-              }`}
-            >
-              <Layers className="w-3.5 h-3.5" />
-              <span>VISÃO POR BOX & VAGAS</span>
-              {boxes.some((b) => b.isFull) && (
-                <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse ml-0.5" />
-              )}
-            </button>
+              Atualizar
+            </Button>
+
+            <Link href="/os/nova">
+              <Button variant="primary" size="sm" leftIcon={<Plus className="w-4 h-4" />}>
+                Nova Ordem
+              </Button>
+            </Link>
           </div>
+        }
+      />
 
-          <Link
-            href="/os/nova"
-            className="btn-engine-start px-3.5 py-2 rounded text-xs flex items-center gap-1.5 shadow-md"
-          >
-            <Plus className="w-3.5 h-3.5 stroke-[3]" />
-            <span>NOVA OS</span>
-          </Link>
-
-          <button
-            onClick={loadPatio}
-            disabled={loading}
-            className="p-2 rounded bg-carbon-800 hover:bg-carbon-700 text-slate-300 border border-carbon-600 text-xs flex items-center gap-1.5 transition-all cursor-pointer"
-            title="Atualizar dados do pátio"
-          >
-            <RefreshCw className={`w-3.5 h-3.5 text-lime-400 ${loading ? "animate-spin" : ""}`} />
-            <span className="hidden sm:inline font-bold">ATUALIZAR</span>
-          </button>
-        </div>
-      </div>
-
-      {/* PAINEL DE TELEMETRIA DE BOXES & VAGAS EM TEMPO REAL */}
+      {/* Resumo de Ocupação dos Boxes */}
       {boxes.length > 0 && (
-        <div className="p-3.5 rounded carbon-card border-carbon-700 bg-carbon-900/60 font-mono">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-2.5 pb-2 border-b border-carbon-800">
-            <div className="flex items-center gap-2 text-xs">
-              <Gauge className="w-4 h-4 text-lime-400" />
-              <span className="font-bold text-white uppercase tracking-wider text-[11px]">
-                Ocupação dos Boxes & Baias da Oficina
+        <div className="bg-white rounded-xl border border-[#E7EAE7] p-4 shadow-xs">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-3 pb-2.5 border-b border-[#F1F3F1]">
+            <div className="flex items-center gap-2">
+              <Layers className="w-4 h-4 text-[#247653]" />
+              <span className="text-xs font-semibold text-[#252B27]">
+                Ocupação dos Boxes e Baias
               </span>
-              <span className="text-[10px] text-slate-500">
-                ({boxes.filter((b) => b.isFull).length}/{boxes.length} lotados —{" "}
-                {boxes.reduce((acc, b) => acc + (b.occupiedCount || 0), 0)}/
-                {boxes.reduce((acc, b) => acc + b.capacity, 0)} vagas preenchidas)
+              <span className="text-xs text-[#737D75]">
+                ({boxes.reduce((acc, b) => acc + (b.occupiedCount || 0), 0)} de{" "}
+                {boxes.reduce((acc, b) => acc + b.capacity, 0)} vagas ocupadas)
               </span>
             </div>
             <Link
               href="/boxes"
-              className="text-[11px] text-slate-400 hover:text-lime-400 transition-colors flex items-center gap-1"
+              className="text-xs font-medium text-[#247653] hover:text-[#142D26] inline-flex items-center gap-1 transition-colors"
             >
-              <span>Gerenciar Configuração de Boxes</span>
-              <ArrowRight className="w-3 h-3" />
+              <span>Configurar boxes e vagas</span>
+              <ArrowRight className="w-3.5 h-3.5" />
             </Link>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2.5">
             {boxes.map((b) => (
               <div
                 key={b.id}
                 onClick={() => setViewMode("BOXES")}
-                className={`p-2 rounded border transition-all cursor-pointer ${
+                className={`p-2.5 rounded-lg border transition-all cursor-pointer ${
                   b.isFull
-                    ? "bg-rose-950/20 border-rose-500/40 text-rose-300 hover:border-rose-400"
+                    ? "bg-[#FEF2F2]/60 border-[#DC4C4C]/30 hover:border-[#DC4C4C]"
                     : b.occupiedCount > 0
-                    ? "bg-carbon-950 border-amber-500/30 text-amber-300 hover:border-amber-400"
-                    : "bg-carbon-950 border-carbon-700/60 text-slate-400 hover:border-lime-400/50"
+                    ? "bg-[#FFFBEB]/50 border-[#D97706]/30 hover:border-[#D97706]"
+                    : "bg-[#F7F8F6] border-[#E7EAE7] hover:border-[#247653]/40"
                 }`}
               >
                 <div className="flex items-center justify-between gap-1 mb-1">
-                  <span className="font-bold text-[11px] truncate uppercase">{b.name}</span>
+                  <span className="font-semibold text-xs text-[#252B27] truncate">{b.name}</span>
                   <span
-                    className={`w-1.5 h-1.5 rounded-full ${
+                    className={`w-2 h-2 rounded-full shrink-0 ${
                       b.isFull
-                        ? "bg-rose-400 animate-pulse"
+                        ? "bg-[#DC4C4C]"
                         : b.occupiedCount > 0
-                        ? "bg-amber-400"
-                        : "bg-lime-400"
+                        ? "bg-[#D97706]"
+                        : "bg-[#16A36A]"
                     }`}
                   />
                 </div>
 
-                <div className="flex items-center justify-between text-[10px]">
+                <div className="flex items-center justify-between text-[11px] text-[#737D75]">
                   <span>Vagas:</span>
-                  <span className="font-bold font-mono">
+                  <span className="font-semibold text-[#252B27]">
                     {b.occupiedCount}/{b.capacity}
                   </span>
                 </div>
 
-                {/* Barra de Ocupação */}
-                <div className="w-full bg-carbon-800 h-1 rounded-full mt-1.5 overflow-hidden">
+                <div className="w-full bg-[#E7EAE7] h-1.5 rounded-full mt-1.5 overflow-hidden">
                   <div
                     className={`h-full transition-all duration-300 ${
                       b.isFull
-                        ? "bg-rose-500"
+                        ? "bg-[#DC4C4C]"
                         : b.occupiedCount > 0
-                        ? "bg-amber-400"
-                        : "bg-lime-400"
+                        ? "bg-[#D97706]"
+                        : "bg-[#16A36A]"
                     }`}
                     style={{
                       width: `${Math.min(100, (b.occupiedCount / Math.max(1, b.capacity)) * 100)}%`,
                     }}
                   />
-                </div>
-
-                <div className="mt-1 text-[9px] text-right font-bold">
-                  {b.isFull ? (
-                    <span className="text-rose-400">LOTADO</span>
-                  ) : (
-                    <span className="text-slate-500">{b.availableSlots} livre(s)</span>
-                  )}
                 </div>
               </div>
             ))}
@@ -457,14 +442,9 @@ export default function PatioKanbanPage() {
       )}
 
       {loading ? (
-        <div className="h-80 flex flex-col items-center justify-center gap-2 text-slate-400 font-mono">
-          <Loader2 className="w-8 h-8 animate-spin text-lime-400" />
-          <p className="text-xs uppercase tracking-wider">SINCRONIZANDO TELEMETRIA DO PÁTIO...</p>
-        </div>
+        <LoadingState message="Sincronizando veículos no pátio..." />
       ) : viewMode === "STATUS" ? (
-        /* ========================================================================= */
-        /* MODO 1: KANBAN CLÁSSICO POR STATUS                                       */
-        /* ========================================================================= */
+        /* MODO 1: KANBAN POR STATUS */
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {columns.map((col) => {
             const colOrders = orders.filter((o) => o.status === col.id);
@@ -473,31 +453,31 @@ export default function PatioKanbanPage() {
                 key={col.id}
                 onDragOver={handleDragOver}
                 onDrop={(e) => handleDropStatus(e, col.id)}
-                className="bg-carbon-900/60 border border-carbon-700/80 rounded-lg p-3 flex flex-col min-h-[520px] transition-colors"
+                className="bg-[#F1F3F1]/70 border border-[#E7EAE7] rounded-xl p-3 flex flex-col min-h-[540px]"
               >
                 {/* Header da Coluna */}
-                <div className="flex items-center justify-between pb-3 mb-3 border-b border-carbon-800">
-                  <div className="flex items-center gap-2">
-                    <col.icon className={`w-4 h-4 ${col.color}`} />
+                <div className="flex items-center justify-between pb-3 mb-3 border-b border-[#E7EAE7]">
+                  <div className="flex items-center gap-2.5">
+                    <div className={`w-8 h-8 rounded-lg ${col.iconBg} ${col.iconColor} flex items-center justify-center`}>
+                      <col.icon className="w-4 h-4" />
+                    </div>
                     <div>
-                      <h2 className="text-xs font-bold text-white font-mono uppercase tracking-wide leading-tight">
+                      <h2 className="text-sm font-semibold text-[#252B27] leading-tight">
                         {col.title}
                       </h2>
-                      <p className="text-[10px] text-slate-500 font-mono">{col.description}</p>
+                      <p className="text-xs text-[#737D75]">{col.description}</p>
                     </div>
                   </div>
-                  <span
-                    className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded border ${col.badgeColor}`}
-                  >
+                  <Badge variant={col.badgeVariant} size="sm">
                     {colOrders.length}
-                  </span>
+                  </Badge>
                 </div>
 
                 {/* Lista de Cards Arrastáveis */}
-                <div className="space-y-2.5 flex-1 overflow-y-auto">
+                <div className="space-y-3 flex-1 overflow-y-auto">
                   {colOrders.length === 0 ? (
-                    <div className="h-32 flex items-center justify-center border border-dashed border-slate-800/80 rounded-lg text-slate-500 text-[11px] font-mono">
-                      Solte um carro aqui
+                    <div className="h-32 flex items-center justify-center border border-dashed border-[#D4D9D4] rounded-xl text-[#737D75] text-xs bg-white/50">
+                      Arraste um veículo para cá
                     </div>
                   ) : (
                     colOrders.map((os) => (
@@ -505,101 +485,110 @@ export default function PatioKanbanPage() {
                         key={os.id}
                         draggable
                         onDragStart={(e) => handleDragStart(e, os.id)}
-                        className="p-3.5 rounded carbon-card hover:border-lime-400/50 shadow-lg transition-all text-xs space-y-2.5 cursor-grab active:cursor-grabbing group bg-carbon-855"
+                        className="p-3.5 rounded-xl bg-white border border-[#E7EAE7] hover:border-[#247653]/50 shadow-xs transition-all text-xs space-y-3 cursor-grab active:cursor-grabbing"
                       >
                         <div className="flex items-start justify-between gap-2">
                           <div>
-                            <span className="font-mono text-[9px] text-slate-500 block leading-tight font-bold">
-                              OS <span className="text-lime-400">#{os.orderNumber}</span>
-                            </span>
+                            <div className="flex items-center gap-1.5">
+                              <Link
+                                href={`/os/${os.id}`}
+                                className="text-xs font-semibold text-[#247653] hover:underline"
+                              >
+                                OS #{os.orderNumber}
+                              </Link>
+                            </div>
                             <div className="mt-1">
-                              <span className="mercosul-plate text-xs font-mono font-bold">
-                                {os.plate}
-                              </span>
+                              <span className="mercosul-plate">{os.plate}</span>
                             </div>
                           </div>
-                          <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-carbon-900 text-slate-300 border border-carbon-700 uppercase">
+                          <Badge variant="neutral" size="sm">
                             {os.category}
-                          </span>
+                          </Badge>
                         </div>
 
                         <div>
-                          <p className="text-white font-bold text-xs">{os.model}</p>
-                          <p className="text-[11px] text-lime-400 font-medium font-mono">
+                          <p className="text-[#252B27] font-semibold text-sm">{os.model}</p>
+                          <p className="text-xs text-[#247653] font-medium mt-0.5">
                             {os.mainService}
                           </p>
                         </div>
 
-                        <div className="pt-2 border-t border-carbon-700/80 flex items-center justify-between text-[11px] text-slate-400 font-mono">
-                          <div className="flex items-center gap-1 min-w-0">
-                            <User className="w-3 h-3 text-slate-500 shrink-0" />
-                            <span className="truncate max-w-[90px]">{os.customerName}</span>
+                        <div className="pt-2.5 border-t border-[#F1F3F1] flex items-center justify-between text-xs text-[#737D75]">
+                          <div className="flex items-center gap-1.5 min-w-0">
+                            <User className="w-3.5 h-3.5 text-[#9CA49E] shrink-0" />
+                            <span className="truncate max-w-[105px]">{os.customerName}</span>
                           </div>
 
-                          {/* Tag de Box com Ação Rápida de Transferência */}
                           <button
                             type="button"
                             onClick={(e) => {
                               e.stopPropagation();
                               setTransferringOrder(os);
                             }}
-                            className="flex items-center gap-1 font-bold text-slate-300 hover:text-lime-400 px-1.5 py-0.5 rounded bg-carbon-900 hover:bg-carbon-800 border border-carbon-700 transition cursor-pointer"
-                            title="Clique para transferir para outro box"
+                            className="inline-flex items-center gap-1 font-medium text-[#252B27] hover:text-[#247653] px-2 py-1 rounded-md bg-[#F7F8F6] hover:bg-[#E9F3EC] border border-[#E7EAE7] transition cursor-pointer"
+                            title="Transferir para outro box"
                           >
-                            <MapPin className="w-3 h-3 text-lime-400" />
-                            <span>{os.box || "Pátio"}</span>
-                            <ArrowRightLeft className="w-2.5 h-2.5 opacity-60 ml-0.5" />
+                            <MapPin className="w-3 h-3 text-[#247653]" />
+                            <span className="truncate max-w-[85px]">{os.box || "Pátio"}</span>
+                            <ArrowRightLeft className="w-3 h-3 text-[#737D75]" />
                           </button>
                         </div>
 
                         {role === "ADMIN" && os.totalAmount !== null && (
-                          <div className="flex items-center justify-between text-[11px] pt-1 font-mono">
-                            <span className="text-slate-500">Total:</span>
-                            <span className="font-bold text-lime-400">
+                          <div className="flex items-center justify-between text-xs pt-1">
+                            <span className="text-[#737D75]">Valor da OS:</span>
+                            <span className="font-semibold text-[#252B27]">
                               {formatCurrency(os.totalAmount)}
                             </span>
                           </div>
                         )}
 
-                        {/* Botões Rápidos de Ação de 1 Toque */}
-                        <div className="pt-2 border-t border-carbon-700/80 space-y-1.5 text-[11px] font-mono">
+                        {/* Botões de Ação */}
+                        <div className="pt-2.5 border-t border-[#F1F3F1] space-y-1.5">
                           {os.status !== "PAID" && (
-                            <button
-                              type="button"
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              fullWidth
                               onClick={(e) => {
                                 e.stopPropagation();
                                 setSelectedOrderForServices(os);
                               }}
-                              className="w-full py-1.5 rounded bg-carbon-800 hover:bg-carbon-700 text-slate-300 hover:text-white border border-carbon-600 text-[10px] font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer uppercase"
-                              title="Adicionar novos serviços solicitados pelo cliente"
+                              leftIcon={<Plus className="w-3.5 h-3.5 text-[#247653]" />}
                             >
-                              <Plus className="w-3 h-3 text-lime-400 stroke-[3]" />
-                              <span>+ Adicionar Serviço</span>
-                            </button>
+                              Adicionar Serviço
+                            </Button>
                           )}
 
                           {os.status === "TODO" && (
-                            <button
+                            <Button
+                              variant="primary"
+                              size="sm"
+                              fullWidth
                               onClick={() => updateOrderStatus(os.id, "IN_PROGRESS")}
-                              className="w-full py-1.5 rounded bg-lime-400/10 hover:bg-lime-400 text-lime-400 hover:text-black border border-lime-400/30 text-[10px] font-bold flex items-center justify-center gap-1 transition-all cursor-pointer uppercase"
+                              leftIcon={<Wrench className="w-3.5 h-3.5" />}
                             >
-                              <Wrench className="w-3 h-3" />
-                              <span>Iniciar Serviço</span>
-                            </button>
+                              Iniciar Serviço
+                            </Button>
                           )}
 
                           {os.status === "IN_PROGRESS" && (
-                            <button
+                            <Button
+                              variant="primary"
+                              size="sm"
+                              fullWidth
                               onClick={() => updateOrderStatus(os.id, "DONE")}
-                              className="w-full py-1.5 rounded bg-emerald-500/20 hover:bg-emerald-500 text-emerald-300 hover:text-black border border-emerald-500/40 text-[10px] font-bold flex items-center justify-center gap-1 transition-all cursor-pointer uppercase"
+                              leftIcon={<CheckCircle2 className="w-3.5 h-3.5" />}
                             >
-                              <CheckCircle2 className="w-3 h-3" />
-                              <span>Finalizar Serviço</span>
-                            </button>
+                              Finalizar Serviço
+                            </Button>
                           )}
 
                           {os.status === "DONE" && (
-                            <button
+                            <Button
+                              variant="primary"
+                              size="sm"
+                              fullWidth
                               onClick={() => {
                                 if (role === "ADMIN") {
                                   setPaymentModalOrder(os);
@@ -609,17 +598,23 @@ export default function PatioKanbanPage() {
                                   );
                                 }
                               }}
-                              className="w-full py-1.5 rounded bg-blue-500/20 hover:bg-blue-500 text-blue-300 hover:text-black border border-blue-500/40 text-[10px] font-bold flex items-center justify-center gap-1 transition-all cursor-pointer uppercase"
+                              leftIcon={<Receipt className="w-3.5 h-3.5" />}
                             >
-                              <Receipt className="w-3 h-3" />
-                              <span>Registrar Pagamento</span>
-                            </button>
+                              Registrar Pagamento
+                            </Button>
                           )}
 
                           {os.status === "PAID" && (
-                            <div className="w-full py-1 rounded bg-carbon-900 border border-carbon-700 text-slate-500 text-[10px] text-center font-bold">
-                              BAIXADO // CONCLUÍDO
-                            </div>
+                            <Link href={`/os/${os.id}`} className="block">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                fullWidth
+                                leftIcon={<Eye className="w-3.5 h-3.5" />}
+                              >
+                                Ver Comprovante
+                              </Button>
+                            </Link>
                           )}
                         </div>
                       </div>
@@ -631,16 +626,13 @@ export default function PatioKanbanPage() {
           })}
         </div>
       ) : (
-        /* ========================================================================= */
-        /* MODO 2: VISÃO POR ESTAÇÃO FÍSICA // BOXES E VAGAS DA OFICINA              */
-        /* ========================================================================= */
+        /* MODO 2: VISÃO POR BOX E VAGAS */
         <div className="space-y-4">
-          <div className="p-3 bg-carbon-900/40 border border-carbon-800 rounded-lg flex items-center justify-between text-xs font-mono text-slate-400">
+          <div className="p-3.5 bg-[#E9F3EC]/60 border border-[#247653]/20 rounded-xl flex items-center justify-between text-xs text-[#142D26]">
             <div className="flex items-center gap-2">
-              <Layers className="w-4 h-4 text-lime-400" />
+              <Layers className="w-4 h-4 text-[#247653] shrink-0" />
               <span>
-                <strong>Mapa de Estações:</strong> Arraste qualquer veículo entre os boxes para
-                transferir de estação de trabalho. Vagas demarcadas respeitam os limites físicos de cada box.
+                <strong>Mapa de Estações Físicas:</strong> Arraste qualquer veículo entre os boxes para transferir de posto de trabalho. As vagas respeitam a capacidade de cada box.
               </span>
             </div>
           </div>
@@ -648,7 +640,6 @@ export default function PatioKanbanPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4">
             {boxes.map((b) => {
               const Icon = BOX_ICONS[b.type || "GERAL"] || Layers;
-              // Veículos ativos atribuídos a este box
               const boxOrders = orders.filter(
                 (o) =>
                   o.status !== "PAID" &&
@@ -664,54 +655,50 @@ export default function PatioKanbanPage() {
                   key={b.id}
                   onDragOver={handleDragOver}
                   onDrop={(e) => handleDropBox(e, b.name)}
-                  className={`rounded-lg p-3.5 border transition-all flex flex-col min-h-[460px] ${
+                  className={`rounded-xl p-4 border transition-all flex flex-col min-h-[460px] ${
                     b.isFull
-                      ? "bg-carbon-900/90 border-rose-500/40 shadow-[0_0_15px_rgba(244,63,94,0.08)]"
-                      : "bg-carbon-900/60 border-carbon-700/80 hover:border-carbon-600"
+                      ? "bg-[#FEF2F2]/30 border-[#DC4C4C]/40"
+                      : "bg-[#F1F3F1]/70 border-[#E7EAE7]"
                   }`}
                 >
                   {/* Header do Box */}
-                  <div className="pb-3 mb-3 border-b border-carbon-800">
+                  <div className="pb-3 mb-3 border-b border-[#E7EAE7]">
                     <div className="flex items-center justify-between gap-2">
                       <div className="flex items-center gap-2 min-w-0">
                         <div
                           className="w-3 h-3 rounded-full shrink-0"
-                          style={{ backgroundColor: b.color || "#a3e635" }}
+                          style={{ backgroundColor: b.color || "#247653" }}
                         />
-                        <Icon className="w-4 h-4 text-slate-300 shrink-0" />
-                        <h2 className="text-xs font-bold text-white font-mono uppercase tracking-wide truncate">
+                        <Icon className="w-4 h-4 text-[#737D75] shrink-0" />
+                        <h2 className="text-sm font-semibold text-[#252B27] truncate">
                           {b.name}
                         </h2>
                       </div>
 
-                      <span
-                        className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded border shrink-0 ${
-                          b.isFull
-                            ? "bg-rose-500/20 text-rose-300 border-rose-500/40 animate-pulse"
-                            : boxOrders.length > 0
-                            ? "bg-amber-500/10 text-amber-300 border-amber-500/30"
-                            : "bg-lime-500/10 text-lime-400 border-lime-500/30"
-                        }`}
+                      <Badge
+                        variant={
+                          b.isFull ? "error" : boxOrders.length > 0 ? "warning" : "success"
+                        }
+                        size="sm"
                       >
-                        {boxOrders.length}/{b.capacity} {b.capacity === 1 ? "VAGA" : "VAGAS"}
-                      </span>
+                        {boxOrders.length}/{b.capacity} {b.capacity === 1 ? "vaga" : "vagas"}
+                      </Badge>
                     </div>
 
                     {b.description && (
-                      <p className="text-[10px] text-slate-500 font-mono mt-1 line-clamp-1">
+                      <p className="text-xs text-[#737D75] mt-1 line-clamp-1">
                         {b.description}
                       </p>
                     )}
 
-                    {/* Barra de Lotação Visual */}
-                    <div className="w-full bg-carbon-950 h-1.5 rounded-full mt-2.5 overflow-hidden border border-carbon-800">
+                    <div className="w-full bg-[#E7EAE7] h-1.5 rounded-full mt-2.5 overflow-hidden">
                       <div
                         className={`h-full transition-all duration-300 ${
                           b.isFull
-                            ? "bg-rose-500"
+                            ? "bg-[#DC4C4C]"
                             : boxOrders.length > 0
-                            ? "bg-amber-400"
-                            : "bg-lime-400"
+                            ? "bg-[#D97706]"
+                            : "bg-[#16A36A]"
                         }`}
                         style={{
                           width: `${Math.min(100, (boxOrders.length / Math.max(1, b.capacity)) * 100)}%`,
@@ -722,140 +709,122 @@ export default function PatioKanbanPage() {
 
                   {/* Vagas e Veículos Dentro do Box */}
                   <div className="space-y-3 flex-1 overflow-y-auto">
-                    {/* 1. Veículos Ocupando Vagas */}
-                    {boxOrders.map((os) => {
-                      const statusCol = columns.find((c) => c.id === os.status);
-                      return (
-                        <div
-                          key={os.id}
-                          draggable
-                          onDragStart={(e) => handleDragStart(e, os.id)}
-                          className="p-3 rounded-lg carbon-card border-carbon-700 hover:border-lime-400/50 shadow-md transition-all text-xs space-y-2.5 cursor-grab active:cursor-grabbing bg-carbon-850"
-                        >
-                          <div className="flex items-start justify-between gap-2">
-                            <div>
-                              <div className="flex items-center gap-1.5">
-                                <span className="font-mono text-[9px] text-slate-500 font-bold">
-                                  OS #{os.orderNumber}
-                                </span>
-                                {statusCol && (
-                                  <span
-                                    className={`text-[9px] font-mono font-bold px-1.5 py-0.2 rounded border ${statusCol.badgeColor}`}
-                                  >
-                                    {statusCol.title.replace(/^[0-9]\.\s*/, "")}
-                                  </span>
-                                )}
-                              </div>
-                              <div className="mt-1">
-                                <span className="mercosul-plate text-xs font-mono font-bold">
-                                  {os.plate}
-                                </span>
-                              </div>
-                            </div>
-                            <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-carbon-900 text-slate-300 border border-carbon-700 uppercase">
-                              {os.category}
-                            </span>
-                          </div>
-
+                    {boxOrders.map((os) => (
+                      <div
+                        key={os.id}
+                        draggable
+                        onDragStart={(e) => handleDragStart(e, os.id)}
+                        className="p-3.5 rounded-xl bg-white border border-[#E7EAE7] hover:border-[#247653]/50 shadow-xs transition-all text-xs space-y-2.5 cursor-grab active:cursor-grabbing"
+                      >
+                        <div className="flex items-start justify-between gap-2">
                           <div>
-                            <p className="text-white font-bold text-xs">{os.model}</p>
-                            <p className="text-[11px] text-lime-400 font-medium font-mono">
-                              {os.mainService}
-                            </p>
-                          </div>
-
-                          <div className="pt-2 border-t border-carbon-700/80 flex items-center justify-between text-[11px] text-slate-400 font-mono">
-                            <div className="flex items-center gap-1 min-w-0">
-                              <User className="w-3 h-3 text-slate-500 shrink-0" />
-                              <span className="truncate max-w-[100px]">{os.customerName}</span>
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-xs font-semibold text-[#247653]">
+                                OS #{os.orderNumber}
+                              </span>
+                              <StatusBadge status={os.status} size="sm" />
                             </div>
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setTransferringOrder(os);
-                              }}
-                              className="text-[10px] font-bold text-slate-400 hover:text-lime-400 flex items-center gap-1 bg-carbon-900 px-1.5 py-0.5 rounded border border-carbon-700 transition cursor-pointer"
-                              title="Transferir para outro box"
-                            >
-                              <ArrowRightLeft className="w-2.5 h-2.5" />
-                              <span>Mover</span>
-                            </button>
+                            <div className="mt-1.5">
+                              <span className="mercosul-plate">{os.plate}</span>
+                            </div>
                           </div>
-
-                          {/* Ações Rápidas no Box */}
-                          <div className="pt-2 border-t border-carbon-700/80 grid grid-cols-2 gap-1.5 text-[10px] font-mono">
-                            {os.status === "TODO" && (
-                              <button
-                                onClick={() => updateOrderStatus(os.id, "IN_PROGRESS")}
-                                className="py-1 rounded bg-lime-400/10 hover:bg-lime-400 text-lime-400 hover:text-black border border-lime-400/30 font-bold flex items-center justify-center gap-1 transition-all cursor-pointer uppercase col-span-2"
-                              >
-                                <Wrench className="w-3 h-3" />
-                                <span>Iniciar</span>
-                              </button>
-                            )}
-
-                            {os.status === "IN_PROGRESS" && (
-                              <button
-                                onClick={() => updateOrderStatus(os.id, "DONE")}
-                                className="py-1 rounded bg-emerald-500/20 hover:bg-emerald-500 text-emerald-300 hover:text-black border border-emerald-500/40 font-bold flex items-center justify-center gap-1 transition-all cursor-pointer uppercase col-span-2"
-                              >
-                                <CheckCircle2 className="w-3 h-3" />
-                                <span>Concluir</span>
-                              </button>
-                            )}
-
-                            {os.status === "DONE" && (
-                              <button
-                                onClick={() => {
-                                  if (role === "ADMIN") {
-                                    setPaymentModalOrder(os);
-                                  } else {
-                                    alert("Apenas administradores podem registrar a baixa da OS.");
-                                  }
-                                }}
-                                className="py-1 rounded bg-blue-500/20 hover:bg-blue-500 text-blue-300 hover:text-black border border-blue-500/40 font-bold flex items-center justify-center gap-1 transition-all cursor-pointer uppercase col-span-2"
-                              >
-                                <Receipt className="w-3 h-3" />
-                                <span>Baixar / Entregar</span>
-                              </button>
-                            )}
-                          </div>
+                          <Badge variant="neutral" size="sm">
+                            {os.category}
+                          </Badge>
                         </div>
-                      );
-                    })}
 
-                    {/* 2. Vagas Livres Demarcadas (Slots Vazios) */}
+                        <div>
+                          <p className="text-[#252B27] font-semibold text-sm">{os.model}</p>
+                          <p className="text-xs text-[#247653] font-medium">
+                            {os.mainService}
+                          </p>
+                        </div>
+
+                        <div className="pt-2 border-t border-[#F1F3F1] flex items-center justify-between text-xs text-[#737D75]">
+                          <div className="flex items-center gap-1 min-w-0">
+                            <User className="w-3.5 h-3.5 text-[#9CA49E] shrink-0" />
+                            <span className="truncate max-w-[110px]">{os.customerName}</span>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setTransferringOrder(os);
+                            }}
+                            className="text-xs font-medium text-[#247653] hover:text-[#142D26] flex items-center gap-1 bg-[#F7F8F6] px-2 py-1 rounded-md border border-[#E7EAE7] transition cursor-pointer"
+                          >
+                            <ArrowRightLeft className="w-3 h-3" />
+                            <span>Trocar Box</span>
+                          </button>
+                        </div>
+
+                        <div className="pt-2 border-t border-[#F1F3F1]">
+                          {os.status === "TODO" && (
+                            <Button
+                              variant="primary"
+                              size="sm"
+                              fullWidth
+                              onClick={() => updateOrderStatus(os.id, "IN_PROGRESS")}
+                              leftIcon={<Wrench className="w-3.5 h-3.5" />}
+                            >
+                              Iniciar Serviço
+                            </Button>
+                          )}
+
+                          {os.status === "IN_PROGRESS" && (
+                            <Button
+                              variant="primary"
+                              size="sm"
+                              fullWidth
+                              onClick={() => updateOrderStatus(os.id, "DONE")}
+                              leftIcon={<CheckCircle2 className="w-3.5 h-3.5" />}
+                            >
+                              Concluir Serviço
+                            </Button>
+                          )}
+
+                          {os.status === "DONE" && (
+                            <Button
+                              variant="primary"
+                              size="sm"
+                              fullWidth
+                              onClick={() => {
+                                if (role === "ADMIN") {
+                                  setPaymentModalOrder(os);
+                                } else {
+                                  alert("Apenas administradores podem registrar a baixa da OS.");
+                                }
+                              }}
+                              leftIcon={<Receipt className="w-3.5 h-3.5" />}
+                            >
+                              Registrar Pagamento
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+
+                    {/* Vagas Livres Demarcadas */}
                     {Array.from({ length: emptySlotsCount }).map((_, slotIdx) => (
                       <div
                         key={`empty-slot-${b.id}-${slotIdx}`}
-                        className="border border-dashed border-carbon-700/80 rounded-lg p-4 text-center flex flex-col items-center justify-center min-h-[100px] bg-carbon-950/30 text-slate-500 font-mono transition-colors hover:border-lime-400/40"
+                        className="border border-dashed border-[#D4D9D4] rounded-xl p-4 text-center flex flex-col items-center justify-center min-h-[100px] bg-white/60 text-[#737D75] transition-colors hover:border-[#247653]/50"
                       >
-                        <Car className="w-5 h-5 text-slate-600 mb-1" />
-                        <span className="text-[11px] text-slate-400 font-bold uppercase tracking-wider">
+                        <Car className="w-5 h-5 text-[#9CA49E] mb-1" />
+                        <span className="text-xs text-[#252B27] font-semibold">
                           Vaga {boxOrders.length + slotIdx + 1} de {b.capacity} Livre
                         </span>
-                        <span className="text-[9px] text-slate-600 mt-0.5">
-                          Arraste um veículo para ocupar esta vaga
+                        <span className="text-[11px] text-[#737D75] mt-0.5">
+                          Arraste um veículo para cá
                         </span>
                       </div>
                     ))}
-                  </div>
-
-                  {/* Rodapé do Box com Status */}
-                  <div className="pt-2.5 mt-2.5 border-t border-carbon-800 flex items-center justify-between text-[10px] font-mono">
-                    <span className="text-slate-500 uppercase">{b.type || "GERAL"}</span>
-                    {b.isFull ? (
-                      <span className="text-rose-400 font-bold">CAPACIDADE MÁXIMA</span>
-                    ) : (
-                      <span className="text-lime-400 font-bold">{emptySlotsCount} vaga(s) livre(s)</span>
-                    )}
                   </div>
                 </div>
               );
             })}
 
-            {/* Coluna Especial: Pátio Geral & Espera (para veículos sem box definido) */}
+            {/* Pátio Geral / Sem Box */}
             {(() => {
               const unassignedOrders = orders.filter(
                 (o) =>
@@ -872,32 +841,32 @@ export default function PatioKanbanPage() {
                 <div
                   onDragOver={handleDragOver}
                   onDrop={(e) => handleDropBox(e, "Pátio Geral")}
-                  className="rounded-lg p-3.5 border border-dashed border-carbon-700/80 bg-carbon-950/40 flex flex-col min-h-[460px]"
+                  className="rounded-xl p-4 border border-dashed border-[#D4D9D4] bg-[#F7F8F6] flex flex-col min-h-[460px]"
                 >
-                  <div className="pb-3 mb-3 border-b border-carbon-800">
+                  <div className="pb-3 mb-3 border-b border-[#E7EAE7]">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <Layers className="w-4 h-4 text-slate-400" />
-                        <h2 className="text-xs font-bold text-slate-300 font-mono uppercase tracking-wide">
-                          Pátio Externo & Espera
+                        <Layers className="w-4 h-4 text-[#737D75]" />
+                        <h2 className="text-sm font-semibold text-[#252B27]">
+                          Pátio de Espera
                         </h2>
                       </div>
-                      <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-carbon-900 text-slate-400 border border-carbon-800">
+                      <Badge variant="neutral" size="sm">
                         {unassignedOrders.length}
-                      </span>
+                      </Badge>
                     </div>
-                    <p className="text-[10px] text-slate-500 font-mono mt-1">
-                      Veículos aguardando alocação em um box específico
+                    <p className="text-xs text-[#737D75] mt-1">
+                      Veículos aguardando alocação em um box
                     </p>
                   </div>
 
                   <div className="space-y-3 flex-1 overflow-y-auto">
                     {unassignedOrders.length === 0 ? (
-                      <div className="h-40 flex flex-col items-center justify-center border border-dashed border-carbon-800 rounded-lg text-slate-600 font-mono text-[11px] text-center p-4">
-                        <CheckCircle2 className="w-6 h-6 text-slate-700 mb-1" />
-                        <span>Nenhum veículo sem box.</span>
-                        <span className="text-[9px] text-slate-700 mt-0.5">
-                          Todos os carros do pátio estão devidamente alocados em boxes.
+                      <div className="h-40 flex flex-col items-center justify-center border border-dashed border-[#E7EAE7] rounded-xl text-[#737D75] text-xs text-center p-4 bg-white/50">
+                        <CheckCircle2 className="w-5 h-5 text-[#16A36A] mb-1.5" />
+                        <span className="font-medium text-[#252B27]">Pátio organizado!</span>
+                        <span className="text-[11px] text-[#737D75] mt-0.5">
+                          Todos os veículos estão alocados em boxes.
                         </span>
                       </div>
                     ) : (
@@ -906,28 +875,26 @@ export default function PatioKanbanPage() {
                           key={os.id}
                           draggable
                           onDragStart={(e) => handleDragStart(e, os.id)}
-                          className="p-3 rounded-lg carbon-card border-carbon-700 hover:border-lime-400/50 shadow-md text-xs space-y-2 cursor-grab active:cursor-grabbing bg-carbon-850"
+                          className="p-3.5 rounded-xl bg-white border border-[#E7EAE7] shadow-xs text-xs space-y-2.5 cursor-grab active:cursor-grabbing"
                         >
                           <div className="flex items-start justify-between">
-                            <span className="mercosul-plate text-xs font-mono font-bold">
-                              {os.plate}
-                            </span>
-                            <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-carbon-900 text-slate-300 border border-carbon-700 uppercase">
+                            <span className="mercosul-plate">{os.plate}</span>
+                            <Badge variant="neutral" size="sm">
                               {os.category}
-                            </span>
+                            </Badge>
                           </div>
                           <div>
-                            <p className="text-white font-bold text-xs">{os.model}</p>
-                            <p className="text-[11px] text-lime-400 font-mono">{os.mainService}</p>
+                            <p className="text-[#252B27] font-semibold text-sm">{os.model}</p>
+                            <p className="text-xs text-[#247653]">{os.mainService}</p>
                           </div>
-                          <div className="pt-2 border-t border-carbon-700/80 flex items-center justify-between text-[11px] font-mono">
-                            <span className="text-slate-500">Local: {os.box || "Geral"}</span>
+                          <div className="pt-2 border-t border-[#F1F3F1] flex items-center justify-between">
+                            <span className="text-[#737D75]">Local: {os.box || "Geral"}</span>
                             <button
                               type="button"
                               onClick={() => setTransferringOrder(os)}
-                              className="text-[10px] font-bold text-lime-400 hover:underline flex items-center gap-1 cursor-pointer"
+                              className="text-xs font-semibold text-[#247653] hover:underline flex items-center gap-1 cursor-pointer"
                             >
-                              <ArrowRightLeft className="w-2.5 h-2.5" />
+                              <ArrowRightLeft className="w-3 h-3" />
                               <span>Alocar em Box</span>
                             </button>
                           </div>
@@ -958,86 +925,81 @@ export default function PatioKanbanPage() {
       )}
 
       {/* MODAL DE BAIXA DE PAGAMENTO */}
-      {paymentModalOrder && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="carbon-card w-full max-w-md p-5 sm:p-6 shadow-2xl space-y-4 bg-carbon-900 border-carbon-700">
-            <div className="flex items-center justify-between pb-3 border-b border-carbon-700">
-              <h2 className="text-base font-display font-extrabold text-white uppercase flex items-center gap-2">
-                <Receipt className="w-4 h-4 text-lime-400" />
-                <span>Confirmar Pagamento // OS #{paymentModalOrder.orderNumber}</span>
-              </h2>
-              <button
-                onClick={() => setPaymentModalOrder(null)}
-                className="text-slate-400 hover:text-white p-1 rounded hover:bg-carbon-800 transition cursor-pointer"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            <div className="p-3 bg-carbon-950 rounded border border-carbon-800 space-y-1 font-mono text-xs">
-              <p className="text-slate-300">
-                Veículo: <strong className="text-white">{paymentModalOrder.plate} — {paymentModalOrder.model}</strong>
-              </p>
-              <p className="text-slate-300">
-                Cliente: <strong className="text-white">{paymentModalOrder.customerName}</strong>
-              </p>
-              <div className="pt-2 flex items-center justify-between text-sm border-t border-carbon-800">
-                <span className="text-slate-400">Total a Quitar:</span>
-                <span className="text-base font-bold text-lime-400">
-                  {paymentModalOrder.totalAmount !== null ? formatCurrency(paymentModalOrder.totalAmount) : "-"}
+      <Modal
+        isOpen={!!paymentModalOrder}
+        onClose={() => setPaymentModalOrder(null)}
+        title={paymentModalOrder ? `Registrar Pagamento — OS #${paymentModalOrder.orderNumber}` : "Registrar Pagamento"}
+        description="Confirme a forma de pagamento recebida para encerrar e dar baixa na Ordem de Serviço."
+        size="md"
+      >
+        {paymentModalOrder && (
+          <form onSubmit={handleConfirmPayment} className="space-y-4">
+            <div className="p-3.5 bg-[#F7F8F6] rounded-xl border border-[#E7EAE7] space-y-1.5 text-sm">
+              <div className="flex justify-between">
+                <span className="text-[#737D75]">Veículo:</span>
+                <strong className="text-[#252B27]">
+                  {paymentModalOrder.plate} — {paymentModalOrder.model}
+                </strong>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-[#737D75]">Cliente:</span>
+                <strong className="text-[#252B27]">{paymentModalOrder.customerName}</strong>
+              </div>
+              <div className="pt-2.5 mt-2 border-t border-[#E7EAE7] flex items-center justify-between">
+                <span className="text-[#737D75] font-medium">Total a Receber:</span>
+                <span className="text-lg font-bold text-[#247653]">
+                  {paymentModalOrder.totalAmount !== null
+                    ? formatCurrency(paymentModalOrder.totalAmount)
+                    : "-"}
                 </span>
               </div>
             </div>
 
-            <form onSubmit={handleConfirmPayment} className="space-y-4 font-mono">
-              <div>
-                <label className="form-label-carbon">
-                  Forma de Pagamento Recebida *
-                </label>
-                <div className="grid grid-cols-2 gap-2 text-xs">
-                  {[
-                    { id: "PIX", label: "PIX" },
-                    { id: "CREDIT_CARD", label: "Cartão de Crédito" },
-                    { id: "DEBIT_CARD", label: "Cartão de Débito" },
-                    { id: "CASH", label: "Dinheiro em Espécie" },
-                  ].map((m) => (
-                    <button
-                      key={m.id}
-                      type="button"
-                      onClick={() => setPaymentMethod(m.id as any)}
-                      className={`p-2.5 rounded border text-left font-bold transition-all cursor-pointer ${
-                        paymentMethod === m.id
-                          ? "bg-lime-400/20 text-lime-400 border-lime-400 shadow-[0_0_12px_rgba(163,230,53,0.15)]"
-                          : "bg-carbon-950 text-slate-400 border-carbon-700 hover:border-carbon-600"
-                      }`}
-                    >
-                      {m.label}
-                    </button>
-                  ))}
-                </div>
+            <div>
+              <label className="form-label">Forma de Pagamento Recebida *</label>
+              <div className="grid grid-cols-2 gap-2.5 text-sm">
+                {[
+                  { id: "PIX", label: "PIX" },
+                  { id: "CREDIT_CARD", label: "Cartão de Crédito" },
+                  { id: "DEBIT_CARD", label: "Cartão de Débito" },
+                  { id: "CASH", label: "Dinheiro em Espécie" },
+                ].map((m) => (
+                  <button
+                    key={m.id}
+                    type="button"
+                    onClick={() => setPaymentMethod(m.id as any)}
+                    className={`p-3 rounded-lg border text-left font-medium transition-all cursor-pointer ${
+                      paymentMethod === m.id
+                        ? "bg-[#E9F3EC] text-[#142D26] border-[#247653] font-semibold"
+                        : "bg-white text-[#737D75] border-[#E7EAE7] hover:border-[#247653]/40"
+                    }`}
+                  >
+                    {m.label}
+                  </button>
+                ))}
               </div>
+            </div>
 
-              <div className="pt-3 border-t border-carbon-700 flex items-center justify-end gap-2 text-xs">
-                <button
-                  type="button"
-                  onClick={() => setPaymentModalOrder(null)}
-                  className="px-3.5 py-2 rounded bg-carbon-800 hover:bg-carbon-700 text-slate-400 hover:text-white transition cursor-pointer"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  disabled={submittingPayment}
-                  className="btn-engine-start px-5 py-2 rounded flex items-center gap-1.5 shadow-md disabled:opacity-50 cursor-pointer"
-                >
-                  {submittingPayment && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-                  <span>Confirmar & Baixar OS</span>
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+            <div className="pt-4 border-t border-[#E7EAE7] flex items-center justify-end gap-2.5">
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => setPaymentModalOrder(null)}
+              >
+                Cancelar
+              </Button>
+              <Button
+                type="submit"
+                variant="primary"
+                isLoading={submittingPayment}
+                leftIcon={<CheckCircle2 className="w-4 h-4" />}
+              >
+                Confirmar e Baixar OS
+              </Button>
+            </div>
+          </form>
+        )}
+      </Modal>
 
       {/* Modal de Gestão/Adição de Serviços da OS */}
       {selectedOrderForServices && (

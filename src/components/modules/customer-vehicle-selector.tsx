@@ -10,12 +10,9 @@ import {
   Check,
   X,
   Phone,
-  FileText,
   AlertCircle,
   Loader2,
-  Tag,
   ChevronRight,
-  RefreshCw,
 } from "lucide-react";
 
 export interface VehicleItem {
@@ -60,27 +57,24 @@ export default function CustomerVehicleSelector({
   onSelectVehicle,
   disabled = false,
 }: CustomerVehicleSelectorProps) {
-  // Estados de busca
   const [mounted, setMounted] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
     setMounted(true);
   }, []);
+
   const [searchResults, setSearchResults] = useState<CustomerItem[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
-  // Cliente e veículo selecionados
   const [selectedCustomer, setSelectedCustomer] = useState<CustomerItem | null>(null);
 
-  // Modais de Cadastro Rápido
   const [isNewCustomerModalOpen, setIsNewCustomerModalOpen] = useState(false);
   const [isNewVehicleModalOpen, setIsNewVehicleModalOpen] = useState(false);
   const [modalSaving, setModalSaving] = useState(false);
   const [modalError, setModalError] = useState<string | null>(null);
 
-  // Formulário de Novo Cliente (Suporta múltiplos carros)
   const [newCustomerForm, setNewCustomerForm] = useState({
     name: "",
     document: "",
@@ -137,7 +131,6 @@ export default function CustomerVehicleSelector({
     });
   };
 
-  // Formulário de Novo Veículo
   const [newVehicleForm, setNewVehicleForm] = useState({
     plate: "",
     brand: "",
@@ -149,7 +142,6 @@ export default function CustomerVehicleSelector({
 
   const searchContainerRef = useRef<HTMLDivElement>(null);
 
-  // Carrega clientes iniciais ou busca com debounce
   useEffect(() => {
     const timer = setTimeout(async () => {
       try {
@@ -172,7 +164,6 @@ export default function CustomerVehicleSelector({
     return () => clearTimeout(timer);
   }, [searchQuery]);
 
-  // Se já houver selectedVehicleId e nenhum cliente selecionado, busca o veículo e seu cliente
   useEffect(() => {
     if (!selectedVehicleId || selectedCustomer) return;
 
@@ -196,7 +187,6 @@ export default function CustomerVehicleSelector({
     loadCurrentVehicle();
   }, [selectedVehicleId]);
 
-  // Fecha dropdown ao clicar fora
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
       if (
@@ -210,25 +200,21 @@ export default function CustomerVehicleSelector({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Seleciona um cliente
   const handleSelectCustomer = (customer: CustomerItem) => {
     setSelectedCustomer(customer);
     setIsDropdownOpen(false);
     setSearchQuery("");
 
-    // Se o cliente tem apenas 1 veículo, já seleciona automaticamente para acelerar o operador
     if (customer.vehicles && customer.vehicles.length === 1) {
       onSelectVehicle(customer.vehicles[0].id, customer.vehicles[0], customer);
     }
   };
 
-  // Trocar cliente
   const handleClearCustomer = () => {
     setSelectedCustomer(null);
     setSearchQuery("");
   };
 
-  // Salvar Novo Cliente (com ou sem veículo inicial)
   const handleSaveNewCustomer = async (e: React.FormEvent) => {
     e.preventDefault();
     setModalSaving(true);
@@ -242,7 +228,6 @@ export default function CustomerVehicleSelector({
         throw new Error("Informe ao menos um telefone ou WhatsApp para contato.");
       }
 
-      // 1. Cria o cliente
       const resCust = await fetch("/api/customers", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -266,7 +251,6 @@ export default function CustomerVehicleSelector({
         vehicles: [],
       };
 
-      // 2. Se optou por criar veículos junto
       let primaryVehicle: VehicleItem | null = null;
       const createdVehicles: VehicleItem[] = [];
 
@@ -309,7 +293,6 @@ export default function CustomerVehicleSelector({
         onSelectVehicle(primaryVehicle.id, primaryVehicle, createdCustomer);
       }
 
-      // Fecha modal e limpa formulário
       setIsNewCustomerModalOpen(false);
       setNewCustomerForm({
         name: "",
@@ -337,7 +320,6 @@ export default function CustomerVehicleSelector({
     }
   };
 
-  // Salvar Novo Veículo para o cliente já selecionado
   const handleSaveNewVehicle = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedCustomer) return;
@@ -371,7 +353,6 @@ export default function CustomerVehicleSelector({
 
       const registeredVehicle = data.vehicle;
 
-      // Atualiza o cliente local com o novo veículo
       const updatedVehicles = [
         ...selectedCustomer.vehicles.filter((v) => v.id !== registeredVehicle.id),
         registeredVehicle,
@@ -422,10 +403,10 @@ export default function CustomerVehicleSelector({
     <div className="space-y-3">
       {/* 1. SELEÇÃO / BUSCA DO CLIENTE */}
       {!selectedCustomer ? (
-        <div ref={searchContainerRef} className="space-y-2 relative font-mono">
+        <div ref={searchContainerRef} className="space-y-2 relative">
           <div className="flex items-center justify-between">
-            <label className="form-label-carbon">
-              1. Localizar Cliente (Nome, Placa, CPF ou Telefone/WhatsApp) *
+            <label className="text-xs font-semibold text-[#343C36]">
+              1. Localizar Cliente (Nome, Placa, CPF ou WhatsApp) <span className="text-[#DC4C4C]">*</span>
             </label>
             <button
               type="button"
@@ -433,15 +414,15 @@ export default function CustomerVehicleSelector({
                 setModalError(null);
                 setIsNewCustomerModalOpen(true);
               }}
-              className="text-xs font-bold text-lime-400 hover:text-lime-300 flex items-center gap-1 cursor-pointer transition uppercase"
+              className="text-xs font-semibold text-[#247653] hover:text-[#142D26] flex items-center gap-1 cursor-pointer transition"
             >
               <Plus className="w-3.5 h-3.5" />
-              <span>+ Novo Cliente</span>
+              <span>Cadastrar novo cliente</span>
             </button>
           </div>
 
           <div className="relative">
-            <Search className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <Search className="w-4 h-4 text-[#9CA49E] absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
             <input
               type="text"
               disabled={disabled}
@@ -451,21 +432,21 @@ export default function CustomerVehicleSelector({
                 setIsDropdownOpen(true);
               }}
               onFocus={() => setIsDropdownOpen(true)}
-              placeholder="DIGITE O NOME, CPF, WHATSAPP OU PLACA DO CARRO..."
-              className="form-input-carbon w-full pl-9 pr-10 py-2.5 uppercase text-xs"
+              placeholder="Digite o nome, CPF, WhatsApp ou placa do carro..."
+              className="dp-input pl-9 pr-10"
             />
             {isSearching && (
-              <Loader2 className="w-4 h-4 text-lime-400 animate-spin absolute right-3 top-1/2 -translate-y-1/2" />
+              <Loader2 className="w-4 h-4 text-[#247653] animate-spin absolute right-3 top-1/2 -translate-y-1/2" />
             )}
           </div>
 
           {/* Dropdown de Resultados da Busca */}
           {isDropdownOpen && (
-            <div className="absolute top-full left-0 right-0 mt-1 z-30 bg-carbon-900 border border-carbon-700 rounded shadow-2xl overflow-hidden max-h-64 overflow-y-auto font-mono">
+            <div className="absolute top-full left-0 right-0 mt-1.5 z-30 bg-white border border-[#E7EAE7] rounded-xl shadow-lg overflow-hidden max-h-64 overflow-y-auto">
               {searchResults.length === 0 ? (
-                <div className="p-4 text-center space-y-2">
-                  <p className="text-xs text-slate-500">
-                    // Nenhum cliente localizado com "{searchQuery}".
+                <div className="p-4 text-center space-y-2.5">
+                  <p className="text-xs text-[#737D75]">
+                    Nenhum cliente encontrado com &ldquo;{searchQuery}&rdquo;.
                   </p>
                   <button
                     type="button"
@@ -474,34 +455,34 @@ export default function CustomerVehicleSelector({
                       setNewCustomerForm((prev) => ({ ...prev, name: searchQuery }));
                       setIsNewCustomerModalOpen(true);
                     }}
-                    className="btn-engine-start inline-flex items-center gap-1.5 px-3 py-1.5 rounded text-xs cursor-pointer"
+                    className="dp-btn-primary text-xs px-3 py-1.5 cursor-pointer"
                   >
-                    <Plus className="w-3.5 h-3.5 stroke-[3]" />
-                    <span>Cadastrar "{searchQuery || "Novo Cliente"}"</span>
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Cadastrar &ldquo;{searchQuery || "Novo Cliente"}&rdquo;</span>
                   </button>
                 </div>
               ) : (
-                <div className="divide-y divide-carbon-800">
+                <div className="divide-y divide-[#E7EAE7]">
                   {searchResults.map((cust) => (
                     <div
                       key={cust.id}
                       onClick={() => handleSelectCustomer(cust)}
-                      className="p-3 hover:bg-carbon-800/80 cursor-pointer transition flex items-center justify-between gap-3 text-xs"
+                      className="p-3 hover:bg-[#F7F8F6] cursor-pointer transition flex items-center justify-between gap-3 text-xs"
                     >
                       <div className="space-y-0.5 min-w-0">
-                        <div className="font-bold text-white truncate flex items-center gap-1.5">
-                          <User className="w-3.5 h-3.5 text-lime-400 shrink-0" />
+                        <div className="font-semibold text-[#252B27] truncate flex items-center gap-1.5">
+                          <User className="w-3.5 h-3.5 text-[#247653] shrink-0" />
                           <span className="truncate">{cust.name}</span>
                         </div>
-                        <div className="text-[11px] text-slate-400 flex flex-wrap items-center gap-2">
+                        <div className="text-[11px] text-[#737D75] flex flex-wrap items-center gap-2">
                           {(cust.phone || cust.whatsapp) && (
-                            <span className="flex items-center gap-1 text-slate-300">
-                              <Phone className="w-3 h-3 text-lime-400" />
+                            <span className="flex items-center gap-1 text-[#343C36]">
+                              <Phone className="w-3 h-3 text-[#247653]" />
                               {cust.whatsapp || cust.phone}
                             </span>
                           )}
                           {cust.document && (
-                            <span className="text-slate-500">
+                            <span className="text-[#9CA49E]">
                               CPF/CNPJ: {cust.document}
                             </span>
                           )}
@@ -509,10 +490,10 @@ export default function CustomerVehicleSelector({
                       </div>
 
                       <div className="shrink-0 flex items-center gap-2">
-                        <span className="text-[10px] px-2 py-0.5 rounded bg-carbon-950 text-slate-300 border border-carbon-700 font-bold">
-                          {cust.vehicles?.length || 0} carro(s)
+                        <span className="text-[11px] px-2 py-0.5 rounded-full bg-[#E9F3EC] text-[#142D26] font-semibold">
+                          {cust.vehicles?.length || 0} veículo(s)
                         </span>
-                        <ChevronRight className="w-4 h-4 text-lime-400" />
+                        <ChevronRight className="w-4 h-4 text-[#737D75]" />
                       </div>
                     </div>
                   ))}
@@ -523,30 +504,30 @@ export default function CustomerVehicleSelector({
         </div>
       ) : (
         /* Card do Cliente Selecionado */
-        <div className="carbon-card p-4 space-y-3 font-mono">
+        <div className="bg-white border border-[#E7EAE7] rounded-xl p-4 space-y-3 shadow-xs">
           <div className="flex items-start justify-between gap-3">
             <div className="space-y-0.5">
-              <span className="text-[10px] uppercase font-bold tracking-wider text-lime-400 block">
-                // CLIENTE VINCULADO
+              <span className="text-[10px] uppercase font-bold tracking-wider text-[#247653] block">
+                Cliente Vinculado
               </span>
-              <h4 className="text-sm font-bold text-white flex items-center gap-1.5">
-                <User className="w-4 h-4 text-lime-400" />
+              <h4 className="text-sm font-bold text-[#252B27] flex items-center gap-1.5">
+                <User className="w-4 h-4 text-[#247653]" />
                 <span>{selectedCustomer.name}</span>
               </h4>
-              <div className="text-xs text-slate-400 flex flex-wrap items-center gap-2.5 pt-0.5">
+              <div className="text-xs text-[#737D75] flex flex-wrap items-center gap-2.5 pt-0.5">
                 {(selectedCustomer.phone || selectedCustomer.whatsapp) && (
-                  <span className="flex items-center gap-1 text-slate-300">
-                    <Phone className="w-3 h-3 text-lime-400" />
+                  <span className="flex items-center gap-1 text-[#343C36]">
+                    <Phone className="w-3 h-3 text-[#247653]" />
                     {selectedCustomer.whatsapp || selectedCustomer.phone}
                   </span>
                 )}
                 {selectedCustomer.document && (
-                  <span className="text-slate-500">
+                  <span className="text-[#9CA49E]">
                     Doc: {selectedCustomer.document}
                   </span>
                 )}
                 {selectedCustomer.address && (
-                  <span className="text-slate-400 truncate max-w-xs">
+                  <span className="text-[#737D75] truncate max-w-xs">
                     {selectedCustomer.address}
                   </span>
                 )}
@@ -560,32 +541,32 @@ export default function CustomerVehicleSelector({
                   setModalError(null);
                   setIsNewVehicleModalOpen(true);
                 }}
-                className="text-xs px-2.5 py-1.5 rounded bg-lime-400/10 hover:bg-lime-400/20 border border-lime-400/30 text-lime-400 font-bold flex items-center gap-1 cursor-pointer transition uppercase"
+                className="text-xs px-2.5 py-1.5 rounded-lg bg-[#E9F3EC] hover:bg-[#d5eadb] text-[#142D26] font-semibold flex items-center gap-1 cursor-pointer transition"
               >
-                <Plus className="w-3.5 h-3.5" />
-                <span>+ Novo Carro</span>
+                <Plus className="w-3.5 h-3.5 text-[#247653]" />
+                <span>Novo veículo</span>
               </button>
 
               <button
                 type="button"
                 onClick={handleClearCustomer}
-                className="text-xs px-2 py-1.5 rounded bg-carbon-800 hover:bg-carbon-700 text-slate-300 transition cursor-pointer border border-carbon-600 uppercase"
+                className="text-xs px-2.5 py-1.5 rounded-lg bg-[#F7F8F6] hover:bg-[#F1F3F1] text-[#343C36] transition cursor-pointer border border-[#E7EAE7] font-medium"
                 title="Trocar cliente"
               >
-                Trocar
+                Trocar cliente
               </button>
             </div>
           </div>
 
           {/* 2. VEÍCULOS DO CLIENTE SELECIONADO */}
-          <div className="pt-2.5 border-t border-carbon-700/80 space-y-2">
+          <div className="pt-3 border-t border-[#E7EAE7] space-y-2">
             <div className="flex items-center justify-between text-xs">
-              <span className="font-bold text-slate-300 flex items-center gap-1.5 uppercase">
-                <Car className="w-3.5 h-3.5 text-lime-400" />
-                <span>Veículos Cadastrados ({selectedCustomer.vehicles?.length || 0}):</span>
+              <span className="font-semibold text-[#343C36] flex items-center gap-1.5">
+                <Car className="w-3.5 h-3.5 text-[#247653]" />
+                <span>Veículos do Cliente ({selectedCustomer.vehicles?.length || 0})</span>
               </span>
-              <span className="text-[10px] text-slate-500">
-                Selecione o veículo para atendimento
+              <span className="text-[11px] text-[#737D75]">
+                Selecione o veículo para o atendimento
               </span>
             </div>
 
@@ -597,10 +578,10 @@ export default function CustomerVehicleSelector({
                     <div
                       key={vh.id}
                       onClick={() => onSelectVehicle(vh.id, vh, selectedCustomer)}
-                      className={`p-3 rounded border cursor-pointer transition flex items-center justify-between gap-3 text-xs ${
+                      className={`p-3 rounded-lg border cursor-pointer transition flex items-center justify-between gap-3 text-xs ${
                         isSelected
-                          ? "bg-lime-400/10 border-lime-400 text-white shadow-[0_0_15px_rgba(163,230,53,0.15)]"
-                          : "bg-carbon-950 border-carbon-700 hover:border-carbon-600 text-slate-300"
+                          ? "bg-[#E9F3EC]/60 border-[#247653] text-[#142D26] shadow-xs"
+                          : "bg-[#F7F8F6] border-[#E7EAE7] hover:border-[#9CA49E] text-[#343C36]"
                       }`}
                     >
                       <div className="space-y-1 min-w-0">
@@ -608,11 +589,11 @@ export default function CustomerVehicleSelector({
                           <span className="mercosul-plate text-xs font-bold">
                             {vh.plate}
                           </span>
-                          <span className="font-bold text-white truncate">
+                          <span className="font-bold text-[#252B27] truncate">
                             {vh.model}
                           </span>
                         </div>
-                        <div className="text-[10px] text-slate-400 flex items-center gap-2">
+                        <div className="text-[11px] text-[#737D75] flex items-center gap-1.5">
                           <span>{getCategoryLabel(vh.category)}</span>
                           {vh.color && <span>• {vh.color}</span>}
                           {vh.year && <span>• {vh.year}</span>}
@@ -620,7 +601,7 @@ export default function CustomerVehicleSelector({
                       </div>
 
                       {isSelected && (
-                        <div className="w-5 h-5 rounded-full bg-lime-400 text-black flex items-center justify-center font-bold text-xs shrink-0 shadow-sm">
+                        <div className="w-5 h-5 rounded-full bg-[#247653] text-white flex items-center justify-center font-bold text-xs shrink-0 shadow-xs">
                           <Check className="w-3 h-3 stroke-[3]" />
                         </div>
                       )}
@@ -629,8 +610,8 @@ export default function CustomerVehicleSelector({
                 })}
               </div>
             ) : (
-              <div className="p-3 rounded bg-carbon-950 border border-carbon-800 text-center text-xs text-slate-500">
-                // Nenhum veículo vinculado. Clique em "+ Novo Carro" acima para cadastrar.
+              <div className="p-3 rounded-lg bg-[#F7F8F6] border border-[#E7EAE7] text-center text-xs text-[#737D75]">
+                Nenhum veículo vinculado. Clique em &ldquo;Novo veículo&rdquo; acima para cadastrar.
               </div>
             )}
           </div>
@@ -639,24 +620,24 @@ export default function CustomerVehicleSelector({
 
       {/* MODAL 1: CADASTRAR NOVO CLIENTE */}
       {mounted && isNewCustomerModalOpen && createPortal(
-        <div className="fixed inset-0 z-[100] bg-black/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
-          <div className="w-full max-w-lg p-5 sm:p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto rounded-xl bg-carbon-900 border border-carbon-700 font-mono my-auto animate-in fade-in zoom-in-95 duration-150">
-            <div className="flex items-center justify-between pb-3 border-b border-carbon-700">
-              <h3 className="text-base font-display font-extrabold text-white uppercase flex items-center gap-2">
-                <User className="w-4 h-4 text-lime-400" />
+        <div className="fixed inset-0 z-[100] bg-[#142D26]/45 backdrop-blur-[2px] flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+          <div className="w-full max-w-lg p-5 sm:p-6 shadow-xl space-y-4 max-h-[90vh] overflow-y-auto rounded-2xl bg-white border border-[#E7EAE7] my-auto animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between pb-3 border-b border-[#E7EAE7]">
+              <h3 className="text-base font-bold text-[#252B27] flex items-center gap-2">
+                <User className="w-4 h-4 text-[#247653]" />
                 <span>Cadastrar Novo Cliente</span>
               </h3>
               <button
                 type="button"
                 onClick={() => setIsNewCustomerModalOpen(false)}
-                className="text-slate-400 hover:text-white p-1 rounded hover:bg-carbon-800 transition"
+                className="text-[#737D75] hover:text-[#252B27] p-1 rounded-lg hover:bg-[#F7F8F6] transition"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
             {modalError && (
-              <div className="p-3 rounded bg-red-500/10 border border-red-500/40 text-red-400 text-xs font-mono flex items-center gap-2">
+              <div className="p-3 rounded-lg bg-[#FEF2F2] border border-[#FECACA] text-[#DC4C4C] text-xs font-medium flex items-center gap-2">
                 <AlertCircle className="w-4 h-4 shrink-0" />
                 <span>{modalError}</span>
               </div>
@@ -664,8 +645,8 @@ export default function CustomerVehicleSelector({
 
             <form onSubmit={handleSaveNewCustomer} className="space-y-3.5">
               <div>
-                <label className="block text-xs font-medium text-slate-300 mb-1">
-                  Nome Completo *
+                <label className="block text-xs font-semibold text-[#343C36] mb-1">
+                  Nome Completo <span className="text-[#DC4C4C]">*</span>
                 </label>
                 <input
                   type="text"
@@ -675,14 +656,14 @@ export default function CustomerVehicleSelector({
                     setNewCustomerForm((prev) => ({ ...prev, name: e.target.value }))
                   }
                   placeholder="Ex: Carlos Eduardo Silva"
-                  className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white text-xs focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                  className="dp-input"
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-medium text-slate-300 mb-1">
-                    Telefone / WhatsApp *
+                  <label className="block text-xs font-semibold text-[#343C36] mb-1">
+                    Telefone / WhatsApp <span className="text-[#DC4C4C]">*</span>
                   </label>
                   <input
                     type="text"
@@ -696,12 +677,12 @@ export default function CustomerVehicleSelector({
                       }))
                     }
                     placeholder="Ex: (61) 98112-2091"
-                    className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white text-xs focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                    className="dp-input"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-slate-300 mb-1">
+                  <label className="block text-xs font-semibold text-[#343C36] mb-1">
                     CPF ou CNPJ
                   </label>
                   <input
@@ -711,14 +692,14 @@ export default function CustomerVehicleSelector({
                       setNewCustomerForm((prev) => ({ ...prev, document: e.target.value }))
                     }
                     placeholder="Ex: 000.000.000-00"
-                    className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white text-xs focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                    className="dp-input"
                   />
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-medium text-slate-300 mb-1">
+                  <label className="block text-xs font-semibold text-[#343C36] mb-1">
                     E-mail (opcional)
                   </label>
                   <input
@@ -728,12 +709,12 @@ export default function CustomerVehicleSelector({
                       setNewCustomerForm((prev) => ({ ...prev, email: e.target.value }))
                     }
                     placeholder="cliente@email.com"
-                    className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white text-xs focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                    className="dp-input"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-slate-300 mb-1">
+                  <label className="block text-xs font-semibold text-[#343C36] mb-1">
                     Endereço / Bairro (opcional)
                   </label>
                   <input
@@ -743,14 +724,14 @@ export default function CustomerVehicleSelector({
                       setNewCustomerForm((prev) => ({ ...prev, address: e.target.value }))
                     }
                     placeholder="Ex: Águas Claras, DF"
-                    className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white text-xs focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                    className="dp-input"
                   />
                 </div>
               </div>
 
               {/* Opção de cadastrar veículo junto */}
-              <div className="pt-2 border-t border-slate-800 space-y-2.5">
-                <label className="flex items-center gap-2 cursor-pointer text-xs font-semibold text-slate-200">
+              <div className="pt-3 border-t border-[#E7EAE7] space-y-3">
+                <label className="flex items-center gap-2 cursor-pointer text-xs font-semibold text-[#252B27]">
                   <input
                     type="checkbox"
                     checked={newCustomerForm.addVehicleNow}
@@ -760,7 +741,7 @@ export default function CustomerVehicleSelector({
                         addVehicleNow: e.target.checked,
                       }))
                     }
-                    className="rounded text-blue-600 focus:ring-blue-500 w-4 h-4 cursor-pointer"
+                    className="rounded text-[#247653] focus:ring-[#247653] w-4 h-4 cursor-pointer accent-[#247653]"
                   />
                   <span>Já cadastrar o veículo deste cliente agora</span>
                 </label>
@@ -770,10 +751,10 @@ export default function CustomerVehicleSelector({
                     {newCustomerForm.vehicles.map((vDraft, idx) => (
                       <div
                         key={idx}
-                        className="p-3 bg-slate-900/60 border border-slate-800 rounded-xl space-y-2.5 relative"
+                        className="p-3.5 bg-[#F7F8F6] border border-[#E7EAE7] rounded-xl space-y-2.5 relative"
                       >
-                        <div className="flex items-center justify-between pb-1 border-b border-slate-800/60 text-xs">
-                          <span className="font-semibold text-blue-400 flex items-center gap-1">
+                        <div className="flex items-center justify-between pb-1.5 border-b border-[#E7EAE7] text-xs">
+                          <span className="font-semibold text-[#247653] flex items-center gap-1.5">
                             <Car className="w-3.5 h-3.5" />
                             <span>Veículo #{idx + 1} {idx === 0 ? "(Principal)" : ""}</span>
                           </span>
@@ -781,7 +762,7 @@ export default function CustomerVehicleSelector({
                             <button
                               type="button"
                               onClick={() => handleRemoveVehicleDraft(idx)}
-                              className="text-slate-400 hover:text-red-400 text-[11px] flex items-center gap-0.5 cursor-pointer"
+                              className="text-[#737D75] hover:text-[#DC4C4C] text-[11px] flex items-center gap-0.5 cursor-pointer font-medium"
                             >
                               <X className="w-3 h-3" />
                               <span>Remover</span>
@@ -791,8 +772,8 @@ export default function CustomerVehicleSelector({
 
                         <div className="grid grid-cols-2 gap-2.5">
                           <div>
-                            <label className="block text-[11px] font-medium text-slate-300 mb-1">
-                              Placa do Carro *
+                            <label className="block text-[11px] font-semibold text-[#343C36] mb-1">
+                              Placa do Carro <span className="text-[#DC4C4C]">*</span>
                             </label>
                             <input
                               type="text"
@@ -806,20 +787,20 @@ export default function CustomerVehicleSelector({
                                 )
                               }
                               placeholder="ABC1D23"
-                              className="w-full px-2.5 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-white text-xs font-mono font-bold uppercase focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                              className="dp-input font-mono font-bold uppercase"
                             />
                           </div>
 
                           <div>
-                            <label className="block text-[11px] font-medium text-slate-300 mb-1">
-                              Porte / Categoria *
+                            <label className="block text-[11px] font-semibold text-[#343C36] mb-1">
+                              Porte / Categoria <span className="text-[#DC4C4C]">*</span>
                             </label>
                             <select
                               value={vDraft.category}
                               onChange={(e) =>
                                 handleUpdateVehicleDraft(idx, "category", e.target.value as any)
                               }
-                              className="w-full px-2.5 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-white text-xs focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                              className="dp-input"
                             >
                               <option value="HATCH">Hatch (Pequeno)</option>
                               <option value="SEDAN">Sedan (Médio)</option>
@@ -832,8 +813,8 @@ export default function CustomerVehicleSelector({
 
                         <div className="grid grid-cols-2 gap-2.5">
                           <div>
-                            <label className="block text-[11px] font-medium text-slate-300 mb-1">
-                              Modelo *
+                            <label className="block text-[11px] font-semibold text-[#343C36] mb-1">
+                              Modelo <span className="text-[#DC4C4C]">*</span>
                             </label>
                             <input
                               type="text"
@@ -843,12 +824,12 @@ export default function CustomerVehicleSelector({
                                 handleUpdateVehicleDraft(idx, "model", e.target.value)
                               }
                               placeholder="Ex: Onix, Corolla, Compass"
-                              className="w-full px-2.5 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-white text-xs focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                              className="dp-input"
                             />
                           </div>
 
                           <div>
-                            <label className="block text-[11px] font-medium text-slate-300 mb-1">
+                            <label className="block text-[11px] font-semibold text-[#343C36] mb-1">
                               Marca (opcional)
                             </label>
                             <input
@@ -858,14 +839,14 @@ export default function CustomerVehicleSelector({
                                 handleUpdateVehicleDraft(idx, "brand", e.target.value)
                               }
                               placeholder="Ex: Chevrolet, Toyota"
-                              className="w-full px-2.5 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-white text-xs focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                              className="dp-input"
                             />
                           </div>
                         </div>
 
                         <div className="grid grid-cols-2 gap-2.5">
                           <div>
-                            <label className="block text-[11px] font-medium text-slate-300 mb-1">
+                            <label className="block text-[11px] font-semibold text-[#343C36] mb-1">
                               Cor
                             </label>
                             <input
@@ -875,12 +856,12 @@ export default function CustomerVehicleSelector({
                                 handleUpdateVehicleDraft(idx, "color", e.target.value)
                               }
                               placeholder="Ex: Preto, Prata, Branco"
-                              className="w-full px-2.5 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-white text-xs focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                              className="dp-input"
                             />
                           </div>
 
                           <div>
-                            <label className="block text-[11px] font-medium text-slate-300 mb-1">
+                            <label className="block text-[11px] font-semibold text-[#343C36] mb-1">
                               Ano
                             </label>
                             <input
@@ -890,7 +871,7 @@ export default function CustomerVehicleSelector({
                                 handleUpdateVehicleDraft(idx, "year", e.target.value)
                               }
                               placeholder="Ex: 2023"
-                              className="w-full px-2.5 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-white text-xs focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                              className="dp-input"
                             />
                           </div>
                         </div>
@@ -900,27 +881,27 @@ export default function CustomerVehicleSelector({
                     <button
                       type="button"
                       onClick={handleAddVehicleDraft}
-                      className="w-full py-2 px-3 rounded-xl border border-dashed border-slate-700 hover:border-blue-500 text-slate-300 hover:text-white text-xs font-semibold flex items-center justify-center gap-1.5 transition cursor-pointer bg-slate-900/40 hover:bg-slate-900"
+                      className="w-full py-2 px-3 rounded-xl border border-dashed border-[#E7EAE7] hover:border-[#247653] text-[#343C36] hover:text-[#247653] text-xs font-semibold flex items-center justify-center gap-1.5 transition cursor-pointer bg-[#F7F8F6]"
                     >
-                      <Plus className="w-3.5 h-3.5 text-blue-400" />
-                      <span>+ Adicionar outro veículo para este cliente</span>
+                      <Plus className="w-3.5 h-3.5 text-[#247653]" />
+                      <span>Adicionar outro veículo para este cliente</span>
                     </button>
                   </div>
                 )}
               </div>
 
-              <div className="pt-3 flex items-center justify-end gap-2 border-t border-carbon-700">
+              <div className="pt-3 flex items-center justify-end gap-2 border-t border-[#E7EAE7]">
                 <button
                   type="button"
                   onClick={() => setIsNewCustomerModalOpen(false)}
-                  className="px-3.5 py-2 rounded bg-carbon-800 hover:bg-carbon-700 text-slate-400 hover:text-white transition cursor-pointer"
+                  className="dp-btn-secondary text-xs cursor-pointer"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
                   disabled={modalSaving}
-                  className="btn-engine-start inline-flex items-center gap-2 px-4 py-2 rounded text-xs transition shadow-sm cursor-pointer disabled:opacity-50"
+                  className="dp-btn-primary text-xs cursor-pointer"
                 >
                   {modalSaving && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                   <span>Salvar e Selecionar</span>
@@ -934,29 +915,29 @@ export default function CustomerVehicleSelector({
 
       {/* MODAL 2: CADASTRAR NOVO VEÍCULO PARA O CLIENTE SELECIONADO */}
       {mounted && isNewVehicleModalOpen && selectedCustomer && createPortal(
-        <div className="fixed inset-0 z-[100] bg-black/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
-          <div className="w-full max-w-md p-5 sm:p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto rounded-xl bg-carbon-900 border border-carbon-700 font-mono my-auto animate-in fade-in zoom-in-95 duration-150">
-            <div className="flex items-center justify-between pb-3 border-b border-carbon-700">
+        <div className="fixed inset-0 z-[100] bg-[#142D26]/45 backdrop-blur-[2px] flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+          <div className="w-full max-w-md p-5 sm:p-6 shadow-xl space-y-4 max-h-[90vh] overflow-y-auto rounded-2xl bg-white border border-[#E7EAE7] my-auto animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between pb-3 border-b border-[#E7EAE7]">
               <div className="space-y-0.5">
-                <h3 className="text-base font-display font-extrabold text-white uppercase flex items-center gap-2">
-                  <Car className="w-4 h-4 text-lime-400" />
-                  <span>Cadastrar Veículo</span>
+                <h3 className="text-base font-bold text-[#252B27] flex items-center gap-2">
+                  <Car className="w-4 h-4 text-[#247653]" />
+                  <span>Cadastrar Novo Veículo</span>
                 </h3>
-                <p className="text-xs text-slate-400">
-                  Para o cliente: <strong className="text-lime-400">{selectedCustomer.name}</strong>
+                <p className="text-xs text-[#737D75]">
+                  Cliente: <strong className="text-[#252B27]">{selectedCustomer.name}</strong>
                 </p>
               </div>
               <button
                 type="button"
                 onClick={() => setIsNewVehicleModalOpen(false)}
-                className="text-slate-400 hover:text-white p-1 rounded hover:bg-carbon-800 transition"
+                className="text-[#737D75] hover:text-[#252B27] p-1 rounded-lg hover:bg-[#F7F8F6] transition"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
             {modalError && (
-              <div className="p-3 rounded bg-red-500/10 border border-red-500/40 text-red-400 text-xs flex items-center gap-2">
+              <div className="p-3 rounded-lg bg-[#FEF2F2] border border-[#FECACA] text-[#DC4C4C] text-xs font-medium flex items-center gap-2">
                 <AlertCircle className="w-4 h-4 shrink-0" />
                 <span>{modalError}</span>
               </div>
@@ -965,8 +946,8 @@ export default function CustomerVehicleSelector({
             <form onSubmit={handleSaveNewVehicle} className="space-y-3.5">
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="form-label-carbon">
-                    Placa do Veículo *
+                  <label className="block text-xs font-semibold text-[#343C36] mb-1">
+                    Placa do Veículo <span className="text-[#DC4C4C]">*</span>
                   </label>
                   <input
                     type="text"
@@ -979,16 +960,16 @@ export default function CustomerVehicleSelector({
                       }))
                     }
                     placeholder="ABC1D23"
-                    className="form-input-carbon w-full font-mono font-bold uppercase tracking-wider"
+                    className="dp-input font-mono font-bold uppercase tracking-wider"
                   />
-                  <span className="text-[10px] text-slate-500 mt-1 block font-mono">
-                    Se a placa já existir no sistema, será vinculada a este cliente.
+                  <span className="text-[10px] text-[#737D75] mt-1 block">
+                    Se a placa já existir, será vinculada a este cliente.
                   </span>
                 </div>
 
                 <div>
-                  <label className="form-label-carbon">
-                    Porte / Categoria *
+                  <label className="block text-xs font-semibold text-[#343C36] mb-1">
+                    Porte / Categoria <span className="text-[#DC4C4C]">*</span>
                   </label>
                   <select
                     value={newVehicleForm.category}
@@ -998,7 +979,7 @@ export default function CustomerVehicleSelector({
                         category: e.target.value as any,
                       }))
                     }
-                    className="form-select-carbon w-full"
+                    className="dp-input"
                   >
                     <option value="HATCH">Hatch (Pequeno)</option>
                     <option value="SEDAN">Sedan (Médio)</option>
@@ -1011,8 +992,8 @@ export default function CustomerVehicleSelector({
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="form-label-carbon">
-                    Modelo *
+                  <label className="block text-xs font-semibold text-[#343C36] mb-1">
+                    Modelo <span className="text-[#DC4C4C]">*</span>
                   </label>
                   <input
                     type="text"
@@ -1022,12 +1003,12 @@ export default function CustomerVehicleSelector({
                       setNewVehicleForm((prev) => ({ ...prev, model: e.target.value }))
                     }
                     placeholder="Ex: Corolla, Civic, Onix"
-                    className="form-input-carbon w-full"
+                    className="dp-input"
                   />
                 </div>
 
                 <div>
-                  <label className="form-label-carbon">
+                  <label className="block text-xs font-semibold text-[#343C36] mb-1">
                     Marca (opcional)
                   </label>
                   <input
@@ -1037,14 +1018,14 @@ export default function CustomerVehicleSelector({
                       setNewVehicleForm((prev) => ({ ...prev, brand: e.target.value }))
                     }
                     placeholder="Ex: Toyota, Honda, GM"
-                    className="form-input-carbon w-full"
+                    className="dp-input"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="form-label-carbon">
+                  <label className="block text-xs font-semibold text-[#343C36] mb-1">
                     Cor
                   </label>
                   <input
@@ -1054,12 +1035,12 @@ export default function CustomerVehicleSelector({
                       setNewVehicleForm((prev) => ({ ...prev, color: e.target.value }))
                     }
                     placeholder="Ex: Preto, Prata"
-                    className="form-input-carbon w-full"
+                    className="dp-input"
                   />
                 </div>
 
                 <div>
-                  <label className="form-label-carbon">
+                  <label className="block text-xs font-semibold text-[#343C36] mb-1">
                     Ano
                   </label>
                   <input
@@ -1069,23 +1050,23 @@ export default function CustomerVehicleSelector({
                       setNewVehicleForm((prev) => ({ ...prev, year: e.target.value }))
                     }
                     placeholder="Ex: 2024"
-                    className="form-input-carbon w-full font-mono"
+                    className="dp-input"
                   />
                 </div>
               </div>
 
-              <div className="pt-3 flex items-center justify-end gap-2 border-t border-[#1c2230]">
+              <div className="pt-3 flex items-center justify-end gap-2 border-t border-[#E7EAE7]">
                 <button
                   type="button"
                   onClick={() => setIsNewVehicleModalOpen(false)}
-                  className="px-3.5 py-2 rounded text-xs font-mono uppercase tracking-wider text-slate-400 hover:text-slate-200 transition cursor-pointer"
+                  className="dp-btn-secondary text-xs cursor-pointer"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
                   disabled={modalSaving}
-                  className="btn-engine-start px-4 py-2 text-xs flex items-center gap-2 cursor-pointer disabled:opacity-50"
+                  className="dp-btn-primary text-xs cursor-pointer"
                 >
                   {modalSaving && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                   <span>Salvar Veículo</span>
@@ -1099,4 +1080,3 @@ export default function CustomerVehicleSelector({
     </div>
   );
 }
-

@@ -96,36 +96,40 @@ export function TransferOrderBoxModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="carbon-card w-full max-w-lg p-5 sm:p-6 shadow-2xl space-y-4 bg-carbon-900 border-carbon-700 animate-in fade-in zoom-in-95 duration-150">
+    <div className="fixed inset-0 z-50 bg-[#142D26]/45 backdrop-blur-[2px] flex items-center justify-center p-4">
+      <div className="bg-white border border-[#E7EAE7] rounded-2xl w-full max-w-lg p-5 sm:p-6 shadow-xl space-y-4 animate-in fade-in zoom-in-95 duration-150">
         {/* Header */}
-        <div className="flex items-center justify-between pb-3 border-b border-carbon-700">
-          <h2 className="text-sm sm:text-base font-display font-extrabold text-white uppercase flex items-center gap-2">
-            <ArrowRightLeft className="w-4 h-4 text-lime-400" />
-            <span>Mover Veículo // Troca de Box & Estação</span>
+        <div className="flex items-center justify-between pb-3 border-b border-[#E7EAE7]">
+          <h2 className="text-base font-bold text-[#252B27] flex items-center gap-2">
+            <ArrowRightLeft className="w-4 h-4 text-[#247653]" />
+            <span>Mover Veículo de Box / Estação</span>
           </h2>
           <button
             onClick={onClose}
-            className="text-slate-400 hover:text-white p-1 rounded hover:bg-carbon-800 transition cursor-pointer"
+            className="text-[#737D75] hover:text-[#252B27] p-1 rounded-lg hover:bg-[#F7F8F6] transition cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* Resumo do Veículo */}
-        <div className="p-3 bg-carbon-950 rounded border border-carbon-800 flex items-center justify-between font-mono text-xs">
+        <div className="p-3.5 bg-[#F7F8F6] rounded-xl border border-[#E7EAE7] flex items-center justify-between text-xs">
           <div>
-            <span className="text-[10px] text-slate-500 font-bold block">VEÍCULO EM ATENDIMENTO</span>
-            <div className="flex items-center gap-2 mt-0.5">
+            <span className="text-[10px] text-[#737D75] font-semibold uppercase block">
+              Veículo em Atendimento
+            </span>
+            <div className="flex items-center gap-2 mt-1">
               <span className="mercosul-plate text-xs font-bold">{plate}</span>
-              <span className="text-white font-bold">{model}</span>
+              <span className="text-[#252B27] font-bold">{model}</span>
             </div>
-            <span className="text-[10px] text-slate-400">OS #{orderNumber}</span>
+            <span className="text-[11px] text-[#737D75] mt-0.5 block">OS #{orderNumber}</span>
           </div>
 
           <div className="text-right">
-            <span className="text-[10px] text-slate-500 font-bold block">BOX ATUAL</span>
-            <span className="text-xs font-bold text-amber-400 mt-0.5 inline-block px-2 py-0.5 rounded bg-amber-500/10 border border-amber-500/30">
+            <span className="text-[10px] text-[#737D75] font-semibold uppercase block">
+              Box Atual
+            </span>
+            <span className="text-xs font-semibold text-[#D97706] mt-1 inline-block px-2.5 py-0.5 rounded-full bg-[#FFFBEB] border border-[#FDE68A]">
               {currentBox || "Sem Box"}
             </span>
           </div>
@@ -133,19 +137,21 @@ export function TransferOrderBoxModal({
 
         {/* Feedback de Erro */}
         {error && (
-          <div className="p-3 bg-rose-500/10 border border-rose-500/40 rounded flex items-center gap-2 text-xs font-mono text-rose-400">
-            <AlertCircle className="w-4 h-4 shrink-0 text-rose-400" />
+          <div className="p-3 bg-[#FEF2F2] border border-[#FECACA] rounded-lg flex items-center gap-2 text-xs font-medium text-[#DC4C4C]">
+            <AlertCircle className="w-4 h-4 shrink-0" />
             <span>{error}</span>
           </div>
         )}
 
         {/* Seletor de Box */}
-        <form onSubmit={handleConfirmTransfer} className="space-y-4 font-mono">
+        <form onSubmit={handleConfirmTransfer} className="space-y-4">
           <div>
-            <label className="form-label-carbon flex items-center justify-between mb-2">
-              <span>Selecione a Estação / Box de Destino *</span>
-              <span className="text-[10px] text-slate-500">Capacidade verificada em tempo real</span>
-            </label>
+            <div className="flex items-center justify-between mb-2">
+              <label className="text-xs font-semibold text-[#343C36]">
+                Selecione o Box / Estação de Destino <span className="text-[#DC4C4C]">*</span>
+              </label>
+              <span className="text-[11px] text-[#737D75]">Capacidade em tempo real</span>
+            </div>
 
             <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
               {boxes.map((b) => {
@@ -159,51 +165,49 @@ export function TransferOrderBoxModal({
                     type="button"
                     disabled={isFull}
                     onClick={() => setSelectedBox(b.name)}
-                    className={`w-full p-2.5 rounded-lg border text-left transition-all flex items-center justify-between ${
+                    className={`w-full p-3 rounded-xl border text-left transition-all flex items-center justify-between ${
                       selectedBox === b.name
-                        ? "bg-lime-400/15 border-lime-400 text-white shadow-[0_0_12px_rgba(163,230,53,0.15)]"
+                        ? "bg-[#E9F3EC] border-[#247653] text-[#142D26] shadow-xs"
                         : isFull
-                        ? "bg-rose-950/20 border-rose-900/40 text-slate-500 opacity-60 cursor-not-allowed"
-                        : "bg-carbon-950 border-carbon-800 hover:border-carbon-600 text-slate-300 cursor-pointer"
+                        ? "bg-[#F7F8F6] border-[#E7EAE7] text-[#9CA49E] opacity-60 cursor-not-allowed"
+                        : "bg-white border-[#E7EAE7] hover:border-[#9CA49E] text-[#252B27] cursor-pointer"
                     }`}
                   >
                     <div className="flex items-center gap-2.5 min-w-0">
                       <div
                         className="w-2.5 h-2.5 rounded-full shrink-0"
-                        style={{ backgroundColor: b.color || "#a3e635" }}
+                        style={{ backgroundColor: b.color || "#247653" }}
                       />
-                      <Icon className="w-4 h-4 text-slate-400 shrink-0" />
+                      <Icon className="w-4 h-4 text-[#737D75] shrink-0" />
                       <div className="min-w-0">
                         <div className="flex items-center gap-1.5">
-                          <span className="font-bold text-xs uppercase truncate text-white">{b.name}</span>
+                          <span className="font-bold text-xs truncate text-[#252B27]">{b.name}</span>
                           {isCurrent && (
-                            <span className="text-[9px] px-1 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">
-                              ATUAL
+                            <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-[#FFFBEB] text-[#B45309] border border-[#FDE68A] font-semibold">
+                              Atual
                             </span>
                           )}
                         </div>
-                        <span className="text-[10px] text-slate-400 block truncate">
+                        <span className="text-[11px] text-[#737D75] block truncate">
                           {b.type || "GERAL"}
                         </span>
                       </div>
                     </div>
 
                     <div className="text-right shrink-0">
-                      <div className="flex items-center gap-1 justify-end">
-                        <span
-                          className={`text-[10px] font-bold px-1.5 py-0.5 rounded border ${
-                            isFull
-                              ? "bg-rose-500/20 text-rose-400 border-rose-500/40"
-                              : b.occupiedCount > 0
-                              ? "bg-amber-500/10 text-amber-300 border-amber-500/30"
-                              : "bg-lime-500/10 text-lime-400 border-lime-500/30"
-                          }`}
-                        >
-                          {b.occupiedCount}/{b.capacity} {b.capacity === 1 ? "VAGA" : "VAGAS"}
-                        </span>
-                      </div>
-                      <span className="text-[9px] text-slate-500 block mt-0.5">
-                        {isFull ? "LOTADO // BLOQUEADO" : `${b.availableSlots} livre(s)`}
+                      <span
+                        className={`text-[11px] font-semibold px-2 py-0.5 rounded-full border ${
+                          isFull
+                            ? "bg-[#FEF2F2] text-[#DC4C4C] border-[#FECACA]"
+                            : b.occupiedCount > 0
+                            ? "bg-[#FFFBEB] text-[#B45309] border-[#FDE68A]"
+                            : "bg-[#ECFDF5] text-[#16A36A] border-[#A7F3D0]"
+                        }`}
+                      >
+                        {b.occupiedCount}/{b.capacity} {b.capacity === 1 ? "vaga" : "vagas"}
+                      </span>
+                      <span className="text-[10px] text-[#737D75] block mt-0.5">
+                        {isFull ? "Lotado" : `${b.availableSlots} livre(s)`}
                       </span>
                     </div>
                   </button>
@@ -214,41 +218,41 @@ export function TransferOrderBoxModal({
               <button
                 type="button"
                 onClick={() => setSelectedBox("Pátio Geral")}
-                className={`w-full p-2.5 rounded-lg border text-left transition-all flex items-center justify-between ${
+                className={`w-full p-3 rounded-xl border text-left transition-all flex items-center justify-between ${
                   selectedBox === "Pátio Geral"
-                    ? "bg-lime-400/15 border-lime-400 text-white shadow-[0_0_12px_rgba(163,230,53,0.15)]"
-                    : "bg-carbon-950 border-carbon-800 hover:border-carbon-600 text-slate-300 cursor-pointer"
+                    ? "bg-[#E9F3EC] border-[#247653] text-[#142D26] shadow-xs"
+                    : "bg-white border-[#E7EAE7] hover:border-[#9CA49E] text-[#252B27] cursor-pointer"
                 }`}
               >
                 <div className="flex items-center gap-2.5">
-                  <div className="w-2.5 h-2.5 rounded-full bg-slate-500" />
-                  <Layers className="w-4 h-4 text-slate-400" />
+                  <div className="w-2.5 h-2.5 rounded-full bg-[#737D75]" />
+                  <Layers className="w-4 h-4 text-[#737D75]" />
                   <div>
-                    <span className="font-bold text-xs uppercase text-white">Pátio Geral / Vaga Externa</span>
-                    <span className="text-[10px] text-slate-400 block">Área de espera ou pátio sem baia fixa</span>
+                    <span className="font-bold text-xs text-[#252B27]">Pátio Geral / Vaga Externa</span>
+                    <span className="text-[11px] text-[#737D75] block">Área de espera ou pátio sem baia fixa</span>
                   </div>
                 </div>
-                <span className="text-[10px] text-slate-400 font-bold px-2 py-0.5 rounded bg-carbon-800 border border-carbon-700">
-                  LIVRE
+                <span className="text-[11px] text-[#16A36A] font-semibold px-2 py-0.5 rounded-full bg-[#ECFDF5] border border-[#A7F3D0]">
+                  Livre
                 </span>
               </button>
             </div>
           </div>
 
           {/* Ações */}
-          <div className="pt-3 border-t border-carbon-700 flex items-center justify-end gap-2 text-xs">
+          <div className="pt-3 border-t border-[#E7EAE7] flex items-center justify-end gap-2 text-xs">
             <button
               type="button"
               onClick={onClose}
               disabled={submitting}
-              className="px-3.5 py-2 rounded bg-carbon-800 hover:bg-carbon-700 text-slate-400 hover:text-white transition cursor-pointer"
+              className="dp-btn-secondary text-xs cursor-pointer"
             >
               Cancelar
             </button>
             <button
               type="submit"
               disabled={submitting || !selectedBox || selectedBox === currentBox}
-              className="btn-engine-start px-5 py-2 rounded flex items-center gap-1.5 shadow-md disabled:opacity-50 cursor-pointer"
+              className="dp-btn-primary text-xs cursor-pointer"
             >
               {submitting ? (
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -263,4 +267,3 @@ export function TransferOrderBoxModal({
     </div>
   );
 }
-

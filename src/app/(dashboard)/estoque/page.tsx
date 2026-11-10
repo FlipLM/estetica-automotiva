@@ -7,13 +7,22 @@ import {
   AlertTriangle,
   ArrowDownRight,
   ArrowUpRight,
-  Search,
-  Filter,
   DollarSign,
   Layers,
-  History,
   TrendingDown,
 } from "lucide-react";
+import {
+  Button,
+  Badge,
+  StatCard,
+  PageHeader,
+  Modal,
+  EmptyState,
+  LoadingState,
+  Input,
+  Select,
+  SearchInput,
+} from "@/components/ui";
 
 interface Product {
   id: string;
@@ -55,7 +64,6 @@ export default function EstoquePage() {
   const [lowStockFilter, setLowStockFilter] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  // Modal Novo Produto
   const [showProductModal, setShowProductModal] = useState(false);
   const [productForm, setProductForm] = useState({
     name: "",
@@ -67,11 +75,10 @@ export default function EstoquePage() {
     supplier: "",
   });
 
-  // Modal Movimentação
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [showMovementModal, setShowMovementModal] = useState(false);
   const [movementForm, setMovementForm] = useState({
-    type: "IN", // IN | OUT | LOSS
+    type: "IN",
     quantity: "",
     reason: "",
   });
@@ -181,438 +188,389 @@ export default function EstoquePage() {
     }
   };
 
+  const fmtCurrency = (val: number) =>
+    `R$ ${(val ?? 0).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
   return (
     <div className="space-y-6">
-      {/* Top Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-100 flex items-center gap-2">
-            <Package className="w-7 h-7 text-cyan-400" />
-            Controle de Insumos & Produtos Químicos
-          </h1>
-          <p className="text-slate-400 text-sm">
-            Gestão de estoque mínimo, consumo de diluições e inventário com alertas de reposição.
-          </p>
-        </div>
-
-        <button
-          onClick={() => setShowProductModal(true)}
-          className="bg-cyan-600 hover:bg-cyan-500 text-white font-medium px-4 py-2 rounded-lg text-sm flex items-center gap-2 shadow-lg shadow-cyan-600/20 transition-colors"
-        >
-          <Plus className="w-4 h-4" />
-          Novo Produto
-        </button>
-      </div>
-
-      {/* Cards de Resumo */}
-      {summary && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-sm">
-            <div className="flex items-center justify-between text-slate-400 text-sm mb-2">
-              <span>Total de Itens Cadastrados</span>
-              <Layers className="w-5 h-5 text-cyan-400" />
-            </div>
-            <div className="text-2xl font-bold text-slate-100">
-              {summary.totalProducts} produtos
-            </div>
-            <div className="text-xs text-slate-400 mt-2">
-              Controle por mililitros, litros, gramas e unidades
-            </div>
-          </div>
-
-          <div
-            onClick={() => setLowStockFilter(!lowStockFilter)}
-            className={`border rounded-xl p-5 shadow-sm cursor-pointer transition-all ${
-              summary.lowStockCount > 0
-                ? "bg-rose-950/20 border-rose-500/30 hover:border-rose-500/50"
-                : "bg-slate-900 border-slate-800"
-            }`}
+      <PageHeader
+        title="Estoque de Produtos e Insumos"
+        description="Gestão de estoque mínimo, consumo de diluições e alertas de reposição de químicos e acessórios."
+        actions={
+          <Button
+            variant="primary"
+            onClick={() => setShowProductModal(true)}
+            leftIcon={<Plus className="w-4 h-4" />}
           >
-            <div className="flex items-center justify-between text-slate-400 text-sm mb-2">
-              <span className="font-semibold text-rose-400">Estoque Crítico / Abaixo do Mínimo</span>
-              <AlertTriangle className="w-5 h-5 text-rose-400" />
+            Novo Produto
+          </Button>
+        }
+      />
+
+      {loading ? (
+        <LoadingState message="Carregando inventário de produtos..." />
+      ) : (
+        <>
+          {/* Cards de Resumo */}
+          {summary && (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <StatCard
+                label="Total de Itens Cadastrados"
+                value={`${summary.totalProducts} produtos`}
+                subtitle="Controle por ML, L, G, KG e unidades"
+                icon={<Layers className="w-5 h-5" />}
+                variant="brand"
+              />
+              <div onClick={() => setLowStockFilter(!lowStockFilter)} className="cursor-pointer">
+                <StatCard
+                  label="Estoque Crítico / Abaixo do Mínimo"
+                  value={`${summary.lowStockCount} alertas`}
+                  subtitle={
+                    lowStockFilter
+                      ? "Mostrando apenas críticos (clique para mostrar todos)"
+                      : "Clique para filtrar apenas estoque crítico"
+                  }
+                  icon={<AlertTriangle className="w-5 h-5" />}
+                  variant={summary.lowStockCount > 0 ? "error" : "default"}
+                />
+              </div>
+              <StatCard
+                label="Valor Imobilizado em Estoque"
+                value={fmtCurrency(summary.totalInventoryValue)}
+                subtitle="Custo total estimado dos insumos"
+                icon={<DollarSign className="w-5 h-5" />}
+                variant="success"
+              />
             </div>
-            <div className="text-2xl font-bold text-rose-400">
-              {summary.lowStockCount} alertas
-            </div>
-            <div className="text-xs text-slate-400 mt-2">
-              {lowStockFilter ? "Mostrando apenas críticos (clique para limpar)" : "Clique para filtrar apenas estoque crítico"}
-            </div>
+          )}
+
+          {/* Barra de Filtros e Busca */}
+          <div className="flex flex-col sm:flex-row gap-3">
+            <form onSubmit={handleSearchSubmit} className="flex-1">
+              <SearchInput
+                placeholder="Buscar produto ou fornecedor..."
+                value={search}
+                onChange={(val) => setSearch(val)}
+                onClear={
+                  search
+                    ? () => {
+                        setSearch("");
+                        setTimeout(fetchInventory, 50);
+                      }
+                    : undefined
+                }
+              />
+            </form>
+
+            <select
+              value={categoryFilter}
+              onChange={(e) => setCategoryFilter(e.target.value)}
+              className="form-select sm:w-64"
+            >
+              <option value="">Todas as Categorias</option>
+              <option value="CHEMICAL">Químicos & Insumos</option>
+              <option value="ACCESSORY">Acessórios & Boinas</option>
+              <option value="TOOL">Ferramentas & Maquinários</option>
+            </select>
           </div>
 
-          <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-sm">
-            <div className="flex items-center justify-between text-slate-400 text-sm mb-2">
-              <span>Valor Imobilizado em Estoque</span>
-              <DollarSign className="w-5 h-5 text-emerald-400" />
-            </div>
-            <div className="text-2xl font-bold text-emerald-400">
-              R$ {summary.totalInventoryValue.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
-            </div>
-            <div className="text-xs text-slate-400 mt-2">
-              Custo de reposição total dos químicos e insumos
-            </div>
+          {/* Tabela de Produtos */}
+          <div className="bg-white border border-[#E7EAE7] rounded-xl overflow-hidden shadow-xs">
+            {products.length === 0 ? (
+              <EmptyState
+                icon={<Package className="w-6 h-6" />}
+                title="Nenhum produto encontrado"
+                description="Cadastre shampoos automotivos, vitrificadores, compostos polidores e boinas para controlar o consumo da estética."
+                action={
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    onClick={() => setShowProductModal(true)}
+                  >
+                    Cadastrar Produto
+                  </Button>
+                }
+              />
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-sm">
+                  <thead className="bg-[#F7F8F6] text-[#737D75] uppercase text-xs border-b border-[#E7EAE7]">
+                    <tr>
+                      <th className="px-6 py-3 font-semibold">Produto / Insumo</th>
+                      <th className="px-6 py-3 font-semibold">Categoria</th>
+                      <th className="px-6 py-3 font-semibold">Saldo Atual</th>
+                      <th className="px-6 py-3 font-semibold">Estoque Mínimo</th>
+                      <th className="px-6 py-3 font-semibold">Custo Unitário</th>
+                      <th className="px-6 py-3 font-semibold">Valor Total</th>
+                      <th className="px-6 py-3 font-semibold text-right">Ações</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[#F1F3F1]">
+                    {products.map((product) => (
+                      <tr key={product.id} className="hover:bg-[#F7F8F6]/70 transition-colors">
+                        <td className="px-6 py-3.5">
+                          <div className="font-semibold text-[#252B27]">{product.name}</div>
+                          {product.supplier && (
+                            <div className="text-xs text-[#737D75]">
+                              Fornecedor: {product.supplier}
+                            </div>
+                          )}
+                        </td>
+                        <td className="px-6 py-3.5">
+                          <Badge variant="neutral" size="sm">
+                            {CATEGORY_NAMES[product.category] || product.category}
+                          </Badge>
+                        </td>
+                        <td className="px-6 py-3.5">
+                          <div className="flex items-center gap-2">
+                            <span
+                              className={`font-bold ${
+                                product.isLowStock ? "text-[#DC4C4C]" : "text-[#16A36A]"
+                              }`}
+                            >
+                              {product.currentStock.toLocaleString("pt-BR")} {product.unit}
+                            </span>
+                            {product.isLowStock && (
+                              <Badge variant="error" size="sm">
+                                Repor
+                              </Badge>
+                            )}
+                          </div>
+                        </td>
+                        <td className="px-6 py-3.5 text-xs text-[#737D75]">
+                          {product.minStock} {product.unit}
+                        </td>
+                        <td className="px-6 py-3.5 text-[#252B27]">
+                          {fmtCurrency(product.costPrice)} / {product.unit}
+                        </td>
+                        <td className="px-6 py-3.5 font-semibold text-[#252B27]">
+                          {fmtCurrency(product.totalInventoryValue)}
+                        </td>
+                        <td className="px-6 py-3.5 text-right">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setSelectedProduct(product);
+                              setShowMovementModal(true);
+                            }}
+                            leftIcon={<ArrowDownRight className="w-3.5 h-3.5 text-[#247653]" />}
+                          >
+                            Movimentar
+                          </Button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
-        </div>
+        </>
       )}
-
-      {/* Barra de Filtros e Busca */}
-      <div className="flex flex-col sm:flex-row gap-3">
-        <form onSubmit={handleSearchSubmit} className="flex-1 relative">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
-          <input
-            type="text"
-            placeholder="Buscar produto ou fornecedor..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full bg-slate-900 border border-slate-800 rounded-lg pl-9 pr-4 py-2 text-sm text-slate-200 outline-none focus:border-cyan-500"
-          />
-        </form>
-
-        <select
-          value={categoryFilter}
-          onChange={(e) => setCategoryFilter(e.target.value)}
-          className="bg-slate-900 border border-slate-800 text-slate-300 text-sm rounded-lg px-3 py-2 outline-none focus:border-cyan-500"
-        >
-          <option value="">Todas as Categorias</option>
-          <option value="CHEMICAL">Químicos & Insumos</option>
-          <option value="ACCESSORY">Acessórios & Boinas</option>
-          <option value="TOOL">Ferramentas & Maquinários</option>
-        </select>
-      </div>
-
-      {/* Tabela de Produtos */}
-      <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-sm">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm text-slate-300">
-            <thead className="bg-slate-800/60 text-slate-400 uppercase text-xs">
-              <tr>
-                <th className="px-6 py-3">Produto / Insumo</th>
-                <th className="px-6 py-3">Categoria</th>
-                <th className="px-6 py-3">Saldo em Estoque</th>
-                <th className="px-6 py-3">Estoque Mínimo</th>
-                <th className="px-6 py-3">Custo Unitário</th>
-                <th className="px-6 py-3">Valor Total</th>
-                <th className="px-6 py-3 text-right">Ação Rápida</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-800">
-              {products.length === 0 ? (
-                <tr>
-                  <td colSpan={7} className="px-6 py-8 text-center text-slate-500">
-                    Nenhum produto cadastrado no estoque.
-                  </td>
-                </tr>
-              ) : (
-                products.map((product) => (
-                  <tr key={product.id} className="hover:bg-slate-800/30 transition-colors">
-                    <td className="px-6 py-3.5">
-                      <div className="font-semibold text-slate-100">{product.name}</div>
-                      {product.supplier && (
-                        <div className="text-xs text-slate-500">Fornecedor: {product.supplier}</div>
-                      )}
-                    </td>
-                    <td className="px-6 py-3.5 text-xs text-slate-400">
-                      {CATEGORY_NAMES[product.category] || product.category}
-                    </td>
-                    <td className="px-6 py-3.5">
-                      <div className="flex items-center gap-2">
-                        <span
-                          className={`font-bold ${
-                            product.isLowStock ? "text-rose-400" : "text-emerald-400"
-                          }`}
-                        >
-                          {product.currentStock.toLocaleString("pt-BR")} {product.unit}
-                        </span>
-                        {product.isLowStock && (
-                          <span className="text-[10px] bg-rose-500/10 text-rose-400 border border-rose-500/20 px-1.5 py-0.5 rounded font-semibold">
-                            Repor
-                          </span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-6 py-3.5 text-xs text-slate-400">
-                      {product.minStock} {product.unit}
-                    </td>
-                    <td className="px-6 py-3.5 text-slate-300">
-                      R$ {product.costPrice.toFixed(2)} / {product.unit}
-                    </td>
-                    <td className="px-6 py-3.5 font-semibold text-slate-100">
-                      R$ {product.totalInventoryValue.toFixed(2)}
-                    </td>
-                    <td className="px-6 py-3.5 text-right">
-                      <button
-                        onClick={() => {
-                          setSelectedProduct(product);
-                          setShowMovementModal(true);
-                        }}
-                        className="bg-slate-800 hover:bg-slate-700 text-cyan-400 border border-slate-700 hover:border-cyan-500/50 text-xs px-2.5 py-1.5 rounded-lg transition-colors inline-flex items-center gap-1"
-                      >
-                        <ArrowDownRight className="w-3.5 h-3.5" />
-                        Movimentar
-                      </button>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
 
       {/* Modal Novo Produto */}
-      {showProductModal && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-xl max-w-md w-full p-6 shadow-2xl">
-            <h3 className="text-lg font-bold text-slate-100 mb-4 flex items-center gap-2">
-              <Plus className="w-5 h-5 text-cyan-400" />
-              Cadastrar Produto / Insumo Químico
-            </h3>
+      <Modal
+        isOpen={showProductModal}
+        onClose={() => setShowProductModal(false)}
+        title="Cadastrar Produto / Insumo"
+        description="Adicione um novo item químico, acessório ou ferramenta ao estoque."
+        size="md"
+      >
+        <form onSubmit={handleCreateProduct} className="space-y-4">
+          <Input
+            label="Nome do Produto"
+            required
+            placeholder="Ex: Vonixx V-Floc Shampoo Concentrado"
+            value={productForm.name}
+            onChange={(e) => setProductForm({ ...productForm, name: e.target.value })}
+          />
 
-            <form onSubmit={handleCreateProduct} className="space-y-4">
-              <div>
-                <label className="block text-xs font-medium text-slate-300 mb-1">
-                  Nome do Produto *
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="Ex: Vonixx V-Floc Shampoo Concentrado"
-                  value={productForm.name}
-                  onChange={(e) => setProductForm({ ...productForm, name: e.target.value })}
-                  className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100 outline-none focus:border-cyan-500"
-                />
-              </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+            <Select
+              label="Categoria"
+              value={productForm.category}
+              onChange={(e) => setProductForm({ ...productForm, category: e.target.value })}
+              options={[
+                { value: "CHEMICAL", label: "Químicos & Insumos" },
+                { value: "ACCESSORY", label: "Acessórios & Boinas" },
+                { value: "TOOL", label: "Ferramentas & Equipamentos" },
+              ]}
+            />
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-medium text-slate-300 mb-1">
-                    Categoria
-                  </label>
-                  <select
-                    value={productForm.category}
-                    onChange={(e) => setProductForm({ ...productForm, category: e.target.value })}
-                    className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100 outline-none focus:border-cyan-500"
-                  >
-                    <option value="CHEMICAL">Químicos & Insumos</option>
-                    <option value="ACCESSORY">Acessórios & Boinas</option>
-                    <option value="TOOL">Ferramentas & Equipamentos</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-medium text-slate-300 mb-1">
-                    Unidade de Medida
-                  </label>
-                  <select
-                    value={productForm.unit}
-                    onChange={(e) => setProductForm({ ...productForm, unit: e.target.value })}
-                    className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100 outline-none focus:border-cyan-500"
-                  >
-                    <option value="ML">Mililitros (ML)</option>
-                    <option value="L">Litros (L)</option>
-                    <option value="G">Gramas (G)</option>
-                    <option value="KG">Quilos (KG)</option>
-                    <option value="UN">Unidade (UN)</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-3 gap-3">
-                <div>
-                  <label className="block text-xs font-medium text-slate-300 mb-1">
-                    Saldo Inicial
-                  </label>
-                  <input
-                    type="number"
-                    step="any"
-                    required
-                    value={productForm.currentStock}
-                    onChange={(e) =>
-                      setProductForm({ ...productForm, currentStock: parseFloat(e.target.value) || 0 })
-                    }
-                    className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100 outline-none focus:border-cyan-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-medium text-slate-300 mb-1">
-                    Estoque Mínimo
-                  </label>
-                  <input
-                    type="number"
-                    step="any"
-                    required
-                    value={productForm.minStock}
-                    onChange={(e) =>
-                      setProductForm({ ...productForm, minStock: parseFloat(e.target.value) || 0 })
-                    }
-                    className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100 outline-none focus:border-cyan-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-medium text-slate-300 mb-1">
-                    Custo Unit. (R$)
-                  </label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    required
-                    value={productForm.costPrice}
-                    onChange={(e) =>
-                      setProductForm({ ...productForm, costPrice: parseFloat(e.target.value) || 0 })
-                    }
-                    className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100 outline-none focus:border-cyan-500"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-slate-300 mb-1">
-                  Fornecedor / Distribuidor (opcional)
-                </label>
-                <input
-                  type="text"
-                  placeholder="Ex: Detailer Distribuidora, Vonixx Oficial"
-                  value={productForm.supplier}
-                  onChange={(e) => setProductForm({ ...productForm, supplier: e.target.value })}
-                  className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100 outline-none focus:border-cyan-500"
-                />
-              </div>
-
-              <div className="flex justify-end gap-3 pt-3 border-t border-slate-800">
-                <button
-                  type="button"
-                  onClick={() => setShowProductModal(false)}
-                  className="px-4 py-2 rounded-lg text-sm text-slate-300 hover:bg-slate-800 transition-colors"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  disabled={submitting}
-                  className="bg-cyan-600 hover:bg-cyan-500 text-white font-medium px-4 py-2 rounded-lg text-sm transition-colors disabled:opacity-50"
-                >
-                  {submitting ? "Salvando..." : "Salvar no Estoque"}
-                </button>
-              </div>
-            </form>
+            <Select
+              label="Unidade de Medida"
+              value={productForm.unit}
+              onChange={(e) => setProductForm({ ...productForm, unit: e.target.value })}
+              options={[
+                { value: "ML", label: "Mililitros (ML)" },
+                { value: "L", label: "Litros (L)" },
+                { value: "G", label: "Gramas (G)" },
+                { value: "KG", label: "Quilos (KG)" },
+                { value: "UN", label: "Unidade (UN)" },
+              ]}
+            />
           </div>
-        </div>
-      )}
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+            <Input
+              label="Saldo Inicial"
+              type="number"
+              step="any"
+              required
+              value={productForm.currentStock}
+              onChange={(e) =>
+                setProductForm({
+                  ...productForm,
+                  currentStock: parseFloat(e.target.value) || 0,
+                })
+              }
+            />
+
+            <Input
+              label="Estoque Mínimo"
+              type="number"
+              step="any"
+              required
+              value={productForm.minStock}
+              onChange={(e) =>
+                setProductForm({
+                  ...productForm,
+                  minStock: parseFloat(e.target.value) || 0,
+                })
+              }
+            />
+
+            <Input
+              label="Custo Unit. (R$)"
+              type="number"
+              step="0.01"
+              required
+              value={productForm.costPrice}
+              onChange={(e) =>
+                setProductForm({
+                  ...productForm,
+                  costPrice: parseFloat(e.target.value) || 0,
+                })
+              }
+            />
+          </div>
+
+          <Input
+            label="Fornecedor / Distribuidor (opcional)"
+            placeholder="Ex: Detailer Distribuidora, Vonixx Oficial"
+            value={productForm.supplier}
+            onChange={(e) => setProductForm({ ...productForm, supplier: e.target.value })}
+          />
+
+          <div className="flex justify-end gap-2.5 pt-4 border-t border-[#E7EAE7]">
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => setShowProductModal(false)}
+            >
+              Cancelar
+            </Button>
+            <Button type="submit" variant="primary" isLoading={submitting}>
+              Salvar no Estoque
+            </Button>
+          </div>
+        </form>
+      </Modal>
 
       {/* Modal de Movimentação */}
-      {showMovementModal && selectedProduct && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-xl max-w-md w-full p-6 shadow-2xl">
-            <h3 className="text-lg font-bold text-slate-100 mb-1 flex items-center gap-2">
-              <ArrowDownRight className="w-5 h-5 text-cyan-400" />
-              Movimentação de Estoque
-            </h3>
-            <p className="text-xs text-slate-400 mb-4">
-              Item: <span className="text-slate-200 font-semibold">{selectedProduct.name}</span>{" "}
-              (Saldo atual: {selectedProduct.currentStock} {selectedProduct.unit})
-            </p>
-
-            <form onSubmit={handleCreateMovement} className="space-y-4">
-              <div>
-                <label className="block text-xs font-medium text-slate-300 mb-1">
-                  Tipo de Operação *
-                </label>
-                <div className="grid grid-cols-3 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setMovementForm({ ...movementForm, type: "IN" })}
-                    className={`py-2 px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-1 border transition-all ${
-                      movementForm.type === "IN"
-                        ? "bg-emerald-600 text-white border-emerald-500"
-                        : "bg-slate-800 text-slate-400 border-slate-700"
-                    }`}
-                  >
-                    <ArrowDownRight className="w-3.5 h-3.5" />
-                    Entrada
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setMovementForm({ ...movementForm, type: "OUT" })}
-                    className={`py-2 px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-1 border transition-all ${
-                      movementForm.type === "OUT"
-                        ? "bg-amber-600 text-white border-amber-500"
-                        : "bg-slate-800 text-slate-400 border-slate-700"
-                    }`}
-                  >
-                    <ArrowUpRight className="w-3.5 h-3.5" />
-                    Saída / Consumo
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setMovementForm({ ...movementForm, type: "LOSS" })}
-                    className={`py-2 px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-1 border transition-all ${
-                      movementForm.type === "LOSS"
-                        ? "bg-rose-600 text-white border-rose-500"
-                        : "bg-slate-800 text-slate-400 border-slate-700"
-                    }`}
-                  >
-                    <TrendingDown className="w-3.5 h-3.5" />
-                    Perda / Avaria
-                  </button>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-slate-300 mb-1">
-                  Quantidade ({selectedProduct.unit}) *
-                </label>
-                <input
-                  type="number"
-                  step="any"
-                  required
-                  placeholder={`Ex: 500 (${selectedProduct.unit})`}
-                  value={movementForm.quantity}
-                  onChange={(e) =>
-                    setMovementForm({ ...movementForm, quantity: e.target.value })
-                  }
-                  className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100 outline-none focus:border-cyan-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-slate-300 mb-1">
-                  Motivo / Justificativa *
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="Ex: Compra NF 4821, Preparação de diluição 1:40, Frasco quebrado"
-                  value={movementForm.reason}
-                  onChange={(e) =>
-                    setMovementForm({ ...movementForm, reason: e.target.value })
-                  }
-                  className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100 outline-none focus:border-cyan-500"
-                />
-              </div>
-
-              <div className="flex justify-end gap-3 pt-3 border-t border-slate-800">
+      <Modal
+        isOpen={showMovementModal && !!selectedProduct}
+        onClose={() => setShowMovementModal(false)}
+        title="Movimentação de Estoque"
+        description={
+          selectedProduct
+            ? `Item: ${selectedProduct.name} (Saldo atual: ${selectedProduct.currentStock} ${selectedProduct.unit})`
+            : ""
+        }
+        size="md"
+      >
+        {selectedProduct && (
+          <form onSubmit={handleCreateMovement} className="space-y-4">
+            <div>
+              <label className="form-label">Tipo de Operação *</label>
+              <div className="grid grid-cols-3 gap-2">
                 <button
                   type="button"
-                  onClick={() => setShowMovementModal(false)}
-                  className="px-4 py-2 rounded-lg text-sm text-slate-300 hover:bg-slate-800 transition-colors"
+                  onClick={() => setMovementForm({ ...movementForm, type: "IN" })}
+                  className={`py-2.5 px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 border transition-all cursor-pointer ${
+                    movementForm.type === "IN"
+                      ? "bg-[#ECFDF5] text-[#16A36A] border-[#16A36A]"
+                      : "bg-white text-[#737D75] border-[#E7EAE7]"
+                  }`}
                 >
-                  Cancelar
+                  <ArrowDownRight className="w-3.5 h-3.5" />
+                  Entrada
                 </button>
                 <button
-                  type="submit"
-                  disabled={submitting}
-                  className="bg-cyan-600 hover:bg-cyan-500 text-white font-medium px-4 py-2 rounded-lg text-sm transition-colors disabled:opacity-50"
+                  type="button"
+                  onClick={() => setMovementForm({ ...movementForm, type: "OUT" })}
+                  className={`py-2.5 px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 border transition-all cursor-pointer ${
+                    movementForm.type === "OUT"
+                      ? "bg-[#FFFBEB] text-[#D97706] border-[#D97706]"
+                      : "bg-white text-[#737D75] border-[#E7EAE7]"
+                  }`}
                 >
-                  {submitting ? "Registrando..." : "Confirmar Movimentação"}
+                  <ArrowUpRight className="w-3.5 h-3.5" />
+                  Consumo
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setMovementForm({ ...movementForm, type: "LOSS" })}
+                  className={`py-2.5 px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 border transition-all cursor-pointer ${
+                    movementForm.type === "LOSS"
+                      ? "bg-[#FEF2F2] text-[#DC4C4C] border-[#DC4C4C]"
+                      : "bg-white text-[#737D75] border-[#E7EAE7]"
+                  }`}
+                >
+                  <TrendingDown className="w-3.5 h-3.5" />
+                  Perda / Avaria
                 </button>
               </div>
-            </form>
-          </div>
-        </div>
-      )}
+            </div>
+
+            <Input
+              label={`Quantidade (${selectedProduct.unit})`}
+              type="number"
+              step="any"
+              required
+              placeholder={`Ex: 500 (${selectedProduct.unit})`}
+              value={movementForm.quantity}
+              onChange={(e) =>
+                setMovementForm({ ...movementForm, quantity: e.target.value })
+              }
+            />
+
+            <Input
+              label="Motivo / Justificativa"
+              required
+              placeholder="Ex: Compra NF 4821, Preparação de diluição 1:40, Frasco avariado"
+              value={movementForm.reason}
+              onChange={(e) =>
+                setMovementForm({ ...movementForm, reason: e.target.value })
+              }
+            />
+
+            <div className="flex justify-end gap-2.5 pt-4 border-t border-[#E7EAE7]">
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => setShowMovementModal(false)}
+              >
+                Cancelar
+              </Button>
+              <Button type="submit" variant="primary" isLoading={submitting}>
+                Confirmar Movimentação
+              </Button>
+            </div>
+          </form>
+        )}
+      </Modal>
     </div>
   );
 }
-

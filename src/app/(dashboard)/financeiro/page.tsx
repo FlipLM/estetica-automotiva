@@ -2,18 +2,28 @@
 
 import { useState, useEffect } from "react";
 import {
-  CircleDollarSign,
   TrendingUp,
   TrendingDown,
   DollarSign,
   Plus,
-  Calendar,
   AlertTriangle,
   CheckCircle2,
   Trash2,
-  Filter,
   PieChart,
+  Receipt,
 } from "lucide-react";
+import {
+  Button,
+  Badge,
+  StatCard,
+  PageHeader,
+  Modal,
+  EmptyState,
+  LoadingState,
+  Input,
+  Select,
+  Checkbox,
+} from "@/components/ui";
 
 interface DREData {
   period: string;
@@ -74,7 +84,6 @@ export default function FinanceiroPage() {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Modal nova despesa
   const [showModal, setShowModal] = useState(false);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
@@ -219,455 +228,363 @@ export default function FinanceiroPage() {
     }
   };
 
+  const fmtCurrency = (val: number) =>
+    `R$ ${(val ?? 0).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
   return (
     <div className="space-y-6">
-      {/* Top Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2 mb-1">
-            <span className="led-pulse-lime"></span>
-            <span className="text-[10px] font-mono tracking-widest text-lime-400 uppercase">
-              // CONTROLADORIA & DRE
-            </span>
-          </div>
-          <h1 className="text-xl font-black text-slate-100 uppercase tracking-wide flex items-center gap-2">
-            <CircleDollarSign className="w-6 h-6 text-lime-400" />
-            Gestão Financeira & DRE
-          </h1>
-          <p className="text-slate-400 text-xs">
-            Demonstrativo do Resultado do Exercício com controle de despesas e lucratividade real da oficina.
-          </p>
-        </div>
-
-        <div className="flex items-center gap-3">
-          {/* Seletor de Período */}
-          <select
-            value={period}
-            onChange={(e) => setPeriod(e.target.value)}
-            className="form-select-carbon text-xs"
-          >
-            <option value="current_month">Mês Atual</option>
-            <option value="last_month">Mês Anterior</option>
-            <option value="7_days">Últimos 7 dias</option>
-            <option value="year">Ano Atual</option>
-          </select>
-
-          <button
-            onClick={() => setShowModal(true)}
-            className="btn-engine-start px-4 py-2 text-xs flex items-center gap-2"
-          >
-            <Plus className="w-4 h-4" />
-            Nova Despesa
-          </button>
-        </div>
-      </div>
-
-      {/* Cards de Métricas Principais */}
-      {dre && (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="carbon-card p-5">
-            <div className="flex items-center justify-between text-slate-400 text-xs uppercase font-mono tracking-wider mb-2">
-              <span>Faturamento Líquido</span>
-              <DollarSign className="w-4 h-4 text-lime-400" />
-            </div>
-            <div className="text-2xl font-black text-slate-100 font-mono">
-              R$ {(dre.netRevenue ?? 0).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
-            </div>
-            <div className="text-[11px] text-slate-400 mt-2 font-mono">
-              {dre.ordersCount ?? 0} veículos atendidos • Médio: R${" "}
-              {(dre.averageTicket ?? 0).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
-            </div>
-          </div>
-
-          <div className="carbon-card p-5">
-            <div className="flex items-center justify-between text-slate-400 text-xs uppercase font-mono tracking-wider mb-2">
-              <span>Custos & Despesas</span>
-              <TrendingDown className="w-4 h-4 text-rose-400" />
-            </div>
-            <div className="text-2xl font-black text-rose-400 font-mono">
-              R$ {(dre.totalExpenses ?? 0).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
-            </div>
-            <div className="text-[11px] text-slate-400 mt-2 font-mono">
-              Variáveis: R$ {(dre.variableCosts?.total ?? 0).toFixed(2)} | Fixos: R$ {(dre.fixedCosts?.total ?? 0).toFixed(2)}
-            </div>
-          </div>
-
-          <div className="carbon-card p-5">
-            <div className="flex items-center justify-between text-slate-400 text-xs uppercase font-mono tracking-wider mb-2">
-              <span>Lucro Líquido Real</span>
-              <TrendingUp className={`w-4 h-4 ${(dre.netProfit ?? 0) >= 0 ? "text-lime-400" : "text-rose-400"}`} />
-            </div>
-            <div
-              className={`text-2xl font-black font-mono ${
-                (dre.netProfit ?? 0) >= 0 ? "text-lime-400" : "text-rose-400"
-              }`}
+      <PageHeader
+        title="Financeiro, DRE e Contas a Pagar"
+        description="Demonstrativo do Resultado do Exercício (DRE) com apuração de receitas, custos e despesas da estética."
+        actions={
+          <div className="flex items-center gap-2.5">
+            <select
+              value={period}
+              onChange={(e) => setPeriod(e.target.value)}
+              className="form-select text-xs h-9 py-1.5"
             >
-              R$ {(dre.netProfit ?? 0).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
-            </div>
-            <div className="text-[11px] text-slate-400 mt-2 font-mono">
-              Após dedução de insumos, comissões e custos fixos
-            </div>
-          </div>
+              <option value="current_month">Mês Atual</option>
+              <option value="last_month">Mês Anterior</option>
+              <option value="7_days">Últimos 7 dias</option>
+              <option value="year">Ano Atual</option>
+            </select>
 
-          <div className="carbon-card p-5">
-            <div className="flex items-center justify-between text-slate-400 text-xs uppercase font-mono tracking-wider mb-2">
-              <span>Margem Líquida</span>
-              <PieChart className="w-4 h-4 text-cyan-400" />
-            </div>
-            <div
-              className={`text-2xl font-black font-mono ${
-                (dre.netMarginPercentage ?? 0) >= 20
-                  ? "text-lime-400"
-                  : (dre.netMarginPercentage ?? 0) >= 0
-                  ? "text-cyan-400"
-                  : "text-rose-400"
-              }`}
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={() => setShowModal(true)}
+              leftIcon={<Plus className="w-4 h-4" />}
             >
-              {(dre.netMarginPercentage ?? 0).toFixed(1)}%
-            </div>
-            <div className="text-[11px] text-slate-400 mt-2 font-mono">
-              Margem Bruta Operacional: {(dre.grossMarginPercentage ?? 0).toFixed(1)}%
-            </div>
+              Nova Despesa
+            </Button>
           </div>
-        </div>
+        }
+      />
+
+      {loading ? (
+        <LoadingState message="Calculando indicadores financeiros e DRE..." />
+      ) : (
+        <>
+          {/* Cards de Métricas Principais */}
+          {dre && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <StatCard
+                label="Faturamento Líquido"
+                value={fmtCurrency(dre.netRevenue)}
+                subtitle={`${dre.ordersCount ?? 0} atendimentos • Ticket: ${fmtCurrency(dre.averageTicket)}`}
+                icon={<DollarSign className="w-5 h-5" />}
+                variant="brand"
+              />
+              <StatCard
+                label="Custos e Despesas"
+                value={fmtCurrency(dre.totalExpenses)}
+                subtitle={`Variáveis: ${fmtCurrency(dre.variableCosts?.total)} • Fixos: ${fmtCurrency(dre.fixedCosts?.total)}`}
+                icon={<TrendingDown className="w-5 h-5" />}
+                variant="error"
+              />
+              <StatCard
+                label="Lucro Líquido Real"
+                value={fmtCurrency(dre.netProfit)}
+                subtitle="Após insumos, comissões e custos fixos"
+                icon={<TrendingUp className="w-5 h-5" />}
+                variant={(dre.netProfit ?? 0) >= 0 ? "success" : "error"}
+              />
+              <StatCard
+                label="Margem Líquida"
+                value={`${(dre.netMarginPercentage ?? 0).toFixed(1)}%`}
+                subtitle={`Margem Bruta: ${(dre.grossMarginPercentage ?? 0).toFixed(1)}%`}
+                icon={<PieChart className="w-5 h-5" />}
+                variant="info"
+              />
+            </div>
+          )}
+
+          {/* DRE Detalhado em Tabela Contábil */}
+          {dre && (
+            <div className="bg-white rounded-xl border border-[#E7EAE7] shadow-xs overflow-hidden">
+              <div className="px-6 py-4 border-b border-[#E7EAE7] bg-[#F7F8F6] flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-[#247653]" />
+                  <h2 className="font-semibold text-[#252B27] text-sm">
+                    DRE Gerencial — Demonstrativo de Resultado
+                  </h2>
+                </div>
+                <span className="text-xs text-[#737D75]">
+                  Período: {dre.startDate ? new Date(dre.startDate).toLocaleDateString("pt-BR") : "--"} até{" "}
+                  {dre.endDate ? new Date(dre.endDate).toLocaleDateString("pt-BR") : "--"}
+                </span>
+              </div>
+
+              <div className="p-6 divide-y divide-[#F1F3F1] text-sm">
+                {/* 1. Receita Bruta */}
+                <div className="py-2.5 flex justify-between items-center">
+                  <span className="font-medium text-[#252B27]">(+) Receita Bruta de Serviços</span>
+                  <span className="font-semibold text-[#16A36A]">{fmtCurrency(dre.grossRevenue)}</span>
+                </div>
+
+                {/* 2. Deduções */}
+                <div className="py-2 pl-4 flex justify-between items-center text-xs text-[#737D75]">
+                  <span>(-) Descontos Concedidos</span>
+                  <span className="text-[#DC4C4C]">- {fmtCurrency(dre.discounts)}</span>
+                </div>
+
+                {/* 3. Receita Líquida */}
+                <div className="py-2.5 px-3 bg-[#F7F8F6] rounded-lg flex justify-between items-center">
+                  <span className="font-semibold text-[#252B27]">(=) Receita Operacional Líquida</span>
+                  <span className="font-bold text-[#252B27]">{fmtCurrency(dre.netRevenue)}</span>
+                </div>
+
+                {/* 4. Custos Variáveis */}
+                <div className="py-2 pl-4 flex justify-between items-center text-xs text-[#737D75]">
+                  <span>(-) Custos Variáveis (Insumos Químicos e Comissões)</span>
+                  <span className="text-[#DC4C4C]">- {fmtCurrency(dre.variableCosts?.total)}</span>
+                </div>
+
+                {/* 5. Lucro Bruto */}
+                <div className="py-2.5 px-3 bg-[#EFF6FF]/60 rounded-lg flex justify-between items-center">
+                  <span className="font-semibold text-[#1E40AF]">(=) Lucro Bruto da Operação</span>
+                  <span className="font-bold text-[#1E40AF]">
+                    {fmtCurrency(dre.grossProfit)} ({(dre.grossMarginPercentage ?? 0).toFixed(1)}%)
+                  </span>
+                </div>
+
+                {/* 6. Custos Fixos Detalhados */}
+                <div className="py-3 pl-4 flex flex-col gap-1.5 text-xs text-[#737D75]">
+                  <div className="flex justify-between">
+                    <span>• Aluguel e Ponto Comercial</span>
+                    <span>{fmtCurrency(dre.fixedCosts?.rent)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>• Energia, Água e Internet</span>
+                    <span>{fmtCurrency(dre.fixedCosts?.utilities)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>• Folha de Pagamento e Salários Fixos</span>
+                    <span>{fmtCurrency(dre.fixedCosts?.salaries)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>• Marketing e Anúncios</span>
+                    <span>{fmtCurrency(dre.fixedCosts?.marketing)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>• Manutenção de Equipamentos</span>
+                    <span>{fmtCurrency(dre.fixedCosts?.maintenance)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>• Outras Despesas Gerais</span>
+                    <span>{fmtCurrency(dre.fixedCosts?.other)}</span>
+                  </div>
+                </div>
+
+                {/* 7. Total Custos Fixos */}
+                <div className="py-2 pl-4 flex justify-between items-center text-xs text-[#737D75]">
+                  <span>(-) Total de Custos Fixos Operacionais</span>
+                  <span className="text-[#DC4C4C]">- {fmtCurrency(dre.fixedCosts?.total)}</span>
+                </div>
+
+                {/* 8. Lucro Líquido Final */}
+                <div className="py-3.5 px-4 bg-[#E9F3EC] border border-[#247653]/20 rounded-xl flex justify-between items-center mt-2">
+                  <span className="font-bold text-[#142D26]">(=) RESULTADO LÍQUIDO DO PERÍODO</span>
+                  <span
+                    className={`text-base font-bold ${
+                      (dre.netProfit ?? 0) >= 0 ? "text-[#16A36A]" : "text-[#DC4C4C]"
+                    }`}
+                  >
+                    {fmtCurrency(dre.netProfit)} ({(dre.netMarginPercentage ?? 0).toFixed(1)}%)
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Tabela de Despesas Lançadas */}
+          <div className="bg-white border border-[#E7EAE7] rounded-xl overflow-hidden shadow-xs">
+            <div className="px-6 py-4 border-b border-[#E7EAE7] flex items-center justify-between">
+              <div>
+                <h2 className="font-semibold text-[#252B27] text-base">Contas a Pagar e Despesas</h2>
+                <p className="text-xs text-[#737D75]">
+                  {expenses.length} lançamentos registrados no sistema
+                </p>
+              </div>
+            </div>
+
+            {expenses.length === 0 ? (
+              <EmptyState
+                icon={<Receipt className="w-6 h-6" />}
+                title="Nenhuma despesa cadastrada"
+                description="Registre suas contas de aluguel, energia, insumos ou manutenção para calcular o lucro líquido exato no DRE."
+                action={
+                  <Button variant="primary" size="sm" onClick={() => setShowModal(true)}>
+                    Lançar Primeira Despesa
+                  </Button>
+                }
+              />
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-sm">
+                  <thead className="bg-[#F7F8F6] text-[#737D75] uppercase text-xs border-b border-[#E7EAE7]">
+                    <tr>
+                      <th className="px-6 py-3 font-semibold">Descrição</th>
+                      <th className="px-6 py-3 font-semibold">Categoria</th>
+                      <th className="px-6 py-3 font-semibold">Vencimento</th>
+                      <th className="px-6 py-3 font-semibold">Valor</th>
+                      <th className="px-6 py-3 font-semibold">Status</th>
+                      <th className="px-6 py-3 font-semibold text-right">Ações</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[#F1F3F1]">
+                    {expenses.map((expense) => (
+                      <tr key={expense.id} className="hover:bg-[#F7F8F6]/70 transition-colors">
+                        <td className="px-6 py-3.5">
+                          <div className="font-medium text-[#252B27]">{expense.description}</div>
+                          {expense.notes && (
+                            <div className="text-xs text-[#737D75]">{expense.notes}</div>
+                          )}
+                        </td>
+                        <td className="px-6 py-3.5">
+                          <Badge variant="neutral" size="sm">
+                            {CATEGORY_LABELS[expense.category] || expense.category}
+                          </Badge>
+                        </td>
+                        <td className="px-6 py-3.5 text-xs text-[#737D75]">
+                          {new Date(expense.dueDate).toLocaleDateString("pt-BR")}
+                        </td>
+                        <td className="px-6 py-3.5 font-semibold text-[#252B27]">
+                          {fmtCurrency(expense.amount)}
+                        </td>
+                        <td className="px-6 py-3.5">
+                          <button
+                            type="button"
+                            onClick={() => handleTogglePaid(expense)}
+                            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium cursor-pointer transition-colors ${
+                              expense.paid
+                                ? "bg-[#ECFDF5] text-[#16A36A] border border-[#16A36A]/20 hover:bg-[#D1FAE5]"
+                                : "bg-[#FFFBEB] text-[#D97706] border border-[#D97706]/20 hover:bg-[#FEF3C7]"
+                            }`}
+                            title="Clique para alternar entre paga e pendente"
+                          >
+                            {expense.paid ? (
+                              <>
+                                <CheckCircle2 className="w-3.5 h-3.5" /> Paga
+                              </>
+                            ) : (
+                              <>
+                                <AlertTriangle className="w-3.5 h-3.5" /> Pendente
+                              </>
+                            )}
+                          </button>
+                        </td>
+                        <td className="px-6 py-3.5 text-right">
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteExpense(expense.id)}
+                            className="text-[#737D75] hover:text-[#DC4C4C] p-1.5 rounded-lg hover:bg-[#FEF2F2] transition-colors cursor-pointer"
+                            title="Excluir despesa"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </>
       )}
-
-      {/* DRE Detalhado em Tabela Contábil */}
-      {dre && (
-        <div className="carbon-card overflow-hidden">
-          <div className="px-6 py-4 border-b border-[#1c2230] bg-[#0c0e14] flex items-center justify-between">
-            <h2 className="font-bold text-slate-200 text-xs uppercase font-mono tracking-wider flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-lime-400"></span>
-              DRE Gerencial — Demonstrativo de Resultado
-            </h2>
-            <span className="text-[11px] text-slate-400 font-mono">
-              Período de apuração: {dre.startDate ? new Date(dre.startDate).toLocaleDateString("pt-BR") : "--"} até{" "}
-              {dre.endDate ? new Date(dre.endDate).toLocaleDateString("pt-BR") : "--"}
-            </span>
-          </div>
-
-          <div className="p-6 divide-y divide-[#1c2230]/60 font-mono text-xs">
-            {/* 1. Receita Bruta */}
-            <div className="py-2.5 flex justify-between font-sans">
-              <span className="font-semibold text-slate-200">(+) Receita Bruta de Serviços</span>
-              <span className="font-bold text-lime-400 font-mono">
-                R$ {(dre.grossRevenue ?? 0).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
-              </span>
-            </div>
-
-            {/* 2. Deduções */}
-            <div className="py-2 pl-4 flex justify-between text-slate-400">
-              <span>(-) Descontos Concedidos</span>
-              <span className="text-rose-400 font-mono">
-                - R$ {(dre.discounts ?? 0).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
-              </span>
-            </div>
-
-            {/* 3. Receita Líquida */}
-            <div className="py-2.5 flex justify-between font-sans bg-[#121620]/60 px-3 rounded">
-              <span className="font-bold text-slate-100">(=) Receita Operacional Líquida</span>
-              <span className="font-black text-slate-100 font-mono">
-                R$ {(dre.netRevenue ?? 0).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
-              </span>
-            </div>
-
-            {/* 4. Custos Variáveis */}
-            <div className="py-2 pl-4 flex justify-between text-slate-400">
-              <span>(-) Custos Variáveis (Insumos Químicos e Comissões)</span>
-              <span className="text-rose-400 font-mono">
-                - R$ {(dre.variableCosts?.total ?? 0).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
-              </span>
-            </div>
-
-            {/* 5. Lucro Bruto */}
-            <div className="py-2.5 flex justify-between font-sans bg-[#121620]/60 px-3 rounded">
-              <span className="font-bold text-cyan-300">(=) Lucro Bruto da Operação</span>
-              <span className="font-black text-cyan-300 font-mono">
-                R$ {(dre.grossProfit ?? 0).toLocaleString("pt-BR", { minimumFractionDigits: 2 })} (
-                {(dre.grossMarginPercentage ?? 0).toFixed(1)}%)
-              </span>
-            </div>
-
-            {/* 6. Custos Fixos Detalhados */}
-            <div className="py-2 pl-4 flex flex-col gap-1.5 text-slate-400">
-              <div className="flex justify-between">
-                <span>• Aluguel & Ponto Comercial</span>
-                <span className="font-mono">R$ {(dre.fixedCosts?.rent ?? 0).toFixed(2)}</span>
-              </div>
-              <div className="flex justify-between">
-                <span>• Energia, Água & Internet</span>
-                <span className="font-mono">R$ {(dre.fixedCosts?.utilities ?? 0).toFixed(2)}</span>
-              </div>
-              <div className="flex justify-between">
-                <span>• Folha de Pagamento & Salários Fixos</span>
-                <span className="font-mono">R$ {(dre.fixedCosts?.salaries ?? 0).toFixed(2)}</span>
-              </div>
-              <div className="flex justify-between">
-                <span>• Marketing & Anúncios</span>
-                <span className="font-mono">R$ {(dre.fixedCosts?.marketing ?? 0).toFixed(2)}</span>
-              </div>
-              <div className="flex justify-between">
-                <span>• Manutenção de Equipamentos</span>
-                <span className="font-mono">R$ {(dre.fixedCosts?.maintenance ?? 0).toFixed(2)}</span>
-              </div>
-              <div className="flex justify-between">
-                <span>• Outras Despesas Gerais</span>
-                <span className="font-mono">R$ {(dre.fixedCosts?.other ?? 0).toFixed(2)}</span>
-              </div>
-            </div>
-
-            {/* 7. Total Custos Fixos */}
-            <div className="py-2 pl-4 flex justify-between text-slate-400">
-              <span>(-) Total de Custos Fixos Operacionais</span>
-              <span className="text-rose-400 font-mono">
-                - R$ {(dre.fixedCosts?.total ?? 0).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
-              </span>
-            </div>
-
-            {/* 8. Lucro Líquido Final */}
-            <div className="py-3 flex justify-between font-sans bg-lime-950/20 border border-lime-500/30 px-3 rounded text-sm">
-              <span className="font-black text-lime-400 tracking-wide">(=) RESULTADO LÍQUIDO DO PERÍODO</span>
-              <span
-                className={`font-black font-mono ${
-                  (dre.netProfit ?? 0) >= 0 ? "text-lime-400" : "text-rose-400"
-                }`}
-              >
-                R$ {(dre.netProfit ?? 0).toLocaleString("pt-BR", { minimumFractionDigits: 2 })} (
-                {(dre.netMarginPercentage ?? 0).toFixed(1)}%)
-              </span>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Tabela de Despesas Lançadas */}
-      <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-sm">
-        <div className="px-6 py-4 border-b border-slate-800 flex items-center justify-between">
-          <div>
-            <h2 className="font-semibold text-slate-100">Contas a Pagar & Despesas</h2>
-            <p className="text-xs text-slate-400">
-              {expenses.length} lançamentos registrados no sistema
-            </p>
-          </div>
-        </div>
-
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm text-slate-300">
-            <thead className="bg-slate-800/60 text-slate-400 uppercase text-xs">
-              <tr>
-                <th className="px-6 py-3">Descrição</th>
-                <th className="px-6 py-3">Categoria</th>
-                <th className="px-6 py-3">Vencimento</th>
-                <th className="px-6 py-3">Valor</th>
-                <th className="px-6 py-3">Status</th>
-                <th className="px-6 py-3 text-right">Ações</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-800">
-              {expenses.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="px-6 py-8 text-center text-slate-500">
-                    Nenhuma despesa cadastrada ainda.
-                  </td>
-                </tr>
-              ) : (
-                expenses.map((expense) => (
-                  <tr key={expense.id} className="hover:bg-slate-800/30 transition-colors">
-                    <td className="px-6 py-3.5">
-                      <div className="font-medium text-slate-100">{expense.description}</div>
-                      {expense.notes && (
-                        <div className="text-xs text-slate-500">{expense.notes}</div>
-                      )}
-                    </td>
-                    <td className="px-6 py-3.5">
-                      <span className="text-xs bg-slate-800 text-slate-300 px-2 py-0.5 rounded border border-slate-700">
-                        {CATEGORY_LABELS[expense.category] || expense.category}
-                      </span>
-                    </td>
-                    <td className="px-6 py-3.5 text-xs text-slate-400">
-                      {new Date(expense.dueDate).toLocaleDateString("pt-BR")}
-                    </td>
-                    <td className="px-6 py-3.5 font-semibold text-slate-100">
-                      R$ {expense.amount.toFixed(2)}
-                    </td>
-                    <td className="px-6 py-3.5">
-                      <button
-                        onClick={() => handleTogglePaid(expense)}
-                        className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium cursor-pointer transition-colors ${
-                          expense.paid
-                            ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20"
-                            : "bg-amber-500/10 text-amber-400 border border-amber-500/20 hover:bg-amber-500/20"
-                        }`}
-                        title="Clique para alternar o status pago/pendente"
-                      >
-                        {expense.paid ? (
-                          <>
-                            <CheckCircle2 className="w-3.5 h-3.5" /> Paga
-                          </>
-                        ) : (
-                          <>
-                            <AlertTriangle className="w-3.5 h-3.5" /> Pendente
-                          </>
-                        )}
-                      </button>
-                    </td>
-                    <td className="px-6 py-3.5 text-right">
-                      <button
-                        onClick={() => handleDeleteExpense(expense.id)}
-                        className="text-slate-500 hover:text-rose-400 p-1 transition-colors"
-                        title="Excluir despesa"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
 
       {/* Modal Nova Despesa */}
-      {showModal && (
-        <div className="fixed inset-0 bg-black/85 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="carbon-card max-w-md w-full p-6 border border-[#2b354c] shadow-2xl">
-            <h3 className="text-sm font-black text-slate-100 mb-4 flex items-center gap-2 font-mono uppercase tracking-wider">
-              <Plus className="w-4 h-4 text-lime-400" />
-              Lançar Nova Despesa Operacional
-            </h3>
+      <Modal
+        isOpen={showModal}
+        onClose={() => setShowModal(false)}
+        title="Lançar Nova Despesa"
+        description="Registre contas fixas ou variáveis para manter o Demonstrativo de Resultado atualizado."
+        size="md"
+      >
+        <form onSubmit={handleCreateExpense} className="space-y-4">
+          <Input
+            label="Descrição da Despesa"
+            required
+            placeholder="Ex: Conta de Energia, Compra de Boinas, Aluguel"
+            value={form.description}
+            onChange={(e) => setForm({ ...form, description: e.target.value })}
+          />
 
-            <form onSubmit={handleCreateExpense} className="space-y-4">
-              <div>
-                <label className="form-label-carbon">
-                  Descrição da Despesa *
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="Ex: Conta de Luz Enel, Compra de Boinas"
-                  value={form.description}
-                  onChange={(e) => setForm({ ...form, description: e.target.value })}
-                  className="form-input-carbon w-full"
-                />
-              </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+            <Input
+              label="Valor (R$)"
+              type="number"
+              step="0.01"
+              required
+              placeholder="0,00"
+              value={form.amount}
+              onChange={(e) => setForm({ ...form, amount: e.target.value })}
+            />
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="form-label-carbon">
-                    Valor (R$) *
-                  </label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    required
-                    placeholder="0.00"
-                    value={form.amount}
-                    onChange={(e) => setForm({ ...form, amount: e.target.value })}
-                    className="form-input-carbon w-full"
-                  />
-                </div>
-
-                <div>
-                  <label className="form-label-carbon">
-                    Vencimento *
-                  </label>
-                  <input
-                    type="date"
-                    required
-                    value={form.dueDate}
-                    onChange={(e) => setForm({ ...form, dueDate: e.target.value })}
-                    className="form-input-carbon w-full"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="form-label-carbon">
-                    Categoria
-                  </label>
-                  <select
-                    value={form.category}
-                    onChange={(e) => setForm({ ...form, category: e.target.value })}
-                    className="form-select-carbon w-full"
-                  >
-                    <option value="RENT">Aluguel & Ponto</option>
-                    <option value="UTILITIES">Água, Luz e Internet</option>
-                    <option value="SALARY">Salários & Pró-labore</option>
-                    <option value="PRODUCTS">Insumos & Produtos</option>
-                    <option value="MARKETING">Marketing & Anúncios</option>
-                    <option value="MAINTENANCE">Manutenção</option>
-                    <option value="OTHER">Outras Despesas</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="form-label-carbon">
-                    Forma de Pagamento
-                  </label>
-                  <select
-                    value={form.paymentMethod}
-                    onChange={(e) => setForm({ ...form, paymentMethod: e.target.value })}
-                    className="form-select-carbon w-full"
-                  >
-                    <option value="PIX">PIX</option>
-                    <option value="BOLETO">Boleto</option>
-                    <option value="CREDIT_CARD">Cartão de Crédito</option>
-                    <option value="DEBIT_CARD">Cartão de Débito</option>
-                    <option value="CASH">Dinheiro</option>
-                    <option value="TRANSFER">Transferência</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2 pt-1">
-                <input
-                  type="checkbox"
-                  id="paidCheck"
-                  checked={form.paid}
-                  onChange={(e) => setForm({ ...form, paid: e.target.checked })}
-                  className="form-checkbox-carbon"
-                />
-                <label htmlFor="paidCheck" className="text-xs text-slate-300 cursor-pointer font-mono">
-                  Despesa já está liquidada/paga
-                </label>
-              </div>
-
-              <div>
-                <label className="form-label-carbon">
-                  Observações (opcional)
-                </label>
-                <input
-                  type="text"
-                  placeholder="Número de nota fiscal, fornecedor, etc."
-                  value={form.notes}
-                  onChange={(e) => setForm({ ...form, notes: e.target.value })}
-                  className="form-input-carbon w-full"
-                />
-              </div>
-
-              <div className="flex justify-end gap-3 pt-3 border-t border-[#1c2230]">
-                <button
-                  type="button"
-                  onClick={() => setShowModal(false)}
-                  className="px-4 py-2 rounded text-xs font-mono uppercase tracking-wider text-slate-400 hover:text-slate-200 transition-colors"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  disabled={saving}
-                  className="btn-engine-start px-4 py-2 text-xs disabled:opacity-50"
-                >
-                  {saving ? "Salvando..." : "Salvar Despesa"}
-                </button>
-              </div>
-            </form>
+            <Input
+              label="Data de Vencimento"
+              type="date"
+              required
+              value={form.dueDate}
+              onChange={(e) => setForm({ ...form, dueDate: e.target.value })}
+            />
           </div>
-        </div>
-      )}
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+            <Select
+              label="Categoria"
+              value={form.category}
+              onChange={(e) => setForm({ ...form, category: e.target.value })}
+              options={[
+                { value: "RENT", label: "Aluguel & Ponto" },
+                { value: "UTILITIES", label: "Água, Luz e Internet" },
+                { value: "SALARY", label: "Salários & Pró-labore" },
+                { value: "PRODUCTS", label: "Insumos & Produtos" },
+                { value: "MARKETING", label: "Marketing & Anúncios" },
+                { value: "MAINTENANCE", label: "Manutenção" },
+                { value: "OTHER", label: "Outras Despesas" },
+              ]}
+            />
+
+            <Select
+              label="Forma de Pagamento"
+              value={form.paymentMethod}
+              onChange={(e) => setForm({ ...form, paymentMethod: e.target.value })}
+              options={[
+                { value: "PIX", label: "PIX" },
+                { value: "BOLETO", label: "Boleto" },
+                { value: "CREDIT_CARD", label: "Cartão de Crédito" },
+                { value: "DEBIT_CARD", label: "Cartão de Débito" },
+                { value: "CASH", label: "Dinheiro" },
+                { value: "TRANSFER", label: "Transferência" },
+              ]}
+            />
+          </div>
+
+          <Checkbox
+            label="Despesa já está paga / liquidada"
+            checked={form.paid}
+            onChange={(checked) => setForm({ ...form, paid: checked })}
+          />
+
+          <Input
+            label="Observações (opcional)"
+            placeholder="Número de nota fiscal, fornecedor, etc."
+            value={form.notes}
+            onChange={(e) => setForm({ ...form, notes: e.target.value })}
+          />
+
+          <div className="flex justify-end gap-2.5 pt-4 border-t border-[#E7EAE7]">
+            <Button type="button" variant="secondary" onClick={() => setShowModal(false)}>
+              Cancelar
+            </Button>
+            <Button type="submit" variant="primary" isLoading={saving}>
+              Salvar Despesa
+            </Button>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 }
-

@@ -5,20 +5,15 @@ import Link from "next/link";
 import {
   FileSpreadsheet,
   Plus,
-  Search,
   Share2,
-  CheckCircle2,
   ArrowRight,
-  Clock,
   Printer,
   X,
   Trash2,
   AlertCircle,
   Loader2,
-  DollarSign,
-  Car,
 } from "lucide-react";
-import { formatCurrency, formatDateTime } from "@/lib/utils";
+import { formatCurrency } from "@/lib/utils";
 import CustomerVehicleSelector from "@/components/modules/customer-vehicle-selector";
 
 interface ServiceItem {
@@ -62,7 +57,6 @@ export default function BudgetsPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Form State
   const [selectedVehicleId, setSelectedVehicleId] = useState("");
   const [selectedVehicle, setSelectedVehicle] = useState<any | null>(null);
   const [selectedItems, setSelectedItems] = useState<
@@ -98,14 +92,12 @@ export default function BudgetsPage() {
     loadData();
   }, []);
 
-  // Quando o veículo é selecionado, recalcula os preços dos itens adicionados conforme o porte
   function handleSelectVehicle(vehicleId: string, vehicleObj?: any) {
     setSelectedVehicleId(vehicleId);
     const vehicle = vehicleObj || vehicles.find((v) => v.id === vehicleId);
     setSelectedVehicle(vehicle || null);
     if (!vehicle) return;
 
-    // Recalcula preços dos itens já selecionados com base no porte
     setSelectedItems((prev) =>
       prev.map((item) => {
         const serv = servicesCatalog.find((s) => s.id === item.serviceId);
@@ -257,21 +249,19 @@ export default function BudgetsPage() {
   return (
     <div className="space-y-5">
       {/* Top Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2 mb-1">
-            <span className="led-pulse-lime"></span>
-            <span className="text-[10px] font-mono tracking-widest text-lime-400 uppercase">
-              // COMERCIAL & PROPOSTAS
-            </span>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-5 rounded-xl bg-white border border-[#E7EAE7] shadow-xs">
+        <div className="flex items-center gap-3.5">
+          <div className="w-10 h-10 rounded-xl bg-[#E9F3EC] flex items-center justify-center text-[#247653]">
+            <FileSpreadsheet className="w-5 h-5" />
           </div>
-          <h1 className="text-xl font-black tracking-wide text-white uppercase flex items-center gap-2 font-mono">
-            <FileSpreadsheet className="w-5 h-5 text-lime-400" />
-            <span>Orçamentos & Propostas Comerciais</span>
-          </h1>
-          <p className="text-xs text-slate-400 mt-0.5">
-            Crie propostas rápidas, envie orçamentos via WhatsApp e converta em Ordem de Serviço em 1 clique
-          </p>
+          <div>
+            <h1 className="text-[22px] font-bold tracking-tight text-[#252B27]">
+              Orçamentos e Propostas Comerciais
+            </h1>
+            <p className="text-xs text-[#737D75] mt-0.5">
+              Crie propostas rápidas, envie orçamentos via WhatsApp e converta em Ordem de Serviço em 1 clique
+            </p>
+          </div>
         </div>
 
         <button
@@ -279,7 +269,7 @@ export default function BudgetsPage() {
             setError(null);
             setModalOpen(true);
           }}
-          className="btn-engine-start px-4 py-2 text-xs flex items-center gap-1.5 cursor-pointer"
+          className="dp-btn-primary text-xs cursor-pointer"
         >
           <Plus className="w-4 h-4" />
           <span>Novo Orçamento</span>
@@ -288,132 +278,133 @@ export default function BudgetsPage() {
 
       {/* Grid de Orçamentos */}
       {loading ? (
-        <div className="h-64 flex flex-col items-center justify-center gap-2 text-slate-400">
-          <Loader2 className="w-7 h-7 animate-spin text-blue-500" />
-          <p className="text-xs">Carregando orçamentos...</p>
+        <div className="h-64 flex flex-col items-center justify-center gap-2 text-[#737D75] bg-white border border-[#E7EAE7] rounded-xl">
+          <Loader2 className="w-7 h-7 animate-spin text-[#247653]" />
+          <p className="text-xs font-medium">Carregando orçamentos...</p>
         </div>
       ) : budgets.length === 0 ? (
-        <div className="bg-[#111827] border border-slate-800 rounded-xl p-12 text-center text-slate-400 text-xs">
-          Nenhum orçamento pendente. Clique em "Novo Orçamento" para gerar uma proposta comercial.
+        <div className="bg-white border border-[#E7EAE7] rounded-xl p-12 text-center text-[#737D75] text-xs space-y-2 shadow-xs">
+          <FileSpreadsheet className="w-8 h-8 text-[#9CA49E] mx-auto" />
+          <p className="font-semibold text-[#252B27]">Nenhum orçamento pendente</p>
+          <p>Clique em &ldquo;Novo Orçamento&rdquo; para gerar uma proposta comercial.</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {budgets.map((b) => {
-            const isConverted = !b.status.startsWith("BUDGET");
-            return (
-              <div
-                key={b.id}
-                className="bg-[#111827] border border-slate-800 hover:border-slate-700/80 rounded-xl p-4 shadow-sm transition-all space-y-3 flex flex-col justify-between"
-              >
-                <div>
-                  <div className="flex items-start justify-between mb-2">
-                    <div>
-                      <span className="font-mono text-[10px] text-slate-400 block">
-                        Orçamento #{b.orderNumber}
-                      </span>
-                      <span className="text-base font-bold text-white tracking-wide block">
-                        {b.vehicle.plate}
-                      </span>
-                    </div>
-
-                    <span
-                      className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${
-                        b.status === "BUDGET_PENDING"
-                          ? "bg-amber-500/10 text-amber-400 border-amber-500/30"
-                          : "bg-emerald-500/10 text-emerald-400 border-emerald-500/30"
-                      }`}
-                    >
-                      {b.status === "BUDGET_PENDING" ? "Pendente" : "Convertido em OS"}
+          {budgets.map((b) => (
+            <div
+              key={b.id}
+              className="bg-white border border-[#E7EAE7] hover:border-[#247653]/50 rounded-xl p-4 shadow-xs transition-all space-y-3 flex flex-col justify-between"
+            >
+              <div>
+                <div className="flex items-start justify-between mb-2">
+                  <div>
+                    <span className="text-[11px] font-semibold text-[#737D75] block mb-0.5">
+                      Orçamento #{b.orderNumber}
+                    </span>
+                    <span className="mercosul-plate text-xs font-bold inline-block">
+                      {b.vehicle.plate}
                     </span>
                   </div>
 
-                  <p className="text-xs font-semibold text-slate-200">
-                    {b.vehicle.brand} {b.vehicle.model} ({b.vehicle.category})
+                  <span
+                    className={`text-[11px] font-semibold px-2.5 py-0.5 rounded-full border ${
+                      b.status === "BUDGET_PENDING"
+                        ? "bg-[#FFFBEB] text-[#B45309] border-[#FDE68A]"
+                        : "bg-[#ECFDF5] text-[#16A36A] border-[#A7F3D0]"
+                    }`}
+                  >
+                    {b.status === "BUDGET_PENDING" ? "Pendente" : "Convertido em OS"}
+                  </span>
+                </div>
+
+                <p className="text-xs font-bold text-[#252B27] mt-2">
+                  {b.vehicle.brand} {b.vehicle.model} ({b.vehicle.category})
+                </p>
+                <p className="text-xs text-[#737D75] mt-0.5">
+                  Cliente: <strong className="text-[#343C36]">{b.vehicle.customer?.name || "Não informado"}</strong>
+                </p>
+
+                {/* Itens Inclusos */}
+                <div className="mt-3 pt-3 border-t border-[#E7EAE7] space-y-1">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-[#737D75]">
+                    Serviços ({b.items.length})
                   </p>
-                  <p className="text-xs text-slate-400 mt-0.5">Cliente: {b.vehicle.customer?.name || "Não informado"}</p>
-
-                  {/* Itens Inclusos */}
-                  <div className="mt-3 pt-3 border-t border-slate-800/80 space-y-1">
-                    <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">
-                      Serviços ({b.items.length})
-                    </p>
-                    {b.items.map((it, idx) => (
-                      <div key={idx} className="flex items-center justify-between text-[11px] text-slate-300">
-                        <span className="truncate max-w-[170px]">{it.serviceName}</span>
-                        {it.unitPrice !== null && (
-                          <span className="font-medium text-slate-400">
-                            {formatCurrency(it.unitPrice * (it.quantity || 1))}
-                          </span>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-
-                  {b.totalAmount !== null && (
-                    <div className="mt-3 pt-2 border-t border-slate-800 flex items-center justify-between text-xs">
-                      <span className="text-slate-400 font-medium">Total da Proposta:</span>
-                      <span className="text-base font-bold text-emerald-400">
-                        {formatCurrency(b.totalAmount)}
-                      </span>
+                  {b.items.map((it, idx) => (
+                    <div key={idx} className="flex items-center justify-between text-xs text-[#343C36]">
+                      <span className="truncate max-w-[170px]">{it.serviceName}</span>
+                      {it.unitPrice !== null && (
+                        <span className="font-semibold text-[#252B27]">
+                          {formatCurrency(it.unitPrice * (it.quantity || 1))}
+                        </span>
+                      )}
                     </div>
-                  )}
+                  ))}
                 </div>
 
-                {/* Ações do Card */}
-                <div className="pt-3 border-t border-slate-800/80 space-y-2">
-                  <div className="flex items-center justify-between text-xs">
-                    <button
-                      onClick={() => sendWhatsAppProposal(b)}
-                      className="px-2.5 py-1 rounded bg-emerald-600/10 hover:bg-emerald-600 text-emerald-400 hover:text-white border border-emerald-500/20 text-[11px] font-medium flex items-center gap-1 transition-all cursor-pointer"
-                    >
-                      <Share2 className="w-3 h-3" />
-                      <span>WhatsApp</span>
-                    </button>
-
-                    <Link
-                      href={`/orcamentos/${b.id}`}
-                      className="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 text-[11px] font-medium flex items-center gap-1 transition-all"
-                    >
-                      <Printer className="w-3 h-3" />
-                      <span>Ver / PDF</span>
-                    </Link>
+                {b.totalAmount !== null && (
+                  <div className="mt-3 pt-2.5 border-t border-[#E7EAE7] flex items-center justify-between text-xs">
+                    <span className="text-[#737D75] font-medium">Total da Proposta:</span>
+                    <span className="text-base font-extrabold text-[#247653]">
+                      {formatCurrency(b.totalAmount)}
+                    </span>
                   </div>
-
-                  {b.status === "BUDGET_PENDING" && (
-                    <button
-                      onClick={() => handleConvertInOS(b.id, b.orderNumber)}
-                      className="w-full py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-medium text-xs flex items-center justify-center gap-1.5 shadow-sm transition-all cursor-pointer"
-                    >
-                      <ArrowRight className="w-3.5 h-3.5" />
-                      <span>Converter em OS (Mover p/ Pátio)</span>
-                    </button>
-                  )}
-                </div>
+                )}
               </div>
-            );
-          })}
+
+              {/* Ações do Card */}
+              <div className="pt-3 border-t border-[#E7EAE7] space-y-2">
+                <div className="flex items-center justify-between text-xs">
+                  <button
+                    onClick={() => sendWhatsAppProposal(b)}
+                    className="px-3 py-1.5 rounded-lg bg-[#ECFDF5] hover:bg-[#D1FAE5] text-[#16A36A] border border-[#A7F3D0] text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer"
+                  >
+                    <Share2 className="w-3.5 h-3.5" />
+                    <span>WhatsApp</span>
+                  </button>
+
+                  <Link
+                    href={`/orcamentos/${b.id}`}
+                    className="dp-btn-secondary py-1.5 px-3 text-xs"
+                  >
+                    <Printer className="w-3.5 h-3.5 text-[#247653]" />
+                    <span>Ver / PDF</span>
+                  </Link>
+                </div>
+
+                {b.status === "BUDGET_PENDING" && (
+                  <button
+                    onClick={() => handleConvertInOS(b.id, b.orderNumber)}
+                    className="dp-btn-primary w-full py-2 text-xs cursor-pointer"
+                  >
+                    <ArrowRight className="w-3.5 h-3.5" />
+                    <span>Converter em OS (Mover p/ Pátio)</span>
+                  </button>
+                )}
+              </div>
+            </div>
+          ))}
         </div>
       )}
 
       {/* MODAL DE NOVO ORÇAMENTO */}
       {modalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
-          <div className="w-full max-w-2xl p-5 sm:p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto rounded-xl bg-carbon-900 border border-carbon-700 font-mono my-auto">
-            <div className="flex items-center justify-between pb-3 border-b border-carbon-800">
-              <h2 className="text-sm font-black text-white uppercase tracking-wider font-mono flex items-center gap-2">
-                <FileSpreadsheet className="w-4 h-4 text-lime-400" />
+        <div className="fixed inset-0 z-50 bg-[#142D26]/45 backdrop-blur-[2px] flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+          <div className="w-full max-w-2xl p-5 sm:p-6 shadow-xl space-y-4 max-h-[90vh] overflow-y-auto rounded-2xl bg-white border border-[#E7EAE7] my-auto">
+            <div className="flex items-center justify-between pb-3 border-b border-[#E7EAE7]">
+              <h2 className="text-base font-bold text-[#252B27] flex items-center gap-2">
+                <FileSpreadsheet className="w-4 h-4 text-[#247653]" />
                 <span>Elaborar Novo Orçamento</span>
               </h2>
               <button
                 onClick={() => setModalOpen(false)}
-                className="text-slate-400 hover:text-white p-1 rounded hover:bg-slate-800"
+                className="text-[#737D75] hover:text-[#252B27] p-1 rounded-lg hover:bg-[#F7F8F6]"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
             {error && (
-              <div className="p-3 rounded bg-red-500/10 border border-red-500/30 text-red-400 text-xs flex items-center gap-2 font-mono">
+              <div className="p-3 rounded-lg bg-[#FEF2F2] border border-[#FECACA] text-[#DC4C4C] text-xs font-medium flex items-center gap-2">
                 <AlertCircle className="w-4 h-4 shrink-0" />
                 <span>{error}</span>
               </div>
@@ -427,8 +418,8 @@ export default function BudgetsPage() {
               />
 
               {/* Adicionar Serviços */}
-              <div className="space-y-2">
-                <label className="form-label-carbon">
+              <div className="space-y-1.5">
+                <label className="block text-xs font-semibold text-[#343C36]">
                   2. Adicionar Serviços à Proposta
                 </label>
                 <select
@@ -437,7 +428,7 @@ export default function BudgetsPage() {
                     handleAddService(e.target.value);
                     e.target.value = "";
                   }}
-                  className="form-select-carbon w-full disabled:opacity-50"
+                  className="dp-input disabled:opacity-50"
                 >
                   <option value="">+ Clique para adicionar um serviço do catálogo...</option>
                   {servicesCatalog.map((s) => (
@@ -450,31 +441,31 @@ export default function BudgetsPage() {
 
               {/* Tabela de Itens Selecionados */}
               {selectedItems.length > 0 && (
-                <div className="border border-[#1c2230] rounded overflow-hidden text-xs font-mono">
+                <div className="border border-[#E7EAE7] rounded-xl overflow-hidden text-xs">
                   <table className="w-full text-left">
-                    <thead className="bg-[#0c0e14] text-slate-400 text-[10px] uppercase border-b border-[#1c2230]">
+                    <thead className="bg-[#F7F8F6] text-[#737D75] text-[11px] font-semibold uppercase border-b border-[#E7EAE7]">
                       <tr>
-                        <th className="py-2 px-3">Serviço</th>
-                        <th className="py-2 px-3 text-right">Preço Unit. (Porte)</th>
-                        <th className="py-2 px-3 text-right">Total</th>
-                        <th className="py-2 px-2 text-center w-8"></th>
+                        <th className="py-2.5 px-3">Serviço</th>
+                        <th className="py-2.5 px-3 text-right">Preço Unit. (Porte)</th>
+                        <th className="py-2.5 px-3 text-right">Total</th>
+                        <th className="py-2.5 px-2 text-center w-8"></th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-[#1c2230]">
+                    <tbody className="divide-y divide-[#E7EAE7] bg-white">
                       {selectedItems.map((item, idx) => (
-                        <tr key={idx} className="hover:bg-[#121620]">
-                          <td className="py-2 px-3 font-medium text-white">{item.name}</td>
-                          <td className="py-2 px-3 text-right text-slate-300">
+                        <tr key={idx} className="hover:bg-[#F7F8F6]">
+                          <td className="py-2.5 px-3 font-semibold text-[#252B27]">{item.name}</td>
+                          <td className="py-2.5 px-3 text-right text-[#737D75]">
                             {formatCurrency(item.unitPrice)}
                           </td>
-                          <td className="py-2 px-3 text-right font-black text-lime-400 font-mono">
+                          <td className="py-2.5 px-3 text-right font-bold text-[#247653]">
                             {formatCurrency(item.unitPrice * item.quantity)}
                           </td>
-                          <td className="py-2 px-2 text-center">
+                          <td className="py-2.5 px-2 text-center">
                             <button
                               type="button"
                               onClick={() => handleRemoveItem(idx)}
-                              className="text-slate-500 hover:text-red-400 p-1"
+                              className="text-[#9CA49E] hover:text-[#DC4C4C] p-1"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
                             </button>
@@ -487,9 +478,9 @@ export default function BudgetsPage() {
               )}
 
               {/* Desconto e Totais */}
-              <div className="grid grid-cols-2 gap-3 pt-2 border-t border-[#1c2230]">
+              <div className="grid grid-cols-2 gap-3 pt-3 border-t border-[#E7EAE7]">
                 <div>
-                  <label className="form-label-carbon">
+                  <label className="block text-xs font-semibold text-[#343C36] mb-1">
                     Desconto Especial (R$)
                   </label>
                   <input
@@ -498,18 +489,18 @@ export default function BudgetsPage() {
                     step="0.01"
                     value={discount}
                     onChange={(e) => setDiscount(parseFloat(e.target.value) || 0)}
-                    className="form-input-carbon w-full font-mono"
+                    className="dp-input"
                   />
                 </div>
 
-                <div className="flex flex-col justify-end text-right">
-                  <p className="text-[11px] text-slate-400 font-mono uppercase tracking-wider">Total Final:</p>
-                  <p className="text-xl font-black text-lime-400 font-mono">{formatCurrency(total)}</p>
+                <div className="flex flex-col justify-end text-right p-3 rounded-xl bg-[#E9F3EC]/60 border border-[#C6E2D0]">
+                  <p className="text-[11px] font-semibold text-[#343C36] uppercase">Total Final:</p>
+                  <p className="text-xl font-extrabold text-[#142D26]">{formatCurrency(total)}</p>
                 </div>
               </div>
 
               <div>
-                <label className="form-label-carbon">
+                <label className="block text-xs font-semibold text-[#343C36] mb-1">
                   Condições de Pagamento / Notas da Proposta
                 </label>
                 <input
@@ -517,22 +508,22 @@ export default function BudgetsPage() {
                   placeholder="Ex: Pagamento em até 3x sem juros no cartão ou 5% no PIX. Validade: 10 dias."
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
-                  className="form-input-carbon w-full"
+                  className="dp-input"
                 />
               </div>
 
-              <div className="pt-3 border-t border-[#1c2230] flex items-center justify-end gap-2">
+              <div className="pt-3 border-t border-[#E7EAE7] flex items-center justify-end gap-2">
                 <button
                   type="button"
                   onClick={() => setModalOpen(false)}
-                  className="px-3.5 py-2 rounded text-xs font-mono uppercase tracking-wider text-slate-400 hover:text-slate-200 cursor-pointer"
+                  className="dp-btn-secondary text-xs cursor-pointer"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
                   disabled={saving}
-                  className="btn-engine-start px-5 py-2 text-xs flex items-center gap-1.5 disabled:opacity-50 cursor-pointer"
+                  className="dp-btn-primary text-xs cursor-pointer"
                 >
                   {saving && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                   <span>Salvar Orçamento</span>
@@ -545,4 +536,3 @@ export default function BudgetsPage() {
     </div>
   );
 }
-

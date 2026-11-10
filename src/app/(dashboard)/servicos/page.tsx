@@ -4,15 +4,12 @@ import { useEffect, useState } from "react";
 import {
   Wrench,
   Clock,
-  Sparkles,
-  Award,
   Plus,
   Loader2,
   AlertCircle,
   X,
   Edit2,
   Trash2,
-  CheckCircle2,
 } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 
@@ -41,7 +38,6 @@ export default function ServicesPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Form State
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -176,20 +172,24 @@ export default function ServicesPage() {
   return (
     <div className="space-y-5">
       {/* Top Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-xl font-bold tracking-tight text-white flex items-center gap-2">
-            <Wrench className="w-5 h-5 text-blue-500" />
-            <span>Catálogo de Serviços & Matriz de Preços</span>
-          </h1>
-          <p className="text-xs text-slate-400 mt-0.5">
-            Tabela padronizada por porte veicular: Hatch, Sedan, SUV/Picape, Moto e Especial
-          </p>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-5 rounded-xl bg-white border border-[#E7EAE7] shadow-xs">
+        <div className="flex items-center gap-3.5">
+          <div className="w-10 h-10 rounded-xl bg-[#E9F3EC] flex items-center justify-center text-[#247653]">
+            <Wrench className="w-5 h-5" />
+          </div>
+          <div>
+            <h1 className="text-[22px] font-bold tracking-tight text-[#252B27]">
+              Catálogo de Serviços e Preços
+            </h1>
+            <p className="text-xs text-[#737D75] mt-0.5">
+              Tabela padronizada por porte veicular: Hatch, Sedan, SUV/Picape, Moto e Especial
+            </p>
+          </div>
         </div>
 
         <button
           onClick={handleOpenCreate}
-          className="px-3.5 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-medium text-xs flex items-center gap-1.5 shadow-md shadow-blue-600/20 transition-all cursor-pointer"
+          className="dp-btn-primary text-xs cursor-pointer"
         >
           <Plus className="w-4 h-4" />
           <span>Novo Serviço</span>
@@ -202,10 +202,10 @@ export default function ServicesPage() {
           <button
             key={cat}
             onClick={() => setSelectedCategory(cat)}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all cursor-pointer ${
+            className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
               selectedCategory === cat
-                ? "bg-blue-600 text-white shadow-sm"
-                : "bg-slate-900 text-slate-400 hover:bg-slate-800 hover:text-slate-200 border border-slate-800"
+                ? "bg-[#247653] text-white shadow-xs"
+                : "bg-white text-[#737D75] hover:bg-[#F7F8F6] hover:text-[#252B27] border border-[#E7EAE7]"
             }`}
           >
             {cat === "ALL" ? "Todos os Serviços" : categoryNames[cat] || cat}
@@ -214,20 +214,20 @@ export default function ServicesPage() {
       </div>
 
       {/* Tabela da Matriz de Preços */}
-      <div className="bg-[#111827] border border-slate-800 rounded-xl overflow-hidden shadow-sm">
+      <div className="bg-white border border-[#E7EAE7] rounded-xl overflow-hidden shadow-xs">
         {loading ? (
-          <div className="h-64 flex flex-col items-center justify-center gap-2 text-slate-400">
-            <Loader2 className="w-7 h-7 animate-spin text-blue-500" />
-            <p className="text-xs">Carregando catálogo de preços...</p>
+          <div className="h-64 flex flex-col items-center justify-center gap-2 text-[#737D75]">
+            <Loader2 className="w-7 h-7 animate-spin text-[#247653]" />
+            <p className="text-xs font-medium">Carregando catálogo de preços...</p>
           </div>
         ) : filteredServices.length === 0 ? (
-          <div className="p-12 text-center text-slate-400 text-xs">
+          <div className="p-12 text-center text-[#737D75] text-xs">
             Nenhum serviço cadastrado nesta categoria.
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
-              <thead className="bg-slate-900/60 text-slate-400 uppercase tracking-wider text-[10px] border-b border-slate-800">
+              <thead className="bg-[#F7F8F6] text-[#737D75] uppercase tracking-wider text-[11px] font-semibold border-b border-[#E7EAE7]">
                 <tr>
                   <th className="py-3 px-4">Serviço</th>
                   <th className="py-3 px-4 text-center">Tempo Est.</th>
@@ -240,40 +240,40 @@ export default function ServicesPage() {
                   <th className="py-3 px-4 text-right">Ações</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800/70">
+              <tbody className="divide-y divide-[#E7EAE7]">
                 {filteredServices.map((s) => (
-                  <tr key={s.id} className="hover:bg-slate-800/30 transition-colors">
+                  <tr key={s.id} className="hover:bg-[#F7F8F6] transition-colors">
                     <td className="py-3.5 px-4">
-                      <div className="font-semibold text-white">{s.name}</div>
+                      <div className="font-semibold text-[#252B27]">{s.name}</div>
                       {s.description && (
-                        <div className="text-[11px] text-slate-400 line-clamp-1 max-w-sm">
+                        <div className="text-[11px] text-[#737D75] line-clamp-1 max-w-sm">
                           {s.description}
                         </div>
                       )}
                     </td>
                     <td className="py-3.5 px-4 text-center">
-                      <span className="inline-flex items-center gap-1 text-[11px] text-slate-300">
-                        <Clock className="w-3 h-3 text-slate-400" />
+                      <span className="inline-flex items-center gap-1 text-xs text-[#343C36]">
+                        <Clock className="w-3.5 h-3.5 text-[#737D75]" />
                         <span>{s.estimatedMinutes} min</span>
                       </span>
                     </td>
-                    <td className="py-3.5 px-3 text-right font-medium text-slate-200">
+                    <td className="py-3.5 px-3 text-right font-medium text-[#343C36]">
                       {formatCurrency(s.priceHatch)}
                     </td>
-                    <td className="py-3.5 px-3 text-right font-semibold text-white">
+                    <td className="py-3.5 px-3 text-right font-semibold text-[#252B27]">
                       {formatCurrency(s.priceSedan)}
                     </td>
-                    <td className="py-3.5 px-3 text-right font-semibold text-blue-400">
+                    <td className="py-3.5 px-3 text-right font-bold text-[#247653]">
                       {formatCurrency(s.priceSuvPickup)}
                     </td>
-                    <td className="py-3.5 px-3 text-right font-medium text-slate-300">
+                    <td className="py-3.5 px-3 text-right font-medium text-[#343C36]">
                       {formatCurrency(s.priceMotorcycle)}
                     </td>
-                    <td className="py-3.5 px-3 text-right font-medium text-purple-400">
+                    <td className="py-3.5 px-3 text-right font-semibold text-[#142D26]">
                       {formatCurrency(s.priceSpecial)}
                     </td>
                     <td className="py-3.5 px-4 text-center">
-                      <span className="inline-block px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                      <span className="inline-block px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-[#ECFDF5] text-[#16A36A] border border-[#A7F3D0]">
                         {s.defaultCommission}%
                       </span>
                     </td>
@@ -282,16 +282,16 @@ export default function ServicesPage() {
                         <button
                           onClick={() => handleOpenEdit(s)}
                           title="Editar preços"
-                          className="p-1.5 rounded hover:bg-slate-800 text-slate-400 hover:text-blue-400 transition-colors cursor-pointer"
+                          className="p-1.5 rounded-lg hover:bg-[#E9F3EC] text-[#737D75] hover:text-[#247653] transition-colors cursor-pointer"
                         >
-                          <Edit2 className="w-3.5 h-3.5" />
+                          <Edit2 className="w-4 h-4" />
                         </button>
                         <button
                           onClick={() => handleDelete(s.id, s.name)}
                           title="Remover / Desativar"
-                          className="p-1.5 rounded hover:bg-slate-800 text-slate-400 hover:text-red-400 transition-colors cursor-pointer"
+                          className="p-1.5 rounded-lg hover:bg-[#FEF2F2] text-[#737D75] hover:text-[#DC4C4C] transition-colors cursor-pointer"
                         >
-                          <Trash2 className="w-3.5 h-3.5" />
+                          <Trash2 className="w-4 h-4" />
                         </button>
                       </div>
                     </td>
@@ -305,33 +305,33 @@ export default function ServicesPage() {
 
       {/* MODAL DE CADASTRO E EDIÇÃO DE SERVIÇO & PREÇOS */}
       {modalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-[#111827] border border-slate-800 rounded-2xl w-full max-w-xl p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-              <h2 className="text-base font-bold text-white flex items-center gap-2">
-                <Wrench className="w-4 h-4 text-blue-500" />
-                <span>{editingId ? "Editar Serviço & Preços" : "Novo Serviço"}</span>
+        <div className="fixed inset-0 z-50 bg-[#142D26]/45 backdrop-blur-[2px] flex items-center justify-center p-4">
+          <div className="bg-white border border-[#E7EAE7] rounded-2xl w-full max-w-xl p-6 shadow-xl space-y-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between pb-3 border-b border-[#E7EAE7]">
+              <h2 className="text-base font-bold text-[#252B27] flex items-center gap-2">
+                <Wrench className="w-4 h-4 text-[#247653]" />
+                <span>{editingId ? "Editar Serviço e Preços" : "Cadastrar Novo Serviço"}</span>
               </h2>
               <button
                 onClick={() => setModalOpen(false)}
-                className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800"
+                className="text-[#737D75] hover:text-[#252B27] p-1 rounded-lg hover:bg-[#F7F8F6]"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
             {error && (
-              <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-xs flex items-center gap-2">
+              <div className="p-3 rounded-lg bg-[#FEF2F2] border border-[#FECACA] text-[#DC4C4C] text-xs font-medium flex items-center gap-2">
                 <AlertCircle className="w-4 h-4 shrink-0" />
                 <span>{error}</span>
               </div>
             )}
 
             <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-3 gap-3">
-                <div className="col-span-2">
-                  <label className="block text-xs font-medium text-slate-300 mb-1">
-                    Nome do Serviço *
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="sm:col-span-2">
+                  <label className="block text-xs font-semibold text-[#343C36] mb-1">
+                    Nome do Serviço <span className="text-[#DC4C4C]">*</span>
                   </label>
                   <input
                     type="text"
@@ -339,20 +339,20 @@ export default function ServicesPage() {
                     placeholder="Ex: Polimento Técnico 3 Etapas"
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    className="dp-input"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-slate-300 mb-1">
-                    Categoria *
+                  <label className="block text-xs font-semibold text-[#343C36] mb-1">
+                    Categoria <span className="text-[#DC4C4C]">*</span>
                   </label>
                   <select
                     value={formData.category}
                     onChange={(e) =>
                       setFormData({ ...formData, category: e.target.value as Service["category"] })
                     }
-                    className="w-full px-2.5 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    className="dp-input"
                   >
                     <option value="LAVAGEM">Lavagem</option>
                     <option value="HIGIENIZACAO">Higienização</option>
@@ -364,7 +364,7 @@ export default function ServicesPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-slate-300 mb-1">
+                <label className="block text-xs font-semibold text-[#343C36] mb-1">
                   Descrição dos Procedimentos
                 </label>
                 <textarea
@@ -372,74 +372,74 @@ export default function ServicesPage() {
                   placeholder="Detalhe o que está incluso no serviço..."
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                  className="dp-input"
                 />
               </div>
 
               {/* SEÇÃO DA MATRIZ DE PREÇOS */}
-              <div className="p-3.5 bg-slate-900/60 border border-slate-800 rounded-xl space-y-3">
-                <p className="text-xs font-semibold text-slate-200">
+              <div className="p-4 bg-[#F7F8F6] border border-[#E7EAE7] rounded-xl space-y-3">
+                <p className="text-xs font-bold text-[#252B27]">
                   Matriz de Preços por Porte do Veículo (R$)
                 </p>
 
                 <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5">
                   <div>
-                    <label className="block text-[10px] text-slate-400 mb-1">Hatch (Pequeno)</label>
+                    <label className="block text-[11px] font-semibold text-[#343C36] mb-1">Hatch</label>
                     <input
                       type="number"
                       step="0.01"
                       required
                       value={formData.priceHatch}
                       onChange={(e) => setFormData({ ...formData, priceHatch: parseFloat(e.target.value) || 0 })}
-                      className="w-full px-2 py-1.5 rounded bg-slate-900 border border-slate-700 text-white text-xs font-semibold focus:outline-none"
+                      className="dp-input font-semibold"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-[10px] text-slate-400 mb-1">Sedan (Médio)</label>
+                    <label className="block text-[11px] font-semibold text-[#343C36] mb-1">Sedan</label>
                     <input
                       type="number"
                       step="0.01"
                       required
                       value={formData.priceSedan}
                       onChange={(e) => setFormData({ ...formData, priceSedan: parseFloat(e.target.value) || 0 })}
-                      className="w-full px-2 py-1.5 rounded bg-slate-900 border border-slate-700 text-white text-xs font-semibold focus:outline-none"
+                      className="dp-input font-semibold"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-[10px] text-slate-400 mb-1">SUV / Picape</label>
+                    <label className="block text-[11px] font-semibold text-[#343C36] mb-1">SUV/Picape</label>
                     <input
                       type="number"
                       step="0.01"
                       required
                       value={formData.priceSuvPickup}
                       onChange={(e) => setFormData({ ...formData, priceSuvPickup: parseFloat(e.target.value) || 0 })}
-                      className="w-full px-2 py-1.5 rounded bg-slate-900 border border-slate-700 text-blue-400 text-xs font-semibold focus:outline-none"
+                      className="dp-input font-bold text-[#247653]"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-[10px] text-slate-400 mb-1">Moto</label>
+                    <label className="block text-[11px] font-semibold text-[#343C36] mb-1">Moto</label>
                     <input
                       type="number"
                       step="0.01"
                       required
                       value={formData.priceMotorcycle}
                       onChange={(e) => setFormData({ ...formData, priceMotorcycle: parseFloat(e.target.value) || 0 })}
-                      className="w-full px-2 py-1.5 rounded bg-slate-900 border border-slate-700 text-white text-xs font-semibold focus:outline-none"
+                      className="dp-input font-semibold"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-[10px] text-slate-400 mb-1">Especial / Van</label>
+                    <label className="block text-[11px] font-semibold text-[#343C36] mb-1">Especial</label>
                     <input
                       type="number"
                       step="0.01"
                       required
                       value={formData.priceSpecial}
                       onChange={(e) => setFormData({ ...formData, priceSpecial: parseFloat(e.target.value) || 0 })}
-                      className="w-full px-2 py-1.5 rounded bg-slate-900 border border-slate-700 text-purple-400 text-xs font-semibold focus:outline-none"
+                      className="dp-input font-semibold"
                     />
                   </div>
                 </div>
@@ -448,7 +448,7 @@ export default function ServicesPage() {
               {/* TEMPO ESTIMADO E COMISSÃO */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-medium text-slate-300 mb-1">
+                  <label className="block text-xs font-semibold text-[#343C36] mb-1">
                     Tempo Estimado (minutos)
                   </label>
                   <input
@@ -458,12 +458,12 @@ export default function ServicesPage() {
                     required
                     value={formData.estimatedMinutes}
                     onChange={(e) => setFormData({ ...formData, estimatedMinutes: parseInt(e.target.value) || 0 })}
-                    className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white text-xs focus:outline-none"
+                    className="dp-input"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-slate-300 mb-1">
+                  <label className="block text-xs font-semibold text-[#343C36] mb-1">
                     Comissão Padrão do Operador (%)
                   </label>
                   <input
@@ -474,23 +474,23 @@ export default function ServicesPage() {
                     required
                     value={formData.defaultCommission}
                     onChange={(e) => setFormData({ ...formData, defaultCommission: parseFloat(e.target.value) || 0 })}
-                    className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white text-xs focus:outline-none"
+                    className="dp-input"
                   />
                 </div>
               </div>
 
-              <div className="pt-3 border-t border-slate-800 flex items-center justify-end gap-2">
+              <div className="pt-3 border-t border-[#E7EAE7] flex items-center justify-end gap-2">
                 <button
                   type="button"
                   onClick={() => setModalOpen(false)}
-                  className="px-3 py-1.5 rounded-lg hover:bg-slate-800 text-slate-400 text-xs cursor-pointer"
+                  className="dp-btn-secondary text-xs cursor-pointer"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
                   disabled={saving}
-                  className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-medium flex items-center gap-1.5 transition-all disabled:opacity-50 cursor-pointer"
+                  className="dp-btn-primary text-xs cursor-pointer"
                 >
                   {saving && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                   <span>{editingId ? "Atualizar Serviço" : "Salvar Serviço"}</span>
@@ -503,4 +503,3 @@ export default function ServicesPage() {
     </div>
   );
 }
-

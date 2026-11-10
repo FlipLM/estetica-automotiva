@@ -4,20 +4,26 @@ import { useEffect, useState } from "react";
 import {
   Users,
   Plus,
-  Search,
   Pencil,
   Trash2,
   ShieldCheck,
   Wrench,
   Percent,
   Phone,
-  Mail,
-  Loader2,
-  X,
-  AlertCircle,
-  CheckCircle2,
-  Award,
 } from "lucide-react";
+import {
+  Button,
+  Badge,
+  PageHeader,
+  Modal,
+  Alert,
+  EmptyState,
+  LoadingState,
+  Input,
+  Select,
+  Checkbox,
+  SearchInput,
+} from "@/components/ui";
 
 interface Employee {
   id: string;
@@ -44,7 +50,6 @@ export default function FuncionariosPage() {
   const [error, setError] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<string | null>(null);
 
-  // Form State
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -133,7 +138,7 @@ export default function FuncionariosPage() {
       );
       setModalOpen(false);
       loadEmployees();
-      setTimeout(() => setFeedback(null), 3000);
+      setTimeout(() => setFeedback(null), 3500);
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -142,7 +147,7 @@ export default function FuncionariosPage() {
   }
 
   async function handleDelete(id: string, name: string) {
-    if (!confirm(`Deseja realmente remover o funcionário ${name}?`)) return;
+    if (!confirm(`Deseja realmente remover o colaborador ${name}?`)) return;
 
     try {
       const res = await fetch(`/api/employees/${id}`, { method: "DELETE" });
@@ -159,154 +164,127 @@ export default function FuncionariosPage() {
     }
   }
 
-  const filteredEmployees = employees.filter((e) =>
-    e.name.toLowerCase().includes(search.toLowerCase()) ||
-    e.email.toLowerCase().includes(search.toLowerCase()) ||
-    (e.phone && e.phone.includes(search))
+  const filteredEmployees = employees.filter(
+    (e) =>
+      e.name.toLowerCase().includes(search.toLowerCase()) ||
+      e.email.toLowerCase().includes(search.toLowerCase()) ||
+      (e.phone && e.phone.includes(search))
   );
 
   return (
     <div className="space-y-6">
-      {/* Cabeçalho */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 rounded carbon-card border-carbon-700 bg-carbon-900/80">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded bg-carbon-800 border border-carbon-700 flex items-center justify-center text-lime-400">
-            <Users className="w-5 h-5" />
-          </div>
-          <div>
-            <h1 className="text-base sm:text-lg font-display font-extrabold tracking-wide text-white uppercase flex items-center gap-2">
-              <span>Gestão de Funcionários & Equipe</span>
-              <span className="led-pulse-lime" />
-            </h1>
-            <p className="text-[11px] font-mono text-slate-400 mt-0.5">
-              CONTROLE DE COLABORADORES, PERMISSÕES DE ACESSO E TAXAS DE COMISSÃO
-            </p>
-          </div>
-        </div>
+      <PageHeader
+        title="Equipe e Colaboradores"
+        description="Gerencie os profissionais da estética, permissões de acesso (Administrador ou Operador) e percentuais de comissão."
+        actions={
+          <Button
+            variant="primary"
+            onClick={handleOpenCreate}
+            leftIcon={<Plus className="w-4 h-4" />}
+          >
+            Cadastrar Colaborador
+          </Button>
+        }
+      />
 
-        <button
-          onClick={handleOpenCreate}
-          className="btn-engine-start px-3.5 py-2 rounded text-xs flex items-center gap-1.5 shadow-md cursor-pointer"
-        >
-          <Plus className="w-4 h-4 stroke-[3]" />
-          <span>+ CADASTRAR FUNCIONÁRIO</span>
-        </button>
-      </div>
+      {feedback && <Alert variant="success" title={feedback} />}
 
-      {feedback && (
-        <div className="p-3 rounded bg-lime-400/10 border border-lime-400/40 text-lime-300 text-xs font-mono flex items-center gap-2">
-          <CheckCircle2 className="w-4 h-4 text-lime-400" />
-          <span>{feedback}</span>
-        </div>
-      )}
-
-      {/* Busca */}
-      <div className="flex items-center gap-3 font-mono">
-        <div className="relative flex-1">
-          <Search className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="BUSCAR COLABORADOR POR NOME, E-MAIL OU TELEFONE..."
-            className="w-full pl-10 pr-4 py-2 rounded bg-carbon-900 border border-carbon-700 hover:border-carbon-600 text-white placeholder-slate-600 text-xs focus:outline-none focus:ring-1 focus:ring-lime-400/50 focus:border-lime-400 transition-all uppercase"
-          />
-        </div>
-      </div>
+      <SearchInput
+        value={search}
+        onChange={(val) => setSearch(val)}
+        onClear={search ? () => setSearch("") : undefined}
+        placeholder="Buscar colaborador por nome, e-mail ou telefone..."
+      />
 
       {/* Tabela de Colaboradores */}
-      <div className="carbon-card overflow-hidden">
+      <div className="bg-white border border-[#E7EAE7] rounded-xl overflow-hidden shadow-xs">
         {loading ? (
-          <div className="h-64 flex flex-col items-center justify-center gap-2 text-slate-400 font-mono">
-            <Loader2 className="w-7 h-7 animate-spin text-lime-400" />
-            <p className="text-xs uppercase tracking-wider">CARREGANDO QUADRO DE EQUIPE...</p>
-          </div>
+          <LoadingState message="Carregando equipe..." />
         ) : filteredEmployees.length === 0 ? (
-          <div className="p-12 text-center text-slate-500 font-mono text-xs">
-            // NENHUM COLABORADOR LOCALIZADO
-          </div>
+          <EmptyState
+            icon={<Users className="w-6 h-6" />}
+            title="Nenhum colaborador encontrado"
+            description="Cadastre os membros da sua equipe para atribuir ordens de serviço e calcular comissões automaticamente."
+            action={
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={handleOpenCreate}
+                leftIcon={<Plus className="w-4 h-4" />}
+              >
+                Cadastrar Colaborador
+              </Button>
+            }
+          />
         ) : (
-          <div className="overflow-x-auto font-mono">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-carbon-950/80 text-slate-500 uppercase tracking-wider text-[10px] border-b border-carbon-800 font-bold">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm">
+              <thead className="bg-[#F7F8F6] text-[#737D75] uppercase text-xs border-b border-[#E7EAE7]">
                 <tr>
-                  <th className="py-3 px-4">COLABORADOR</th>
-                  <th className="py-3 px-4">PERFIL DE ACESSO</th>
-                  <th className="py-3 px-4">CONTATO</th>
-                  <th className="py-3 px-4 text-center">COMISSÃO PADRÃO</th>
-                  <th className="py-3 px-4 text-center">STATUS</th>
-                  <th className="py-3 px-4 text-right">AÇÕES</th>
+                  <th className="py-3.5 px-6 font-semibold">Colaborador</th>
+                  <th className="py-3.5 px-6 font-semibold">Perfil de Acesso</th>
+                  <th className="py-3.5 px-6 font-semibold">Contato</th>
+                  <th className="py-3.5 px-6 font-semibold text-center">Comissão Padrão</th>
+                  <th className="py-3.5 px-6 font-semibold text-center">Status</th>
+                  <th className="py-3.5 px-6 font-semibold text-right">Ações</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-carbon-800/70">
+              <tbody className="divide-y divide-[#F1F3F1]">
                 {filteredEmployees.map((emp) => (
-                  <tr key={emp.id} className="hover:bg-carbon-800/40 transition-colors">
-                    <td className="py-3 px-4">
-                      <div className="font-bold text-white text-xs">{emp.name}</div>
-                      <div className="text-[10px] text-slate-500">{emp.email}</div>
+                  <tr key={emp.id} className="hover:bg-[#F7F8F6]/70 transition-colors">
+                    <td className="py-3.5 px-6">
+                      <div className="font-semibold text-[#252B27]">{emp.name}</div>
+                      <div className="text-xs text-[#737D75]">{emp.email}</div>
                     </td>
-                    <td className="py-3 px-4">
-                      <span
-                        className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border ${
-                          emp.role === "ADMIN"
-                            ? "bg-lime-400/10 text-lime-400 border-lime-400/30"
-                            : "bg-blue-400/10 text-blue-400 border-blue-400/30"
-                        }`}
-                      >
-                        {emp.role === "ADMIN" ? (
-                          <>
-                            <ShieldCheck className="w-3 h-3 text-lime-400" />
-                            <span>Administrador</span>
-                          </>
-                        ) : (
-                          <>
-                            <Wrench className="w-3 h-3 text-blue-400" />
-                            <span>Operador de Pátio</span>
-                          </>
-                        )}
-                      </span>
+                    <td className="py-3.5 px-6">
+                      {emp.role === "ADMIN" ? (
+                        <Badge variant="brand" size="sm">
+                          <ShieldCheck className="w-3.5 h-3.5 mr-1" />
+                          Administrador
+                        </Badge>
+                      ) : (
+                        <Badge variant="info" size="sm">
+                          <Wrench className="w-3.5 h-3.5 mr-1" />
+                          Operador de Pátio
+                        </Badge>
+                      )}
                     </td>
-                    <td className="py-3 px-4 text-slate-300">
+                    <td className="py-3.5 px-6 text-[#252B27] text-xs">
                       <div className="flex items-center gap-1.5">
-                        <Phone className="w-3 h-3 text-lime-400" />
+                        <Phone className="w-3.5 h-3.5 text-[#247653]" />
                         <span>{emp.phone || "Não informado"}</span>
                       </div>
                     </td>
-                    <td className="py-3 px-4 text-center">
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-carbon-900 border border-carbon-700 text-lime-400 font-bold">
-                        <Percent className="w-3 h-3" />
+                    <td className="py-3.5 px-6 text-center">
+                      <span className="inline-flex items-center gap-0.5 px-2.5 py-1 rounded-md bg-[#E9F3EC] text-[#142D26] font-semibold text-xs">
+                        <Percent className="w-3 h-3 text-[#247653]" />
                         <span>{emp.commissionRate}%</span>
                       </span>
                     </td>
-                    <td className="py-3 px-4 text-center">
-                      <span
-                        className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-bold uppercase border ${
-                          emp.active
-                            ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/30"
-                            : "bg-red-500/10 text-red-400 border-red-500/30"
-                        }`}
-                      >
-                        <span className={`w-1.5 h-1.5 rounded-full ${emp.active ? "bg-emerald-400" : "bg-red-400"}`} />
-                        <span>{emp.active ? "Ativo" : "Inativo"}</span>
-                      </span>
+                    <td className="py-3.5 px-6 text-center">
+                      <Badge variant={emp.active ? "success" : "error"} size="sm" dot>
+                        {emp.active ? "Ativo" : "Inativo"}
+                      </Badge>
                     </td>
-                    <td className="py-3 px-4 text-right">
+                    <td className="py-3.5 px-6 text-right">
                       <div className="flex items-center justify-end gap-1.5">
-                        <button
+                        <Button
+                          variant="outline"
+                          size="sm"
                           onClick={() => handleOpenEdit(emp)}
-                          className="px-2 py-1 rounded bg-carbon-800 hover:bg-carbon-700 text-slate-300 hover:text-white transition-colors cursor-pointer flex items-center gap-1 text-[11px] font-bold border border-carbon-600 uppercase"
-                          title="Editar cadastro do funcionário"
+                          leftIcon={<Pencil className="w-3.5 h-3.5" />}
                         >
-                          <Pencil className="w-3 h-3 text-lime-400" />
-                          <span>Editar</span>
-                        </button>
-                        <button
+                          Editar
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
                           onClick={() => handleDelete(emp.id, emp.name)}
-                          className="p-1.5 rounded hover:bg-carbon-800 text-slate-500 hover:text-red-400 transition-colors cursor-pointer border border-transparent hover:border-carbon-700"
-                          title="Excluir funcionário"
+                          className="text-[#737D75] hover:text-[#DC4C4C]"
+                          title="Excluir colaborador"
                         >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
                       </div>
                     </td>
                   </tr>
@@ -318,142 +296,97 @@ export default function FuncionariosPage() {
       </div>
 
       {/* Modal de Cadastro / Edição de Funcionário */}
-      {modalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="carbon-card w-full max-w-lg p-5 sm:p-6 shadow-2xl space-y-4 max-h-[92vh] overflow-y-auto bg-carbon-900 border-carbon-700">
-            <div className="flex items-center justify-between pb-3 border-b border-carbon-700">
-              <h2 className="text-base font-display font-extrabold text-white uppercase flex items-center gap-2">
-                <Users className="w-4 h-4 text-lime-400" />
-                <span>{editingEmployee ? "Editar Funcionário" : "Novo Colaborador"}</span>
-              </h2>
-              <button
-                onClick={() => setModalOpen(false)}
-                className="text-slate-400 hover:text-white p-1 rounded hover:bg-carbon-800 transition"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
+      <Modal
+        isOpen={modalOpen}
+        onClose={() => setModalOpen(false)}
+        title={editingEmployee ? "Editar Colaborador" : "Novo Colaborador"}
+        description="Defina os dados de acesso, o nível de permissão e a taxa de comissão padrão."
+        size="md"
+      >
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {error && <Alert variant="error" title={error} />}
 
-            {error && (
-              <div className="p-3 rounded bg-red-500/10 border border-red-500/40 text-red-400 text-xs font-mono flex items-center gap-2">
-                <AlertCircle className="w-4 h-4 shrink-0" />
-                <span>{error}</span>
-              </div>
-            )}
+          <Input
+            label="Nome Completo"
+            required
+            placeholder="Ex: Carlos Eduardo de Oliveira"
+            value={formData.name}
+            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+          />
 
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label className="form-label-carbon">Nome Completo *</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="Ex: Carlos Eduardo de Oliveira"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="form-input-carbon w-full"
-                />
-              </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+            <Input
+              label="E-mail de Acesso"
+              type="email"
+              required
+              placeholder="carlos@oficina.com.br"
+              value={formData.email}
+              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+            />
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="form-label-carbon">E-mail de Acesso *</label>
-                  <input
-                    type="email"
-                    required
-                    placeholder="carlos@oficina.com.br"
-                    value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    className="form-input-carbon w-full"
-                  />
-                </div>
-
-                <div>
-                  <label className="form-label-carbon">
-                    {editingEmployee ? "Nova Senha (deixe vazio p/ manter)" : "Senha de Acesso *"}
-                  </label>
-                  <input
-                    type="password"
-                    placeholder="Mínimo 6 caracteres"
-                    value={formData.password}
-                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                    className="form-input-carbon w-full"
-                    {...(!editingEmployee ? { required: true } : {})}
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <div>
-                  <label className="form-label-carbon">Perfil de Acesso</label>
-                  <select
-                    value={formData.role}
-                    onChange={(e) => setFormData({ ...formData, role: e.target.value as any })}
-                    className="form-select-carbon w-full font-mono text-xs"
-                  >
-                    <option value="OPERATOR">Operador de Pátio</option>
-                    <option value="ADMIN">Administrador</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="form-label-carbon">Telefone / WhatsApp</label>
-                  <input
-                    type="text"
-                    placeholder="(11) 99999-8888"
-                    value={formData.phone}
-                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                    className="form-input-carbon w-full font-mono"
-                  />
-                </div>
-
-                <div>
-                  <label className="form-label-carbon">Comissão Padrão (%)</label>
-                  <input
-                    type="number"
-                    step="0.5"
-                    min="0"
-                    max="100"
-                    value={formData.commissionRate}
-                    onChange={(e) => setFormData({ ...formData, commissionRate: Number(e.target.value) })}
-                    className="form-input-carbon w-full font-mono font-bold text-lime-400"
-                  />
-                </div>
-              </div>
-
-              <div className="pt-2">
-                <label className="flex items-center gap-2 cursor-pointer font-mono text-xs text-slate-300">
-                  <input
-                    type="checkbox"
-                    checked={formData.active}
-                    onChange={(e) => setFormData({ ...formData, active: e.target.checked })}
-                    className="form-checkbox-carbon"
-                  />
-                  <span>Colaborador com acesso ativo ao sistema</span>
-                </label>
-              </div>
-
-              <div className="pt-4 border-t border-carbon-700 flex items-center justify-end gap-2 font-mono text-xs">
-                <button
-                  type="button"
-                  onClick={() => setModalOpen(false)}
-                  className="px-3.5 py-2 rounded bg-carbon-800 hover:bg-carbon-700 text-slate-300 border border-carbon-600 transition"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  disabled={saving}
-                  className="btn-engine-start px-4 py-2 rounded flex items-center gap-1.5"
-                >
-                  {saving && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-                  <span>{editingEmployee ? "Salvar Alterações" : "Salvar Funcionário"}</span>
-                </button>
-              </div>
-            </form>
+            <Input
+              label={
+                editingEmployee
+                  ? "Nova Senha (deixe vazio p/ manter)"
+                  : "Senha de Acesso"
+              }
+              type="password"
+              placeholder="Mínimo 6 caracteres"
+              value={formData.password}
+              onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+              {...(!editingEmployee ? { required: true } : {})}
+            />
           </div>
-        </div>
-      )}
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+            <Select
+              label="Perfil de Acesso"
+              value={formData.role}
+              onChange={(e) =>
+                setFormData({ ...formData, role: e.target.value as "ADMIN" | "OPERATOR" })
+              }
+              options={[
+                { value: "OPERATOR", label: "Operador de Pátio" },
+                { value: "ADMIN", label: "Administrador" },
+              ]}
+            />
+
+            <Input
+              label="Telefone / WhatsApp"
+              placeholder="(11) 99999-8888"
+              value={formData.phone}
+              onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+            />
+
+            <Input
+              label="Comissão Padrão (%)"
+              type="number"
+              step="0.5"
+              min="0"
+              max="100"
+              value={formData.commissionRate}
+              onChange={(e) =>
+                setFormData({ ...formData, commissionRate: Number(e.target.value) })
+              }
+            />
+          </div>
+
+          <Checkbox
+            label="Colaborador com acesso ativo ao sistema"
+            checked={formData.active}
+            onChange={(checked) => setFormData({ ...formData, active: checked })}
+          />
+
+          <div className="pt-4 border-t border-[#E7EAE7] flex items-center justify-end gap-2.5">
+            <Button type="button" variant="secondary" onClick={() => setModalOpen(false)}>
+              Cancelar
+            </Button>
+            <Button type="submit" variant="primary" isLoading={saving}>
+              {editingEmployee ? "Salvar Alterações" : "Cadastrar Colaborador"}
+            </Button>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 }
-

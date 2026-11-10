@@ -15,12 +15,13 @@ import {
   AlertTriangle,
   Loader2,
   Plus,
-  Activity,
-  Gauge,
+  Calendar,
+  FileText,
   ArrowUpRight,
-  ShieldAlert,
+  LayoutDashboard,
 } from "lucide-react";
-import { formatCurrency, formatDateTime } from "@/lib/utils";
+import { formatCurrency } from "@/lib/utils";
+import { OrderStatusBadge } from "@/components/ui/badge";
 
 interface DashboardData {
   role: "ADMIN" | "OPERATOR";
@@ -64,6 +65,7 @@ export default function DashboardPage() {
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [periodView, setPeriodView] = useState<"TODAY" | "7DAYS" | "MONTH">("MONTH");
 
   useEffect(() => {
     async function loadStats() {
@@ -85,10 +87,10 @@ export default function DashboardPage() {
 
   if (loading) {
     return (
-      <div className="h-96 flex flex-col items-center justify-center gap-3 text-slate-400">
-        <Loader2 className="w-8 h-8 animate-spin text-lime-400" />
-        <p className="text-xs font-mono tracking-wider text-slate-300 uppercase">
-          CARREGANDO PAINEL OPERACIONAL DA OFICINA...
+      <div className="h-96 flex flex-col items-center justify-center gap-3 text-[#737D75]">
+        <Loader2 className="w-8 h-8 animate-spin text-[#247653]" />
+        <p className="text-xs font-medium text-[#737D75]">
+          Carregando indicadores operacionais da estética...
         </p>
       </div>
     );
@@ -96,166 +98,290 @@ export default function DashboardPage() {
 
   if (error || !data) {
     return (
-      <div className="p-6 rounded carbon-card border-red-500/40 text-red-400 text-sm flex items-center gap-3">
+      <div className="p-5 rounded-xl bg-[#FEF2F2] border border-[#FECACA] text-[#DC4C4C] text-sm flex items-center gap-3">
         <AlertTriangle className="w-5 h-5 shrink-0" />
-        <span className="font-mono text-xs">{error || "Não foi possível carregar os dados operacionais."}</span>
+        <span className="text-xs font-medium">{error || "Não foi possível carregar os dados operacionais."}</span>
       </div>
     );
   }
 
-  const { patio, financial, recentOrders } = data;
+  const { patio, financial, recentOrders, role } = data;
+
+  const todayFormatted = new Intl.DateTimeFormat("pt-BR", {
+    weekday: "long",
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+  }).format(new Date());
+
+  const displayedRevenue = financial
+    ? periodView === "TODAY"
+      ? financial.revenueToday
+      : periodView === "7DAYS"
+      ? financial.revenue7Days
+      : financial.revenueMonth
+    : 0;
 
   return (
     <div className="space-y-6">
-      {/* 1. BARRA SUPERIOR DO PAINEL */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-4 rounded carbon-card border-carbon-700 bg-carbon-900/80">
-        <div className="flex items-center gap-3.5">
-          <div className="w-10 h-10 rounded bg-carbon-800 border border-carbon-700 flex items-center justify-center text-lime-400">
-            <Gauge className="w-5 h-5" />
+      {/* 1. CABEÇALHO EXECUTIVO */}
+      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 bg-white border border-[#E7EAE7] rounded-xl p-5 shadow-xs">
+        <div className="flex items-start sm:items-center gap-3.5">
+          <div className="w-11 h-11 rounded-xl bg-[#E9F3EC] text-[#247653] flex items-center justify-center shrink-0">
+            <LayoutDashboard className="w-5 h-5" />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-base sm:text-lg font-display font-extrabold tracking-wide text-white uppercase">
-                Painel Geral // Visão Operacional
+              <h1 className="text-[22px] sm:text-[26px] font-bold tracking-tight text-[#252B27] leading-tight">
+                Visão Geral da Estética
               </h1>
-              <span className="led-pulse-lime" />
+              <span className="px-2 py-0.5 rounded-full bg-[#ECFDF5] text-[#16A36A] border border-[#A7F3D0] text-[11px] font-semibold">
+                Ao vivo
+              </span>
             </div>
-            <p className="text-[11px] font-mono text-slate-400 mt-0.5">
-              MONITORAMENTO EM TEMPO REAL DOS CARROS, BAIAS E RESULTADOS
+            <p className="text-xs text-[#737D75] mt-0.5 capitalize">
+              {todayFormatted} • Acompanhamento de pátio, ordens e resultados
             </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-2 font-mono">
-          <Link
-            href="/patio"
-            className="px-3 py-1.5 rounded bg-carbon-800 hover:bg-carbon-700 text-slate-200 text-xs font-semibold border border-carbon-600 transition-all flex items-center gap-2 group"
-          >
-            <Car className="w-3.5 h-3.5 text-lime-400 group-hover:scale-110 transition-transform" />
-            <span>PÁTIO EM TEMPO REAL</span>
-            <ArrowUpRight className="w-3.5 h-3.5 text-slate-400" />
+        <div className="flex flex-wrap items-center gap-2">
+          {financial && (
+            <div className="inline-flex p-1 rounded-lg bg-[#F7F8F6] border border-[#E7EAE7] text-xs">
+              <button
+                type="button"
+                onClick={() => setPeriodView("TODAY")}
+                className={`px-2.5 py-1 rounded-md font-medium transition cursor-pointer ${
+                  periodView === "TODAY"
+                    ? "bg-white text-[#252B27] shadow-xs font-semibold"
+                    : "text-[#737D75] hover:text-[#252B27]"
+                }`}
+              >
+                Hoje
+              </button>
+              <button
+                type="button"
+                onClick={() => setPeriodView("7DAYS")}
+                className={`px-2.5 py-1 rounded-md font-medium transition cursor-pointer ${
+                  periodView === "7DAYS"
+                    ? "bg-white text-[#252B27] shadow-xs font-semibold"
+                    : "text-[#737D75] hover:text-[#252B27]"
+                }`}
+              >
+                7 dias
+              </button>
+              <button
+                type="button"
+                onClick={() => setPeriodView("MONTH")}
+                className={`px-2.5 py-1 rounded-md font-medium transition cursor-pointer ${
+                  periodView === "MONTH"
+                    ? "bg-white text-[#252B27] shadow-xs font-semibold"
+                    : "text-[#737D75] hover:text-[#252B27]"
+                }`}
+              >
+                Mês atual
+              </button>
+            </div>
+          )}
+
+          <Link href="/patio" className="dp-btn-secondary text-xs">
+            <Car className="w-3.5 h-3.5 text-[#247653]" />
+            <span>Ver Pátio</span>
           </Link>
-          <Link
-            href="/os/nova"
-            className="btn-engine-start px-3 py-1.5 rounded text-xs flex items-center gap-1.5"
-          >
-            <Plus className="w-3.5 h-3.5 stroke-[3]" />
-            <span>+ NOVA ENTRADA</span>
+
+          <Link href="/os/nova" className="dp-btn-primary text-xs">
+            <Plus className="w-4 h-4" />
+            <span>Nova Ordem de Serviço</span>
           </Link>
         </div>
       </div>
 
-      {/* 2. BLOCOS DE STATUS DO PÁTIO */}
+      {/* 2. ATALHOS RÁPIDOS DE OPERAÇÃO */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <Link
+          href="/os/nova"
+          className="p-3.5 rounded-xl bg-white border border-[#E7EAE7] hover:border-[#247653] transition flex items-center justify-between group shadow-xs"
+        >
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-[#E9F3EC] text-[#247653] flex items-center justify-center">
+              <Plus className="w-4 h-4" />
+            </div>
+            <div>
+              <p className="text-xs font-bold text-[#252B27]">Nova Ordem</p>
+              <p className="text-[11px] text-[#737D75]">Entrada no pátio</p>
+            </div>
+          </div>
+          <ChevronRight className="w-4 h-4 text-[#9CA49E] group-hover:text-[#247653] transition" />
+        </Link>
+
+        <Link
+          href="/vistoria"
+          className="p-3.5 rounded-xl bg-white border border-[#E7EAE7] hover:border-[#247653] transition flex items-center justify-between group shadow-xs"
+        >
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-[#EFF6FF] text-[#2563EB] flex items-center justify-center">
+              <CheckCircle2 className="w-4 h-4" />
+            </div>
+            <div>
+              <p className="text-xs font-bold text-[#252B27]">Nova Vistoria</p>
+              <p className="text-[11px] text-[#737D75]">Checklist 360º</p>
+            </div>
+          </div>
+          <ChevronRight className="w-4 h-4 text-[#9CA49E] group-hover:text-[#247653] transition" />
+        </Link>
+
+        <Link
+          href="/orcamentos"
+          className="p-3.5 rounded-xl bg-white border border-[#E7EAE7] hover:border-[#247653] transition flex items-center justify-between group shadow-xs"
+        >
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-[#FFFBEB] text-[#D97706] flex items-center justify-center">
+              <FileText className="w-4 h-4" />
+            </div>
+            <div>
+              <p className="text-xs font-bold text-[#252B27]">Novo Orçamento</p>
+              <p className="text-[11px] text-[#737D75]">Proposta comercial</p>
+            </div>
+          </div>
+          <ChevronRight className="w-4 h-4 text-[#9CA49E] group-hover:text-[#247653] transition" />
+        </Link>
+
+        <Link
+          href={role === "ADMIN" ? "/financeiro" : "/clientes"}
+          className="p-3.5 rounded-xl bg-white border border-[#E7EAE7] hover:border-[#247653] transition flex items-center justify-between group shadow-xs"
+        >
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-[#ECFDF5] text-[#16A36A] flex items-center justify-center">
+              {role === "ADMIN" ? <DollarSign className="w-4 h-4" /> : <Users className="w-4 h-4" />}
+            </div>
+            <div>
+              <p className="text-xs font-bold text-[#252B27]">
+                {role === "ADMIN" ? "Financeiro & DRE" : "Novo Cliente"}
+              </p>
+              <p className="text-[11px] text-[#737D75]">
+                {role === "ADMIN" ? "Receitas e despesas" : "Base cadastral"}
+              </p>
+            </div>
+          </div>
+          <ChevronRight className="w-4 h-4 text-[#9CA49E] group-hover:text-[#247653] transition" />
+        </Link>
+      </div>
+
+      {/* 3. INDICADORES OPERACIONAIS DO PÁTIO */}
       <div>
-        <div className="telemetry-header mb-3">
-          <span className="text-lime-400 font-bold">SETOR // 01</span>
-          <span>ESTADO DOS VEÍCULOS NO PÁTIO</span>
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-[16px] font-semibold text-[#252B27]">
+            Ocupação e Status do Pátio ({patio.totalActive} veículos ativos)
+          </h2>
+          <Link
+            href="/agenda"
+            className="text-xs font-semibold text-[#247653] hover:text-[#142D26] flex items-center gap-1"
+          >
+            <Calendar className="w-3.5 h-3.5" />
+            <span>Ver Agenda de Horários</span>
+          </Link>
         </div>
 
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {/* Card 1: Para Fazer */}
-          <div className="carbon-card p-4 group hover:border-amber-500/40 transition-colors">
-            <div className="flex items-center justify-between text-[10px] font-mono text-slate-400 mb-2">
-              <span className="text-slate-500 font-bold tracking-wider">// 01 FILA DE ESPERA</span>
-              <div className="w-2 h-2 rounded-full bg-amber-400/80 shadow-[0_0_8px_rgba(251,191,36,0.6)]" />
+          <div className="bg-white border border-[#E7EAE7] rounded-xl p-4 shadow-xs">
+            <div className="flex items-center justify-between text-xs text-[#737D75] mb-2">
+              <span className="font-semibold">Fila de Espera</span>
+              <span className="w-2.5 h-2.5 rounded-full bg-[#D97706]" />
             </div>
             <div className="flex items-baseline justify-between">
-              <span className="font-mono text-3xl font-extrabold text-white tracking-tight">
-                {String(patio.todo).padStart(2, "0")}
+              <span className="text-3xl font-bold text-[#252B27] tracking-tight">
+                {patio.todo}
               </span>
-              <span className="text-[10px] font-mono text-amber-400 font-semibold uppercase">
-                A INICIAR
+              <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-[#FFFBEB] text-[#B45309] border border-[#FDE68A]">
+                A iniciar
               </span>
             </div>
-            <p className="text-[11px] text-slate-400 mt-2 font-mono flex items-center gap-1.5">
-              <Clock className="w-3 h-3 text-amber-400" />
-              <span>Aguardando início</span>
+            <p className="text-xs text-[#737D75] mt-2 flex items-center gap-1.5">
+              <Clock className="w-3.5 h-3.5 text-[#D97706]" />
+              <span>Aguardando início no pátio</span>
             </p>
-            {/* Visual Gauge Bar */}
-            <div className="w-full h-1 bg-carbon-800 rounded-full mt-3 overflow-hidden">
+            <div className="w-full h-1.5 bg-[#F1F3F1] rounded-full mt-3 overflow-hidden">
               <div
-                className="h-full bg-amber-400 transition-all duration-500"
+                className="h-full bg-[#D97706] transition-all duration-500"
                 style={{ width: `${Math.min(100, (patio.todo / Math.max(1, patio.totalActive)) * 100)}%` }}
               />
             </div>
           </div>
 
           {/* Card 2: Em Serviço */}
-          <div className="carbon-card p-4 group hover:border-lime-500/40 transition-colors carbon-card-active">
-            <div className="flex items-center justify-between text-[10px] font-mono text-slate-400 mb-2">
-              <span className="text-lime-400 font-bold tracking-wider">// 02 EM EXECUÇÃO</span>
-              <div className="led-pulse-lime" />
+          <div className="bg-white border border-[#247653]/40 rounded-xl p-4 shadow-xs">
+            <div className="flex items-center justify-between text-xs text-[#247653] mb-2">
+              <span className="font-semibold">Em Execução</span>
+              <span className="w-2.5 h-2.5 rounded-full bg-[#247653]" />
             </div>
             <div className="flex items-baseline justify-between">
-              <span className="font-mono text-3xl font-extrabold text-lime-400 tracking-tight">
-                {String(patio.inProgress).padStart(2, "0")}
+              <span className="text-3xl font-bold text-[#247653] tracking-tight">
+                {patio.inProgress}
               </span>
-              <span className="text-[10px] font-mono text-lime-400 font-semibold uppercase">
-                NOS BOXES
+              <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-[#E9F3EC] text-[#142D26]">
+                Nos boxes
               </span>
             </div>
-            <p className="text-[11px] text-slate-400 mt-2 font-mono flex items-center gap-1.5">
-              <Wrench className="w-3 h-3 text-lime-400" />
-              <span>Na rampa / estética ativa</span>
+            <p className="text-xs text-[#737D75] mt-2 flex items-center gap-1.5">
+              <Wrench className="w-3.5 h-3.5 text-[#247653]" />
+              <span>Em atendimento na estética</span>
             </p>
-            {/* Visual Gauge Bar */}
-            <div className="w-full h-1 bg-carbon-800 rounded-full mt-3 overflow-hidden">
+            <div className="w-full h-1.5 bg-[#F1F3F1] rounded-full mt-3 overflow-hidden">
               <div
-                className="h-full bg-lime-400 transition-all duration-500"
+                className="h-full bg-[#247653] transition-all duration-500"
                 style={{ width: `${Math.min(100, (patio.inProgress / Math.max(1, patio.totalActive)) * 100)}%` }}
               />
             </div>
           </div>
 
           {/* Card 3: Concluídos */}
-          <div className="carbon-card p-4 group hover:border-emerald-500/40 transition-colors">
-            <div className="flex items-center justify-between text-[10px] font-mono text-slate-400 mb-2">
-              <span className="text-slate-500 font-bold tracking-wider">// 03 PRONTOS / LIBERADOS</span>
-              <div className="w-2 h-2 rounded-full bg-emerald-400/80 shadow-[0_0_8px_rgba(52,211,153,0.6)]" />
+          <div className="bg-white border border-[#E7EAE7] rounded-xl p-4 shadow-xs">
+            <div className="flex items-center justify-between text-xs text-[#737D75] mb-2">
+              <span className="font-semibold">Prontos p/ Retirada</span>
+              <span className="w-2.5 h-2.5 rounded-full bg-[#16A36A]" />
             </div>
             <div className="flex items-baseline justify-between">
-              <span className="font-mono text-3xl font-extrabold text-white tracking-tight">
-                {String(patio.done).padStart(2, "0")}
+              <span className="text-3xl font-bold text-[#252B27] tracking-tight">
+                {patio.done}
               </span>
-              <span className="text-[10px] font-mono text-emerald-400 font-semibold uppercase">
-                PRONTOS
+              <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-[#ECFDF5] text-[#16A36A] border border-[#A7F3D0]">
+                Concluídos
               </span>
             </div>
-            <p className="text-[11px] text-slate-400 mt-2 font-mono flex items-center gap-1.5">
-              <CheckCircle2 className="w-3 h-3 text-emerald-400" />
-              <span>Aguardando retirada</span>
+            <p className="text-xs text-[#737D75] mt-2 flex items-center gap-1.5">
+              <CheckCircle2 className="w-3.5 h-3.5 text-[#16A36A]" />
+              <span>Aguardando entrega e baixa</span>
             </p>
-            {/* Visual Gauge Bar */}
-            <div className="w-full h-1 bg-carbon-800 rounded-full mt-3 overflow-hidden">
+            <div className="w-full h-1.5 bg-[#F1F3F1] rounded-full mt-3 overflow-hidden">
               <div
-                className="h-full bg-emerald-400 transition-all duration-500"
+                className="h-full bg-[#16A36A] transition-all duration-500"
                 style={{ width: `${Math.min(100, (patio.done / Math.max(1, patio.totalActive)) * 100)}%` }}
               />
             </div>
           </div>
 
           {/* Card 4: Pagos / Encerrados */}
-          <div className="carbon-card p-4 group hover:border-blue-500/40 transition-colors">
-            <div className="flex items-center justify-between text-[10px] font-mono text-slate-400 mb-2">
-              <span className="text-slate-500 font-bold tracking-wider">// 04 FATURADOS E ENTREGUES</span>
-              <div className="w-2 h-2 rounded-full bg-blue-400/80 shadow-[0_0_8px_rgba(96,165,250,0.6)]" />
+          <div className="bg-white border border-[#E7EAE7] rounded-xl p-4 shadow-xs">
+            <div className="flex items-center justify-between text-xs text-[#737D75] mb-2">
+              <span className="font-semibold">Pagos & Entregues</span>
+              <span className="w-2.5 h-2.5 rounded-full bg-[#2563EB]" />
             </div>
             <div className="flex items-baseline justify-between">
-              <span className="font-mono text-3xl font-extrabold text-white tracking-tight">
-                {String(patio.paid).padStart(2, "0")}
+              <span className="text-3xl font-bold text-[#252B27] tracking-tight">
+                {patio.paid}
               </span>
-              <span className="text-[10px] font-mono text-blue-400 font-semibold uppercase">
-                QUITADOS
+              <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-[#EFF6FF] text-[#1D4ED8] border border-[#BFDBFE]">
+                Quitados
               </span>
             </div>
-            <p className="text-[11px] text-slate-400 mt-2 font-mono flex items-center gap-1.5">
-              <Receipt className="w-3 h-3 text-blue-400" />
-              <span>Pagos e entregues</span>
+            <p className="text-xs text-[#737D75] mt-2 flex items-center gap-1.5">
+              <Receipt className="w-3.5 h-3.5 text-[#2563EB]" />
+              <span>Ordens finalizadas no caixa</span>
             </p>
-            {/* Visual Gauge Bar */}
-            <div className="w-full h-1 bg-carbon-800 rounded-full mt-3 overflow-hidden">
+            <div className="w-full h-1.5 bg-[#F1F3F1] rounded-full mt-3 overflow-hidden">
               <div
-                className="h-full bg-blue-400 transition-all duration-500"
+                className="h-full bg-[#2563EB] transition-all duration-500"
                 style={{ width: `${Math.min(100, (patio.paid / Math.max(1, patio.totalActive + patio.paid)) * 100)}%` }}
               />
             </div>
@@ -263,221 +389,191 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* 3. BLOCOS DE RESULTADOS FINANCEIROS */}
+      {/* 4. DESEMPENHO FINANCEIRO (APENAS ADMIN) */}
       {financial && (
         <div>
-          <div className="telemetry-header mb-3">
-            <span className="text-lime-400 font-bold">SETOR // 02</span>
-            <span>DESEMPENHO FINANCEIRO DA OFICINA</span>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-[16px] font-semibold text-[#252B27]">
+              Desempenho Financeiro
+            </h2>
             <Link
               href="/financeiro"
-              className="text-lime-400 hover:text-lime-300 font-mono text-[10px] flex items-center gap-1 font-bold ml-auto"
+              className="text-xs font-semibold text-[#247653] hover:text-[#142D26] flex items-center gap-1"
             >
-              <span>ABRIR DRE COMPLETO</span>
-              <ArrowUpRight className="w-3 h-3" />
+              <span>Abrir DRE Completo</span>
+              <ArrowUpRight className="w-3.5 h-3.5" />
             </Link>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
-            {/* Card Faturamento Mensal */}
-            <div className="carbon-card p-4">
-              <div className="flex items-center justify-between text-[10px] font-mono text-slate-500 mb-1">
-                <span>RECEITA LÍQUIDA MENSAL</span>
-                <TrendingUp className="w-3.5 h-3.5 text-lime-400" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* Receita do Período */}
+            <div className="bg-white border border-[#E7EAE7] rounded-xl p-4 shadow-xs">
+              <div className="flex items-center justify-between text-xs text-[#737D75] mb-1">
+                <span className="font-medium">
+                  {periodView === "TODAY"
+                    ? "Faturamento de Hoje"
+                    : periodView === "7DAYS"
+                    ? "Faturamento (7 dias)"
+                    : "Faturamento Mensal"}
+                </span>
+                <TrendingUp className="w-4 h-4 text-[#247653]" />
               </div>
-              <div className="font-mono text-2xl font-black text-lime-400 tracking-tight">
-                {formatCurrency(financial.revenueMonth)}
+              <div className="text-2xl font-bold text-[#247653] tracking-tight">
+                {formatCurrency(displayedRevenue)}
               </div>
-              <div className="flex items-center justify-between text-[10px] font-mono text-slate-400 mt-2 pt-2 border-t border-carbon-800">
-                <span>ÚLTIMOS 7 DIAS:</span>
-                <span className="text-slate-200 font-bold">{formatCurrency(financial.revenue7Days)}</span>
+              <div className="flex items-center justify-between text-xs text-[#737D75] mt-3 pt-2.5 border-t border-[#E7EAE7]">
+                <span>Acumulado 7 dias:</span>
+                <span className="text-[#252B27] font-semibold">{formatCurrency(financial.revenue7Days)}</span>
               </div>
             </div>
 
-            {/* Card Ticket Médio */}
-            <div className="carbon-card p-4">
-              <div className="flex items-center justify-between text-[10px] font-mono text-slate-500 mb-1">
-                <span>TICKET MÉDIO POR CARRO</span>
-                <DollarSign className="w-3.5 h-3.5 text-blue-400" />
+            {/* Ticket Médio */}
+            <div className="bg-white border border-[#E7EAE7] rounded-xl p-4 shadow-xs">
+              <div className="flex items-center justify-between text-xs text-[#737D75] mb-1">
+                <span className="font-medium">Ticket Médio por Ordem</span>
+                <DollarSign className="w-4 h-4 text-[#2563EB]" />
               </div>
-              <div className="font-mono text-2xl font-black text-white tracking-tight">
+              <div className="text-2xl font-bold text-[#252B27] tracking-tight">
                 {formatCurrency(financial.averageTicket)}
               </div>
-              <div className="flex items-center justify-between text-[10px] font-mono text-slate-400 mt-2 pt-2 border-t border-carbon-800">
-                <span>CLIENTES ATIVOS:</span>
-                <span className="text-slate-200 font-bold">{financial.totalCustomers} cadastrados</span>
+              <div className="flex items-center justify-between text-xs text-[#737D75] mt-3 pt-2.5 border-t border-[#E7EAE7]">
+                <span>Base ativa:</span>
+                <span className="text-[#252B27] font-semibold">
+                  {financial.totalCustomers} clientes • {financial.totalVehicles} carros
+                </span>
               </div>
             </div>
 
-            {/* Card Despesas Lançadas */}
-            <div className="carbon-card p-4">
-              <div className="flex items-center justify-between text-[10px] font-mono text-slate-500 mb-1">
-                <span>CUSTOS & DESPESAS (MÊS)</span>
-                <Receipt className="w-3.5 h-3.5 text-red-400" />
+            {/* Despesas Lançadas */}
+            <div className="bg-white border border-[#E7EAE7] rounded-xl p-4 shadow-xs">
+              <div className="flex items-center justify-between text-xs text-[#737D75] mb-1">
+                <span className="font-medium">Despesas do Mês</span>
+                <Receipt className="w-4 h-4 text-[#DC4C4C]" />
               </div>
-              <div className="font-mono text-2xl font-black text-red-400 tracking-tight">
+              <div className="text-2xl font-bold text-[#DC4C4C] tracking-tight">
                 {formatCurrency(financial.totalExpensesMonth)}
               </div>
-              <div className="flex items-center justify-between text-[10px] font-mono text-slate-400 mt-2 pt-2 border-t border-carbon-800">
-                <span>INSUMOS E FIXOS:</span>
-                <span className="text-slate-200 font-bold">Lançamentos reais</span>
+              <div className="flex items-center justify-between text-xs text-[#737D75] mt-3 pt-2.5 border-t border-[#E7EAE7]">
+                <span>Custos operacionais:</span>
+                <span className="text-[#252B27] font-semibold">Contas e insumos</span>
               </div>
             </div>
 
-            {/* Card Resultado Líquido */}
-            <div className="carbon-card p-4">
-              <div className="flex items-center justify-between text-[10px] font-mono text-slate-500 mb-1">
-                <span>LUCRO LÍQUIDO REAL</span>
-                <span className="px-1.5 py-0.5 rounded text-[9px] font-mono font-bold bg-carbon-800 border border-lime-400/40 text-lime-400">
-                  {financial.profitMargin.toFixed(1)}% MARGEM
+            {/* Lucro Líquido Real */}
+            <div className="bg-white border border-[#E7EAE7] rounded-xl p-4 shadow-xs">
+              <div className="flex items-center justify-between text-xs text-[#737D75] mb-1">
+                <span className="font-medium">Lucro Líquido (Mês)</span>
+                <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-[#E9F3EC] text-[#142D26]">
+                  {financial.profitMargin.toFixed(1)}% margem
                 </span>
               </div>
               <div
-                className={`font-mono text-2xl font-black tracking-tight ${
-                  financial.netProfitMonth >= 0 ? "text-lime-400" : "text-red-400"
+                className={`text-2xl font-bold tracking-tight ${
+                  financial.netProfitMonth >= 0 ? "text-[#16A36A]" : "text-[#DC4C4C]"
                 }`}
               >
                 {formatCurrency(financial.netProfitMonth)}
               </div>
-              <div className="flex items-center justify-between text-[10px] font-mono text-slate-400 mt-2 pt-2 border-t border-carbon-800">
-                <span>EFICIÊNCIA OFICINA:</span>
-                <span className="text-lime-400 font-bold">RESULTADO LÍQUIDO</span>
+              <div className="flex items-center justify-between text-xs text-[#737D75] mt-3 pt-2.5 border-t border-[#E7EAE7]">
+                <span>Resultado contábil:</span>
+                <span className="text-[#247653] font-semibold">Receitas - Custos</span>
               </div>
             </div>
           </div>
         </div>
       )}
 
-      {/* 4. TELEMETRY LIVE FEED: VEÍCULOS NO PÁTIO */}
-      <div className="carbon-card overflow-hidden">
-        {/* Card Header */}
-        <div className="p-3.5 sm:p-4 border-b border-carbon-700 bg-carbon-900/90 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-          <div className="flex items-center gap-2.5">
-            <span className="led-pulse-lime" />
-            <div>
-              <h2 className="text-xs sm:text-sm font-display font-bold uppercase tracking-wider text-white">
-                Fluxo da Oficina // Ordens de Serviço no Pátio
-              </h2>
-              <p className="text-[10px] font-mono text-slate-400">
-                MONITORAMENTO DE EXECUÇÃO DE SERVIÇOS POR POSTO DE TRABALHO
-              </p>
-            </div>
+      {/* 5. TABELA DE VEÍCULOS E ORDENS RECENTES NO PÁTIO */}
+      <div className="bg-white border border-[#E7EAE7] rounded-xl overflow-hidden shadow-xs">
+        <div className="p-4 sm:p-5 border-b border-[#E7EAE7] flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div>
+            <h2 className="text-[16px] font-semibold text-[#252B27]">
+              Ordens de Serviço Recentes no Pátio
+            </h2>
+            <p className="text-xs text-[#737D75]">
+              Acompanhamento em tempo real dos veículos em atendimento por box e responsável
+            </p>
           </div>
 
           <Link
             href="/patio"
-            className="text-xs font-mono font-bold text-lime-400 hover:text-lime-300 flex items-center gap-1.5"
+            className="text-xs font-semibold text-[#247653] hover:text-[#142D26] flex items-center gap-1"
           >
-            <span>VER PÁTIO COMPLETO</span>
-            <ChevronRight className="w-3.5 h-3.5" />
+            <span>Abrir Quadro Kanban do Pátio</span>
+            <ChevronRight className="w-4 h-4" />
           </Link>
         </div>
 
         {recentOrders.length === 0 ? (
-          <div className="p-8 text-center text-slate-500 font-mono text-xs">
-            // NENHUM VEÍCULO EM ATENDIMENTO NO MOMENTO // PÁTIO DISPONÍVEL
+          <div className="p-10 text-center text-[#737D75] text-xs space-y-2">
+            <Car className="w-8 h-8 text-[#9CA49E] mx-auto" />
+            <p className="font-semibold text-[#252B27]">Nenhum veículo em atendimento no momento</p>
+            <p>Clique em &ldquo;Nova Ordem de Serviço&rdquo; para registrar uma entrada no pátio.</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs font-mono">
-              <thead className="bg-carbon-950/80 text-slate-500 uppercase tracking-wider text-[10px] border-b border-carbon-800">
+            <table className="w-full text-left text-xs">
+              <thead className="bg-[#F7F8F6] text-[#737D75] uppercase tracking-wider text-[11px] font-semibold border-b border-[#E7EAE7]">
                 <tr>
-                  <th className="py-2.5 px-4 font-bold">OS #</th>
-                  <th className="py-2.5 px-4 font-bold">PLACA DO VEÍCULO</th>
-                  <th className="py-2.5 px-4 font-bold">MODELO / CATEGORIA</th>
-                  <th className="py-2.5 px-4 font-bold">CLIENTE</th>
-                  <th className="py-2.5 px-4 font-bold">SERVIÇO PRINCIPAL</th>
-                  <th className="py-2.5 px-4 font-bold">BOX</th>
-                  <th className="py-2.5 px-4 font-bold">STATUS</th>
-                  <th className="py-2.5 px-4 font-bold">OPERADOR</th>
-                  {financial && <th className="py-2.5 px-4 text-right font-bold">VALOR</th>}
+                  <th className="py-3 px-4">OS #</th>
+                  <th className="py-3 px-4">Placa</th>
+                  <th className="py-3 px-4">Veículo / Porte</th>
+                  <th className="py-3 px-4">Cliente</th>
+                  <th className="py-3 px-4">Serviço Principal</th>
+                  <th className="py-3 px-4">Box / Vaga</th>
+                  <th className="py-3 px-4">Status</th>
+                  <th className="py-3 px-4">Operador</th>
+                  {financial && <th className="py-3 px-4 text-right">Valor</th>}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-carbon-800/80">
+              <tbody className="divide-y divide-[#E7EAE7]">
                 {recentOrders.map((os) => (
                   <tr
                     key={os.id}
-                    className="hover:bg-carbon-800/50 transition-colors group"
+                    className="hover:bg-[#F7F8F6] transition-colors"
                   >
-                    {/* OS Number */}
-                    <td className="py-3 px-4 font-bold text-slate-300">
-                      <span className="text-lime-400">#</span>
-                      {String(os.orderNumber).padStart(4, "0")}
+                    <td className="py-3 px-4 font-bold text-[#252B27]">
+                      <Link href={`/os/${os.id}`} className="hover:text-[#247653] underline-offset-2 hover:underline">
+                        #{String(os.orderNumber).padStart(4, "0")}
+                      </Link>
                     </td>
 
-                    {/* Placa com Realismo Mercosul */}
                     <td className="py-3 px-4">
                       <span className="mercosul-plate text-xs">
                         {os.plate}
                       </span>
                     </td>
 
-                    {/* Modelo */}
                     <td className="py-3 px-4">
-                      <div className="text-white font-bold">{os.model}</div>
-                      <div className="text-[10px] text-slate-500 uppercase">{os.category}</div>
+                      <div className="text-[#252B27] font-semibold">{os.model}</div>
+                      <div className="text-[11px] text-[#737D75]">{os.category}</div>
                     </td>
 
-                    {/* Cliente */}
                     <td className="py-3 px-4">
-                      <div className="text-slate-200 font-semibold">{os.customerName}</div>
+                      <div className="text-[#252B27] font-medium">{os.customerName}</div>
                       {os.customerPhone && (
-                        <div className="text-[10px] text-slate-500">{os.customerPhone}</div>
+                        <div className="text-[11px] text-[#737D75]">{os.customerPhone}</div>
                       )}
                     </td>
 
-                    {/* Serviço Principal */}
-                    <td className="py-3 px-4 text-slate-300 font-medium">
-                      <span className="px-2 py-0.5 rounded bg-carbon-800 border border-carbon-700 text-slate-200">
+                    <td className="py-3 px-4">
+                      <span className="px-2.5 py-1 rounded-md bg-[#F7F8F6] border border-[#E7EAE7] text-[#343C36] font-medium">
                         {os.mainService}
                       </span>
                     </td>
 
-                    {/* Box */}
-                    <td className="py-3 px-4 text-slate-400">
-                      <span className="font-bold text-slate-300">{os.box || "Pátio Geral"}</span>
-                    </td>
-
-                    {/* Status Badge */}
                     <td className="py-3 px-4">
-                      <span
-                        className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border ${
-                          os.status === "TODO"
-                            ? "bg-amber-500/10 text-amber-400 border-amber-500/40"
-                            : os.status === "IN_PROGRESS"
-                            ? "bg-lime-500/10 text-lime-400 border-lime-500/40"
-                            : os.status === "DONE"
-                            ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/40"
-                            : "bg-blue-500/10 text-blue-400 border-blue-500/40"
-                        }`}
-                      >
-                        <span
-                          className={`w-1.5 h-1.5 rounded-full ${
-                            os.status === "TODO"
-                              ? "bg-amber-400"
-                              : os.status === "IN_PROGRESS"
-                              ? "bg-lime-400 animate-pulse"
-                              : os.status === "DONE"
-                              ? "bg-emerald-400"
-                              : "bg-blue-400"
-                          }`}
-                        />
-                        {os.status === "TODO"
-                          ? "Fila"
-                          : os.status === "IN_PROGRESS"
-                          ? "Em Serviço"
-                          : os.status === "DONE"
-                          ? "Pronto"
-                          : "Pago"}
-                      </span>
+                      <span className="font-semibold text-[#343C36]">{os.box || "Pátio Geral"}</span>
                     </td>
 
-                    {/* Operador */}
-                    <td className="py-3 px-4 text-slate-400">{os.assignedTo}</td>
+                    <td className="py-3 px-4">
+                      <OrderStatusBadge status={os.status} />
+                    </td>
 
-                    {/* Valor */}
+                    <td className="py-3 px-4 text-[#737D75]">{os.assignedTo}</td>
+
                     {financial && (
-                      <td className="py-3 px-4 text-right font-bold text-lime-400">
+                      <td className="py-3 px-4 text-right font-bold text-[#247653]">
                         {os.totalAmount !== null ? formatCurrency(os.totalAmount) : "-"}
                       </td>
                     )}

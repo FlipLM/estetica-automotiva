@@ -1,30 +1,27 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import Link from "next/link";
 import {
   ArrowLeft,
-  ClipboardList,
   Wrench,
   Car,
   User,
-  Calendar,
   DollarSign,
-  Phone,
   MessageCircle,
   Plus,
-  Trash2,
-  CheckCircle2,
   AlertCircle,
-  Clock,
   Gauge,
-  Receipt,
   Loader2,
   Sparkles,
+  CheckCircle2,
+  Clock,
+  Receipt,
 } from "lucide-react";
 import { formatCurrency, formatDateTime } from "@/lib/utils";
 import { ManageOrderServicesModal } from "@/components/modules/manage-order-services-modal";
+import { OrderStatusBadge } from "@/components/ui/badge";
 
 interface OrderDetail {
   id: string;
@@ -85,7 +82,6 @@ interface OrderDetail {
 
 export default function OrderDetailPage() {
   const params = useParams();
-  const router = useRouter();
   const id = params?.id as string;
 
   const [order, setOrder] = useState<OrderDetail | null>(null);
@@ -116,32 +112,24 @@ export default function OrderDetailPage() {
     if (id) loadOrder();
   }, [id]);
 
-  const statusMap: Record<string, { label: string; badge: string }> = {
-    TODO: { label: "Para Fazer (Aguardando Box)", badge: "bg-amber-500/10 text-amber-400 border-amber-500/30" },
-    IN_PROGRESS: { label: "Em Execução / Na Baia", badge: "bg-blue-500/10 text-blue-400 border-blue-500/30" },
-    DONE: { label: "Concluído (Pronto para Entrega)", badge: "bg-emerald-500/10 text-emerald-400 border-emerald-500/30" },
-    PAID: { label: "Baixado & Pago", badge: "bg-purple-500/10 text-purple-400 border-purple-500/30" },
-    CANCELLED: { label: "Cancelado", badge: "bg-rose-500/10 text-rose-400 border-rose-500/30" },
-  };
-
   if (loading) {
     return (
-      <div className="h-80 flex flex-col items-center justify-center gap-2 text-slate-400 font-mono">
-        <Loader2 className="w-8 h-8 animate-spin text-lime-400" />
-        <p className="text-xs uppercase tracking-wider">CARREGANDO DETALHES TÉCNICOS DA OS...</p>
+      <div className="h-80 flex flex-col items-center justify-center gap-2 text-[#737D75]">
+        <Loader2 className="w-8 h-8 animate-spin text-[#247653]" />
+        <p className="text-xs font-medium">Carregando detalhes da Ordem de Serviço...</p>
       </div>
     );
   }
 
   if (error || !order) {
     return (
-      <div className="max-w-2xl mx-auto p-6 carbon-card border-rose-500/40 text-center space-y-4 font-mono">
-        <AlertCircle className="w-10 h-10 text-rose-400 mx-auto" />
-        <h2 className="text-base font-bold text-white uppercase">Ordem de Serviço Não Encontrada</h2>
-        <p className="text-xs text-rose-300">{error || "Registro indisponível."}</p>
+      <div className="max-w-2xl mx-auto p-6 bg-white border border-[#FECACA] rounded-xl text-center space-y-4 shadow-xs">
+        <AlertCircle className="w-10 h-10 text-[#DC4C4C] mx-auto" />
+        <h2 className="text-base font-bold text-[#252B27]">Ordem de Serviço Não Encontrada</h2>
+        <p className="text-xs text-[#DC4C4C]">{error || "Registro indisponível."}</p>
         <Link
           href="/os"
-          className="btn-engine-start inline-flex items-center gap-2 px-4 py-2 text-xs"
+          className="dp-btn-primary inline-flex items-center gap-2 text-xs"
         >
           <ArrowLeft className="w-4 h-4" />
           <span>Voltar para Lista de OS</span>
@@ -150,11 +138,6 @@ export default function OrderDetailPage() {
     );
   }
 
-  const currentStatus = statusMap[order.status] || {
-    label: order.status,
-    badge: "bg-carbon-800 text-slate-300 border-carbon-700",
-  };
-
   const customerWhatsapp = order.vehicle.customer?.whatsapp || order.vehicle.customer?.phone;
   const whatsappUrl = customerWhatsapp
     ? `https://wa.me/55${customerWhatsapp.replace(/\D/g, "")}?text=${encodeURIComponent(
@@ -162,15 +145,25 @@ export default function OrderDetailPage() {
       )}`
     : null;
 
+  const timelineSteps = [
+    { key: "TODO", label: "Fila / Recepção", icon: Clock },
+    { key: "IN_PROGRESS", label: "Em Execução no Box", icon: Wrench },
+    { key: "DONE", label: "Pronto p/ Retirada", icon: CheckCircle2 },
+    { key: "PAID", label: "Pago e Entregue", icon: Receipt },
+  ];
+
+  const statusOrder = ["TODO", "IN_PROGRESS", "DONE", "PAID"];
+  const currentStepIdx = statusOrder.indexOf(order.status);
+
   return (
-    <div className="max-w-5xl mx-auto space-y-5 pb-12 font-sans">
+    <div className="max-w-5xl mx-auto space-y-5 pb-12">
       {/* Barra de Navegação */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <Link
           href="/os"
-          className="text-xs text-slate-400 hover:text-white flex items-center gap-1.5 transition-colors font-mono uppercase tracking-wider"
+          className="text-xs font-semibold text-[#737D75] hover:text-[#252B27] flex items-center gap-1.5 transition-colors"
         >
-          <ArrowLeft className="w-4 h-4 text-lime-400" />
+          <ArrowLeft className="w-4 h-4 text-[#247653]" />
           <span>Voltar para Ordens de Serviço</span>
         </Link>
 
@@ -178,64 +171,93 @@ export default function OrderDetailPage() {
           {order.status !== "PAID" && (
             <button
               onClick={() => setIsServicesModalOpen(true)}
-              className="btn-engine-start px-3.5 py-2 text-xs flex items-center gap-1.5 cursor-pointer font-mono"
+              className="dp-btn-primary text-xs cursor-pointer"
             >
-              <Plus className="w-4 h-4 stroke-[3]" />
-              <span>+ Adicionar Serviço (Cliente Pediu)</span>
+              <Plus className="w-4 h-4" />
+              <span>Adicionar Serviço à OS</span>
             </button>
           )}
 
           <Link
             href="/patio"
-            className="px-3.5 py-2 rounded bg-carbon-800 hover:bg-carbon-700 text-slate-300 hover:text-white border border-carbon-600 text-xs flex items-center gap-1.5 font-mono"
+            className="dp-btn-secondary text-xs"
           >
-            <Car className="w-4 h-4 text-lime-400" />
+            <Car className="w-4 h-4 text-[#247653]" />
             <span>Ver no Pátio</span>
           </Link>
         </div>
       </div>
 
       {/* Top Header Card */}
-      <div className="carbon-card p-6 border-carbon-700 space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-4 border-b border-carbon-800">
+      <div className="bg-white border border-[#E7EAE7] rounded-2xl p-6 space-y-5 shadow-xs">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-4 border-b border-[#E7EAE7]">
           <div>
-            <div className="flex items-center gap-2 mb-1">
-              <span className="led-pulse-lime" />
-              <span className="text-[10px] font-mono tracking-widest text-lime-400 uppercase">
-                // DETALHAMENTO OPERACIONAL
-              </span>
-            </div>
-            <h1 className="text-xl sm:text-2xl font-black text-white uppercase tracking-wide flex items-center gap-3">
-              <span>ORDEM DE SERVIÇO #{order.orderNumber}</span>
-              <span className="mercosul-plate text-sm font-mono font-bold">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-[#247653] block mb-1">
+              Detalhamento Operacional
+            </span>
+            <h1 className="text-xl sm:text-2xl font-bold text-[#252B27] flex items-center gap-3">
+              <span>Ordem de Serviço #{order.orderNumber}</span>
+              <span className="mercosul-plate text-xs font-bold">
                 {order.vehicle.plate}
               </span>
             </h1>
-            <p className="text-xs text-slate-400 font-mono mt-1">
-              {order.vehicle.brand} {order.vehicle.model} • Categoria Porte:{" "}
-              <strong className="text-lime-400">{order.vehicle.category}</strong> • Abertura:{" "}
+            <p className="text-xs text-[#737D75] mt-1">
+              {order.vehicle.brand} {order.vehicle.model} • Porte:{" "}
+              <strong className="text-[#247653]">{order.vehicle.category}</strong> • Abertura:{" "}
               {formatDateTime(order.createdAt)}
             </p>
           </div>
 
-          <div className="flex flex-col sm:items-end gap-1.5 font-mono">
-            <span className={`px-3 py-1 rounded text-xs font-bold border ${currentStatus.badge}`}>
-              {currentStatus.label}
-            </span>
-            <span className="text-[11px] text-slate-400 flex items-center gap-1">
-              <Gauge className="w-3.5 h-3.5 text-lime-400" />
-              Local: <strong className="text-slate-200">{order.box || "Pátio Geral"}</strong>
+          <div className="flex flex-col sm:items-end gap-1.5">
+            <OrderStatusBadge status={order.status} />
+            <span className="text-xs text-[#737D75] flex items-center gap-1">
+              <Gauge className="w-3.5 h-3.5 text-[#247653]" />
+              Local: <strong className="text-[#252B27]">{order.box || "Pátio Geral"}</strong>
             </span>
           </div>
         </div>
 
+        {/* TIMELINE VISUAL DO ATENDIMENTO */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-1">
+          {timelineSteps.map((step, idx) => {
+            const Icon = step.icon;
+            const isCompleted = currentStepIdx >= idx;
+            const isCurrent = currentStepIdx === idx;
+            return (
+              <div
+                key={step.key}
+                className={`p-3 rounded-xl border flex items-center gap-2.5 text-xs ${
+                  isCurrent
+                    ? "bg-[#E9F3EC] border-[#247653] text-[#142D26] font-bold"
+                    : isCompleted
+                    ? "bg-[#ECFDF5]/60 border-[#A7F3D0] text-[#16A36A] font-semibold"
+                    : "bg-[#F7F8F6] border-[#E7EAE7] text-[#9CA49E]"
+                }`}
+              >
+                <div
+                  className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${
+                    isCurrent
+                      ? "bg-[#247653] text-white"
+                      : isCompleted
+                      ? "bg-[#16A36A] text-white"
+                      : "bg-[#E7EAE7] text-[#737D75]"
+                  }`}
+                >
+                  <Icon className="w-3.5 h-3.5" />
+                </div>
+                <span className="truncate">{step.label}</span>
+              </div>
+            );
+          })}
+        </div>
+
         {/* Informações Resumidas do Veículo e Cliente */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 font-mono text-xs">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
           {/* Card Cliente */}
-          <div className="p-3.5 rounded bg-carbon-950 border border-carbon-800 space-y-2">
-            <div className="flex items-center justify-between text-slate-400 text-[10px] uppercase font-bold tracking-wider">
+          <div className="p-4 rounded-xl bg-[#F7F8F6] border border-[#E7EAE7] space-y-1.5">
+            <div className="flex items-center justify-between text-[#737D75] text-[10px] uppercase font-bold tracking-wider">
               <span className="flex items-center gap-1.5">
-                <User className="w-3.5 h-3.5 text-lime-400" />
+                <User className="w-3.5 h-3.5 text-[#247653]" />
                 Dados do Cliente
               </span>
               {whatsappUrl && (
@@ -243,45 +265,45 @@ export default function OrderDetailPage() {
                   href={whatsappUrl}
                   target="_blank"
                   rel="noreferrer"
-                  className="text-emerald-400 hover:text-emerald-300 flex items-center gap-1 text-[10px] lowercase transition"
+                  className="text-[#16A36A] hover:underline flex items-center gap-1 text-[11px] font-semibold"
                 >
                   <MessageCircle className="w-3 h-3" />
-                  whatsapp
+                  WhatsApp
                 </a>
               )}
             </div>
-            <p className="text-white font-bold text-sm">
+            <p className="text-[#252B27] font-bold text-sm">
               {order.vehicle.customer?.name || "Cliente não informado"}
             </p>
-            <p className="text-slate-400 text-[11px]">
+            <p className="text-[#737D75] text-xs">
               Telefone: {customerWhatsapp || "Não cadastrado"}
             </p>
           </div>
 
           {/* Card Veículo */}
-          <div className="p-3.5 rounded bg-carbon-950 border border-carbon-800 space-y-2">
-            <span className="text-slate-400 text-[10px] uppercase font-bold tracking-wider flex items-center gap-1.5">
-              <Car className="w-3.5 h-3.5 text-lime-400" />
+          <div className="p-4 rounded-xl bg-[#F7F8F6] border border-[#E7EAE7] space-y-1.5">
+            <span className="text-[#737D75] text-[10px] uppercase font-bold tracking-wider flex items-center gap-1.5">
+              <Car className="w-3.5 h-3.5 text-[#247653]" />
               Veículo em Produção
             </span>
-            <p className="text-white font-bold text-sm">
+            <p className="text-[#252B27] font-bold text-sm">
               {order.vehicle.model} {order.vehicle.color ? `• ${order.vehicle.color}` : ""}
             </p>
-            <p className="text-slate-400 text-[11px]">
+            <p className="text-[#737D75] text-xs">
               KM Entrada: {order.mileage ? `${order.mileage.toLocaleString("pt-BR")} km` : "Não registrado"}
             </p>
           </div>
 
           {/* Card Financeiro */}
-          <div className="p-3.5 rounded bg-carbon-950 border border-carbon-800 space-y-2">
-            <span className="text-slate-400 text-[10px] uppercase font-bold tracking-wider flex items-center gap-1.5">
-              <DollarSign className="w-3.5 h-3.5 text-lime-400" />
+          <div className="p-4 rounded-xl bg-[#E9F3EC]/50 border border-[#C6E2D0] space-y-1.5">
+            <span className="text-[#142D26] text-[10px] uppercase font-bold tracking-wider flex items-center gap-1.5">
+              <DollarSign className="w-3.5 h-3.5 text-[#247653]" />
               Totalização da OS
             </span>
-            <p className="text-lime-400 font-bold text-lg">
+            <p className="text-[#142D26] font-extrabold text-lg">
               {formatCurrency(order.totalAmount)}
             </p>
-            <p className="text-slate-400 text-[11px]">
+            <p className="text-[#343C36] text-xs">
               Subtotal: {formatCurrency(order.subtotal)}{" "}
               {order.discount > 0 ? `| Desconto: -${formatCurrency(order.discount)}` : ""}
             </p>
@@ -290,14 +312,14 @@ export default function OrderDetailPage() {
       </div>
 
       {/* SEÇÃO PRINCIPAL: SERVIÇOS CONTRATADOS & ADICIONAIS */}
-      <div className="carbon-card p-6 border-carbon-700 space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-3 border-b border-carbon-800">
+      <div className="bg-white border border-[#E7EAE7] rounded-2xl p-6 space-y-4 shadow-xs">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-3 border-b border-[#E7EAE7]">
           <div>
-            <h2 className="text-base font-bold text-white uppercase tracking-wide flex items-center gap-2 font-mono">
-              <Wrench className="w-4 h-4 text-lime-400" />
-              <span>Serviços & Pacotes de Estética ({order.items.length})</span>
+            <h2 className="text-base font-bold text-[#252B27] flex items-center gap-2">
+              <Wrench className="w-4 h-4 text-[#247653]" />
+              <span>Serviços e Pacotes de Estética ({order.items.length})</span>
             </h2>
-            <p className="text-xs text-slate-400 mt-0.5">
+            <p className="text-xs text-[#737D75] mt-0.5">
               Itens em execução no veículo. Se o cliente solicitou novos serviços, adicione abaixo.
             </p>
           </div>
@@ -305,7 +327,7 @@ export default function OrderDetailPage() {
           {order.status !== "PAID" && (
             <button
               onClick={() => setIsServicesModalOpen(true)}
-              className="btn-engine-start px-3.5 py-2 text-xs flex items-center gap-1.5 cursor-pointer font-mono"
+              className="dp-btn-primary text-xs cursor-pointer"
             >
               <Sparkles className="w-3.5 h-3.5" />
               <span>Adicionar Novos Serviços</span>
@@ -313,9 +335,9 @@ export default function OrderDetailPage() {
           )}
         </div>
 
-        <div className="border border-carbon-700 rounded-lg overflow-hidden font-mono text-xs">
+        <div className="border border-[#E7EAE7] rounded-xl overflow-hidden text-xs">
           <table className="w-full text-left">
-            <thead className="bg-carbon-950 text-slate-400 text-[10px] uppercase border-b border-carbon-700">
+            <thead className="bg-[#F7F8F6] text-[#737D75] text-[11px] font-semibold uppercase border-b border-[#E7EAE7]">
               <tr>
                 <th className="py-2.5 px-3">Serviço Solicitado</th>
                 <th className="py-2.5 px-3 text-center w-16">Qtd</th>
@@ -323,19 +345,19 @@ export default function OrderDetailPage() {
                 <th className="py-2.5 px-3 text-right">Total</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-carbon-800 bg-carbon-900/50">
+            <tbody className="divide-y divide-[#E7EAE7] bg-white">
               {order.items.map((item) => (
-                <tr key={item.id} className="hover:bg-carbon-800/40 transition">
-                  <td className="py-3 px-3 font-semibold text-white">
+                <tr key={item.id} className="hover:bg-[#F7F8F6] transition">
+                  <td className="py-3 px-3 font-semibold text-[#252B27]">
                     {item.serviceName}
                   </td>
-                  <td className="py-3 px-3 text-center text-slate-300">
+                  <td className="py-3 px-3 text-center text-[#343C36]">
                     {item.quantity}
                   </td>
-                  <td className="py-3 px-3 text-right text-slate-400">
+                  <td className="py-3 px-3 text-right text-[#737D75]">
                     {formatCurrency(item.unitPrice)}
                   </td>
-                  <td className="py-3 px-3 text-right font-bold text-lime-400">
+                  <td className="py-3 px-3 text-right font-bold text-[#247653]">
                     {formatCurrency(item.totalPrice)}
                   </td>
                 </tr>
@@ -344,16 +366,15 @@ export default function OrderDetailPage() {
           </table>
         </div>
 
-        {/* Banner Explicativo */}
         {order.status !== "PAID" && (
-          <div className="p-3.5 rounded-lg bg-carbon-950 border border-carbon-800 flex items-center justify-between text-xs font-mono text-slate-400">
+          <div className="p-3.5 rounded-xl bg-[#F7F8F6] border border-[#E7EAE7] flex items-center justify-between text-xs text-[#343C36]">
             <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-lime-400 animate-pulse" />
+              <span className="w-2 h-2 rounded-full bg-[#247653]" />
               <span>O cliente entrou em contato para incluir novos serviços antes da entrega?</span>
             </div>
             <button
               onClick={() => setIsServicesModalOpen(true)}
-              className="text-lime-400 hover:text-lime-300 font-bold underline cursor-pointer"
+              className="text-[#247653] hover:text-[#142D26] font-bold underline cursor-pointer"
             >
               Clique aqui para adicionar à OS
             </button>
@@ -363,11 +384,11 @@ export default function OrderDetailPage() {
 
       {/* Observações da OS */}
       {order.notes && (
-        <div className="carbon-card p-4 border-carbon-700 text-xs font-mono space-y-1">
-          <span className="text-[10px] text-slate-400 uppercase tracking-wider block font-bold">
+        <div className="bg-white border border-[#E7EAE7] rounded-xl p-4 text-xs space-y-1 shadow-xs">
+          <span className="text-[11px] text-[#737D75] uppercase tracking-wider block font-bold">
             Observações Técnicas / Operacionais:
           </span>
-          <p className="text-slate-300 leading-relaxed">{order.notes}</p>
+          <p className="text-[#252B27] leading-relaxed">{order.notes}</p>
         </div>
       )}
 
@@ -387,4 +408,3 @@ export default function OrderDetailPage() {
     </div>
   );
 }
-

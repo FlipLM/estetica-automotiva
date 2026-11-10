@@ -8,13 +8,9 @@ import {
   ClipboardList,
   Loader2,
   Trash2,
-  Plus,
   AlertCircle,
   AlertTriangle,
-  Car,
-  Wrench,
   Gauge,
-  CheckCircle2,
 } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 import CustomerVehicleSelector from "@/components/modules/customer-vehicle-selector";
@@ -38,7 +34,6 @@ export default function NewOrderPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Form State
   const [selectedVehicleId, setSelectedVehicleId] = useState("");
   const [selectedVehicle, setSelectedVehicle] = useState<any | null>(null);
   const [box, setBox] = useState("");
@@ -64,11 +59,10 @@ export default function NewOrderPage() {
 
         setVehicles(jsonVehicles.vehicles || []);
         setServicesCatalog(jsonServices.services || []);
-        
+
         const loadedBoxes: WorkBay[] = jsonBoxes.boxes || [];
         setBoxes(loadedBoxes);
 
-        // Define automaticamente o primeiro box com vaga disponível
         const firstAvailable = loadedBoxes.find((b) => !b.isFull);
         if (firstAvailable) {
           setBox(firstAvailable.name);
@@ -148,7 +142,6 @@ export default function NewOrderPage() {
   const subtotal = selectedItems.reduce((acc, curr) => acc + curr.unitPrice * curr.quantity, 0);
   const total = Math.max(0, subtotal - discount);
 
-  // Verificações de Lotação do Box Selecionado
   const selectedBoxObj = boxes.find(
     (b) => b.name === box || b.id === box || (b.name && box && b.name.trim().toLowerCase() === box.trim().toLowerCase())
   );
@@ -183,7 +176,7 @@ export default function NewOrderPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           vehicleId: selectedVehicleId,
-          status: "TODO", // Vai direto para o Pátio (Para Fazer)
+          status: "TODO",
           box,
           mileage: mileage ? Number(mileage) : null,
           discount,
@@ -211,9 +204,9 @@ export default function NewOrderPage() {
 
   if (loading) {
     return (
-      <div className="h-64 flex flex-col items-center justify-center gap-2 text-slate-400 font-mono">
-        <Loader2 className="w-7 h-7 animate-spin text-lime-400" />
-        <p className="text-xs uppercase tracking-wider">CARREGANDO CATÁLOGO E STATUS DO PÁTIO...</p>
+      <div className="h-64 flex flex-col items-center justify-center gap-2 text-[#737D75]">
+        <Loader2 className="w-7 h-7 animate-spin text-[#247653]" />
+        <p className="text-xs font-medium">Carregando catálogo e status do pátio...</p>
       </div>
     );
   }
@@ -224,38 +217,38 @@ export default function NewOrderPage() {
       <div className="flex items-center justify-between">
         <Link
           href="/os"
-          className="text-xs text-slate-400 hover:text-white flex items-center gap-1.5 transition-colors font-mono uppercase tracking-wider"
+          className="text-xs font-semibold text-[#737D75] hover:text-[#252B27] flex items-center gap-1.5 transition-colors"
         >
-          <ArrowLeft className="w-4 h-4 text-lime-400" />
+          <ArrowLeft className="w-4 h-4 text-[#247653]" />
           <span>Voltar para Ordens de Serviço</span>
         </Link>
 
         <Link
           href="/boxes"
-          className="text-xs text-slate-400 hover:text-lime-400 flex items-center gap-1.5 transition-colors font-mono"
+          className="text-xs font-semibold text-[#247653] hover:text-[#142D26] flex items-center gap-1.5 transition-colors"
         >
-          <Gauge className="w-3.5 h-3.5 text-lime-400" />
+          <Gauge className="w-3.5 h-3.5" />
           <span>Ver Ocupação dos Boxes</span>
         </Link>
       </div>
 
       {/* Alerta Geral: Pátio Completamente Lotado */}
       {allBoxesFull && (
-        <div className="p-4 rounded-lg bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs flex items-start gap-3 font-mono">
-          <AlertTriangle className="w-5 h-5 text-rose-400 shrink-0 mt-0.5" />
+        <div className="p-4 rounded-xl bg-[#FEF2F2] border border-[#FECACA] text-[#DC4C4C] text-xs flex items-start gap-3">
+          <AlertTriangle className="w-5 h-5 shrink-0 mt-0.5" />
           <div className="space-y-1">
-            <span className="font-bold uppercase tracking-wider block text-rose-200">
-              ⛔ CAPACIDADE TOTAL DO PÁTIO ESGOTADA
+            <span className="font-bold uppercase tracking-wider block">
+              Capacidade Total do Pátio Esgotada
             </span>
-            <p className="text-[11px] text-rose-300/80 leading-relaxed">
+            <p className="text-xs leading-relaxed">
               Todos os {boxes.length} boxes cadastrados atingiram o limite máximo de vagas simultâneas.
               Para liberar novas entradas, finalize ordens de serviço pendentes no{" "}
-              <Link href="/patio" className="underline font-bold text-rose-200 hover:text-white">
+              <Link href="/patio" className="underline font-bold">
                 Pátio Kanban
               </Link>{" "}
               ou aumente a capacidade das baias em{" "}
-              <Link href="/boxes" className="underline font-bold text-rose-200 hover:text-white">
-                Boxes & Baias
+              <Link href="/boxes" className="underline font-bold">
+                Boxes e Baias
               </Link>.
             </p>
           </div>
@@ -263,29 +256,27 @@ export default function NewOrderPage() {
       )}
 
       {/* Formulário Principal */}
-      <div className="carbon-card p-6 sm:p-8 space-y-6">
-        <div className="pb-4 border-b border-carbon-700 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-          <div>
-            <div className="flex items-center gap-2 mb-1">
-              <span className="led-pulse-lime" />
-              <span className="text-[10px] font-mono tracking-widest text-lime-400 uppercase">
-                // CHECK-IN & RECEPTIVO
-              </span>
+      <div className="bg-white border border-[#E7EAE7] rounded-2xl p-6 sm:p-8 space-y-6 shadow-xs">
+        <div className="pb-4 border-b border-[#E7EAE7] flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+          <div className="flex items-center gap-3.5">
+            <div className="w-10 h-10 rounded-xl bg-[#E9F3EC] flex items-center justify-center text-[#247653]">
+              <ClipboardList className="w-5 h-5" />
             </div>
-            <h1 className="text-lg font-black text-white uppercase tracking-wide flex items-center gap-2">
-              <ClipboardList className="w-5 h-5 text-lime-400" />
-              <span>Nova Ordem de Serviço (Entrada no Pátio)</span>
-            </h1>
-            <p className="text-xs text-slate-400 mt-0.5">
-              Abra a OS, direcione para um box disponível e envie o veículo para a linha de produção.
-            </p>
+            <div>
+              <h1 className="text-[20px] font-bold text-[#252B27]">
+                Nova Ordem de Serviço (Entrada no Pátio)
+              </h1>
+              <p className="text-xs text-[#737D75] mt-0.5">
+                Abra a OS, direcione para um box disponível e envie o veículo para a linha de produção
+              </p>
+            </div>
           </div>
         </div>
 
         {/* Mensagem de Erro / Alerta */}
         {error && (
-          <div className="p-3.5 rounded-lg bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs flex items-center gap-2.5 font-mono">
-            <AlertCircle className="w-4 h-4 shrink-0 text-rose-400" />
+          <div className="p-3.5 rounded-xl bg-[#FEF2F2] border border-[#FECACA] text-[#DC4C4C] text-xs font-medium flex items-center gap-2.5">
+            <AlertCircle className="w-4 h-4 shrink-0" />
             <span>{error}</span>
           </div>
         )}
@@ -293,8 +284,7 @@ export default function NewOrderPage() {
         <form onSubmit={handleCreateOrder} className="space-y-5">
           {/* 1. Seleção de Veículo e Cliente */}
           <div className="space-y-2">
-            <label className="form-label-carbon">1. Veículo & Cliente *</label>
-            <div className="p-3.5 bg-carbon-950 border border-carbon-700 rounded-lg">
+            <div className="p-4 bg-[#F7F8F6] border border-[#E7EAE7] rounded-xl">
               <CustomerVehicleSelector
                 selectedVehicleId={selectedVehicleId}
                 onSelectVehicle={(vehId, vehObj) => handleSelectVehicle(vehId, vehObj)}
@@ -305,18 +295,18 @@ export default function NewOrderPage() {
           {/* 2. Seleção de Box com Indicador de Vagas e Bloqueio Automático */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="form-label-carbon flex items-center justify-between">
-                <span>Local / Box do Pátio *</span>
+              <label className="text-xs font-semibold text-[#343C36] flex items-center justify-between mb-1.5">
+                <span>Local / Box do Pátio <span className="text-[#DC4C4C]">*</span></span>
                 {selectedBoxObj && (
                   <span
-                    className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded border ${
+                    className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
                       selectedBoxObj.isFull
-                        ? "bg-rose-500/10 text-rose-400 border-rose-500/30"
-                        : "bg-lime-500/10 text-lime-400 border-lime-500/30"
+                        ? "bg-[#FEF2F2] text-[#DC4C4C] border-[#FECACA]"
+                        : "bg-[#ECFDF5] text-[#16A36A] border-[#A7F3D0]"
                     }`}
                   >
-                    {selectedBoxObj.occupiedCount}/{selectedBoxObj.capacity} VAGAS{" "}
-                    {selectedBoxObj.isFull ? "(LOTADO)" : "OCUPADAS"}
+                    {selectedBoxObj.occupiedCount}/{selectedBoxObj.capacity} vagas{" "}
+                    {selectedBoxObj.isFull ? "(Lotado)" : "ocupadas"}
                   </span>
                 )}
               </label>
@@ -324,8 +314,8 @@ export default function NewOrderPage() {
               <select
                 value={box}
                 onChange={(e) => setBox(e.target.value)}
-                className={`form-select-carbon w-full ${
-                  isSelectedBoxFull ? "border-rose-500/50 bg-rose-950/20 text-rose-300" : ""
+                className={`dp-input ${
+                  isSelectedBoxFull ? "border-[#DC4C4C] bg-[#FEF2F2] text-[#DC4C4C]" : ""
                 }`}
                 required
               >
@@ -337,18 +327,16 @@ export default function NewOrderPage() {
                       key={b.id}
                       value={b.name}
                       disabled={b.isFull}
-                      className={b.isFull ? "text-slate-500 bg-carbon-950" : "text-white bg-carbon-900"}
                     >
-                      {b.name} — ({b.occupiedCount}/{b.capacity} vagas{b.isFull ? " - LOTADO / BLOQUEADO" : ` - ${b.availableSlots} livre${b.availableSlots > 1 ? "s" : ""}`})
+                      {b.name} — ({b.occupiedCount}/{b.capacity} vagas{b.isFull ? " - LOTADO" : ` - ${b.availableSlots} livre${b.availableSlots > 1 ? "s" : ""}`})
                     </option>
                   ))
                 )}
               </select>
 
-              {/* Alerta de Box Cheio */}
               {isSelectedBoxFull && selectedBoxObj && (
-                <div className="mt-2 p-2.5 rounded bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs flex items-center gap-2 font-mono">
-                  <AlertTriangle className="w-4 h-4 shrink-0 text-rose-400" />
+                <div className="mt-2 p-2.5 rounded-lg bg-[#FEF2F2] border border-[#FECACA] text-[#DC4C4C] text-xs flex items-center gap-2">
+                  <AlertTriangle className="w-4 h-4 shrink-0" />
                   <span>
                     <strong>Box Lotado:</strong> O <strong>{selectedBoxObj.name}</strong> atingiu o limite de {selectedBoxObj.capacity} veículo(s). Selecione outro box livre para dar entrada.
                   </span>
@@ -357,32 +345,36 @@ export default function NewOrderPage() {
             </div>
 
             <div>
-              <label className="form-label-carbon">Quilometragem Atual (KM)</label>
+              <label className="block text-xs font-semibold text-[#343C36] mb-1.5">
+                Quilometragem Atual (KM)
+              </label>
               <input
                 type="number"
                 min="0"
                 value={mileage}
                 onChange={(e) => setMileage(e.target.value ? Number(e.target.value) : "")}
                 placeholder="Ex: 52000"
-                className="form-input-carbon w-full"
+                className="dp-input"
               />
             </div>
           </div>
 
           {/* 3. Seleção de Serviços do Catálogo */}
-          <div className="space-y-2">
-            <label className="form-label-carbon">2. Serviços a serem Executados *</label>
+          <div className="space-y-1.5">
+            <label className="block text-xs font-semibold text-[#343C36]">
+              2. Serviços a serem Executados <span className="text-[#DC4C4C]">*</span>
+            </label>
             <select
               disabled={!selectedVehicleId}
               onChange={(e) => {
                 handleAddService(e.target.value);
                 e.target.value = "";
               }}
-              className="form-select-carbon w-full disabled:opacity-50"
+              className="dp-input disabled:opacity-50"
             >
               <option value="">+ Clique para selecionar e adicionar um serviço...</option>
               {servicesCatalog.map((s) => (
-                <option key={s.id} value={s.id} className="bg-carbon-900 text-white">
+                <option key={s.id} value={s.id}>
                   {s.name} ({s.category})
                 </option>
               ))}
@@ -391,9 +383,9 @@ export default function NewOrderPage() {
 
           {/* Tabela de Itens Selecionados */}
           {selectedItems.length > 0 && (
-            <div className="border border-carbon-700 rounded-lg overflow-hidden text-xs font-mono">
+            <div className="border border-[#E7EAE7] rounded-xl overflow-hidden text-xs">
               <table className="w-full text-left">
-                <thead className="bg-carbon-950 text-slate-400 text-[10px] uppercase border-b border-carbon-700">
+                <thead className="bg-[#F7F8F6] text-[#737D75] text-[11px] font-semibold uppercase border-b border-[#E7EAE7]">
                   <tr>
                     <th className="py-2.5 px-3">Serviço</th>
                     <th className="py-2.5 px-3 text-right">Preço Unit. (Porte)</th>
@@ -401,21 +393,21 @@ export default function NewOrderPage() {
                     <th className="py-2.5 px-2 text-center w-8"></th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-carbon-800 bg-carbon-900/40">
+                <tbody className="divide-y divide-[#E7EAE7] bg-white">
                   {selectedItems.map((item, idx) => (
-                    <tr key={idx} className="hover:bg-carbon-800/40 transition-colors">
-                      <td className="py-2.5 px-3 font-medium text-white">{item.name}</td>
-                      <td className="py-2.5 px-3 text-right text-slate-300">
+                    <tr key={idx} className="hover:bg-[#F7F8F6] transition-colors">
+                      <td className="py-2.5 px-3 font-semibold text-[#252B27]">{item.name}</td>
+                      <td className="py-2.5 px-3 text-right text-[#737D75]">
                         {formatCurrency(item.unitPrice)}
                       </td>
-                      <td className="py-2.5 px-3 text-right font-bold text-lime-400">
+                      <td className="py-2.5 px-3 text-right font-bold text-[#247653]">
                         {formatCurrency(item.unitPrice * item.quantity)}
                       </td>
                       <td className="py-2.5 px-2 text-center">
                         <button
                           type="button"
                           onClick={() => handleRemoveItem(idx)}
-                          className="text-slate-500 hover:text-rose-400 p-1 transition-colors"
+                          className="text-[#9CA49E] hover:text-[#DC4C4C] p-1 transition-colors"
                           title="Remover serviço"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
@@ -429,58 +421,64 @@ export default function NewOrderPage() {
           )}
 
           {/* Desconto e Totalização */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-3 border-t border-carbon-700">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-3 border-t border-[#E7EAE7]">
             <div>
-              <label className="form-label-carbon">Desconto Concedido (R$)</label>
+              <label className="block text-xs font-semibold text-[#343C36] mb-1.5">
+                Desconto Concedido (R$)
+              </label>
               <input
                 type="number"
                 min="0"
                 step="0.01"
                 value={discount}
                 onChange={(e) => setDiscount(parseFloat(e.target.value) || 0)}
-                className="form-input-carbon w-full"
+                className="dp-input"
                 placeholder="0.00"
               />
             </div>
 
-            <div className="flex flex-col justify-end text-right font-mono bg-carbon-950/60 p-3 rounded-lg border border-carbon-800">
-              <p className="text-[10px] uppercase tracking-wider text-slate-400">Total da OS Previsto:</p>
-              <p className="text-2xl font-black text-lime-400">{formatCurrency(total)}</p>
+            <div className="flex flex-col justify-end text-right bg-[#E9F3EC]/60 p-3.5 rounded-xl border border-[#C6E2D0]">
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-[#343C36]">
+                Total da OS Previsto:
+              </p>
+              <p className="text-2xl font-extrabold text-[#142D26]">{formatCurrency(total)}</p>
             </div>
           </div>
 
           {/* Observações da OS */}
           <div>
-            <label className="form-label-carbon">Observações Técnicas / Operacionais</label>
+            <label className="block text-xs font-semibold text-[#343C36] mb-1.5">
+              Observações Técnicas / Operacionais
+            </label>
             <input
               type="text"
               placeholder="Instruções para o operador, cuidados com a pintura, etc..."
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              className="form-input-carbon w-full"
+              className="dp-input"
             />
           </div>
 
           {/* Ações do Rodapé */}
-          <div className="pt-4 border-t border-carbon-700 flex flex-col sm:flex-row items-center justify-end gap-3 font-mono">
+          <div className="pt-4 border-t border-[#E7EAE7] flex flex-col sm:flex-row items-center justify-end gap-3">
             <Link
               href="/os"
-              className="w-full sm:w-auto px-4 py-2.5 rounded hover:bg-carbon-800 text-slate-400 hover:text-white text-xs text-center transition-colors"
+              className="dp-btn-secondary w-full sm:w-auto text-xs text-center"
             >
-              CANCELAR
+              Cancelar
             </Link>
 
             <button
               type="submit"
               disabled={saving || isSelectedBoxFull}
-              className={`w-full sm:w-auto px-6 py-2.5 text-xs flex items-center justify-center gap-2 ${
+              className={`w-full sm:w-auto text-xs ${
                 isSelectedBoxFull
-                  ? "bg-carbon-800 text-slate-500 border border-carbon-700 cursor-not-allowed opacity-60"
-                  : "btn-engine-start cursor-pointer"
+                  ? "px-5 py-2.5 rounded-lg bg-[#F1F3F1] text-[#9CA49E] border border-[#E7EAE7] cursor-not-allowed"
+                  : "dp-btn-primary cursor-pointer"
               }`}
             >
               {saving && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-              <span>{isSelectedBoxFull ? "BOX LOTADO (SELECIONE OUTRO)" : "ABRIR OS & ENVIAR AO PÁTIO"}</span>
+              <span>{isSelectedBoxFull ? "Box Lotado (Selecione Outro)" : "Abrir OS e Enviar ao Pátio"}</span>
             </button>
           </div>
         </form>

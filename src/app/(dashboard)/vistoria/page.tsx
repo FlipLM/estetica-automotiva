@@ -4,13 +4,10 @@ import { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
 import {
   Camera,
-  Car,
   Fuel,
   Gauge,
   Plus,
   Search,
-  CheckCircle2,
-  Clock,
   AlertTriangle,
   Loader2,
   Share2,
@@ -18,18 +15,10 @@ import {
   X,
   FileCheck,
   ClipboardList,
-  Check,
-  ArrowRight,
   User,
-  Users,
-  Layers,
-  Sparkles,
 } from "lucide-react";
 import { VehicleSilhouette360, DamagePin } from "@/components/modules/vehicle-silhouette-360";
-import CustomerVehicleSelector, {
-  VehicleItem,
-  CustomerItem,
-} from "@/components/modules/customer-vehicle-selector";
+import CustomerVehicleSelector from "@/components/modules/customer-vehicle-selector";
 import { CustomerChecklistHistoryModal } from "@/components/modules/customer-checklist-history-modal";
 import { formatDateTime } from "@/lib/utils";
 
@@ -110,7 +99,6 @@ export default function VistoriaPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Filtros & Visualização Individual por Cliente
   const [search, setSearch] = useState("");
   const [viewMode, setViewMode] = useState<"ALL" | "BY_CUSTOMER">("ALL");
   const [historyModalCustomer, setHistoryModalCustomer] = useState<{
@@ -119,7 +107,6 @@ export default function VistoriaPage() {
     phone?: string;
   } | null>(null);
 
-  // Form State
   const [selectionMode, setSelectionMode] = useState<"TODO_OS" | "SEARCH_CUSTOMER">("TODO_OS");
   const [selectedServiceOrderId, setSelectedServiceOrderId] = useState<string | null>(null);
   const [selectedOrderSummary, setSelectedOrderSummary] = useState<PendingOrder | null>(null);
@@ -253,7 +240,6 @@ export default function VistoriaPage() {
     window.open(`https://wa.me/${formattedPhone}?text=${text}`, "_blank");
   }
 
-  // Filtragem de Vistorias por termo de busca
   const filteredChecklists = useMemo(() => {
     if (!search.trim()) return checklists;
     const term = search.trim().toLowerCase();
@@ -271,7 +257,6 @@ export default function VistoriaPage() {
     });
   }, [checklists, search]);
 
-  // Agrupamento de Vistorias por Cliente para Histórico Individual
   const customerGroups = useMemo(() => {
     const map = new Map<
       string,
@@ -318,21 +303,19 @@ export default function VistoriaPage() {
   return (
     <div className="space-y-5">
       {/* Top Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2 mb-1">
-            <span className="led-pulse-lime"></span>
-            <span className="text-[10px] font-mono tracking-widest text-lime-400 uppercase">
-              // CHECKLIST & RECEPÇÃO
-            </span>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-5 rounded-xl bg-white border border-[#E7EAE7] shadow-xs">
+        <div className="flex items-center gap-3.5">
+          <div className="w-10 h-10 rounded-xl bg-[#E9F3EC] flex items-center justify-center text-[#247653]">
+            <Camera className="w-5 h-5" />
           </div>
-          <h1 className="text-xl font-black tracking-wide text-white uppercase flex items-center gap-2 font-mono">
-            <Camera className="w-5 h-5 text-lime-400" />
-            <span>Recepção & Vistoria Digital 360º</span>
-          </h1>
-          <p className="text-xs text-slate-400 mt-0.5">
-            Checklist de entrada, registro de avarias e integração direta com o Pátio da Oficina
-          </p>
+          <div>
+            <h1 className="text-[22px] font-bold tracking-tight text-[#252B27]">
+              Recepção e Vistoria Digital 360º
+            </h1>
+            <p className="text-xs text-[#737D75] mt-0.5">
+              Checklist de entrada, registro de avarias e integração direta com o Pátio da Oficina
+            </p>
+          </div>
         </div>
 
         <button
@@ -341,7 +324,7 @@ export default function VistoriaPage() {
             refreshPendingOrders();
             setModalOpen(true);
           }}
-          className="btn-engine-start px-4 py-2 text-xs flex items-center gap-1.5 cursor-pointer"
+          className="dp-btn-primary text-xs cursor-pointer"
         >
           <Plus className="w-4 h-4" />
           <span>Nova Vistoria (Entrada)</span>
@@ -349,91 +332,92 @@ export default function VistoriaPage() {
       </div>
 
       {/* Cards de Métricas Rápidas */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-        <div className="p-3.5 rounded-xl bg-[#111827] border border-slate-800 flex items-center gap-3">
-          <div className="w-9 h-9 rounded-lg bg-blue-500/10 text-blue-400 flex items-center justify-center">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+        <div className="p-4 rounded-xl bg-white border border-[#E7EAE7] flex items-center gap-3 shadow-xs">
+          <div className="w-10 h-10 rounded-xl bg-[#EFF6FF] text-[#2563EB] flex items-center justify-center">
             <FileCheck className="w-5 h-5" />
           </div>
           <div>
-            <p className="text-[11px] text-slate-400 font-medium">Vistorias Realizadas</p>
-            <p className="text-lg font-bold text-white leading-tight">{checklists.length}</p>
+            <p className="text-xs text-[#737D75] font-medium">Vistorias Realizadas</p>
+            <p className="text-xl font-bold text-[#252B27] leading-tight">{checklists.length}</p>
           </div>
         </div>
 
-        <div className="p-3.5 rounded-xl bg-[#111827] border border-slate-800 flex items-center gap-3">
-          <div className="w-9 h-9 rounded-lg bg-amber-500/10 text-amber-400 flex items-center justify-center">
+        <div className="p-4 rounded-xl bg-white border border-[#E7EAE7] flex items-center gap-3 shadow-xs">
+          <div className="w-10 h-10 rounded-xl bg-[#FFFBEB] text-[#D97706] flex items-center justify-center">
             <AlertTriangle className="w-5 h-5" />
           </div>
           <div>
-            <p className="text-[11px] text-slate-400 font-medium">Avarias Mapeadas</p>
-            <p className="text-lg font-bold text-white leading-tight">
+            <p className="text-xs text-[#737D75] font-medium">Avarias Mapeadas</p>
+            <p className="text-xl font-bold text-[#252B27] leading-tight">
               {checklists.reduce((acc, c) => acc + c.damageRecords.length, 0)}
             </p>
           </div>
         </div>
 
-        <div className="col-span-2 sm:col-span-1 p-3.5 rounded-xl bg-[#111827] border border-slate-800 flex items-center gap-3">
-          <div className="w-9 h-9 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center">
+        <div className="p-4 rounded-xl bg-white border border-[#E7EAE7] flex items-center gap-3 shadow-xs">
+          <div className="w-10 h-10 rounded-xl bg-[#ECFDF5] text-[#16A36A] flex items-center justify-center">
             <ClipboardList className="w-5 h-5" />
           </div>
           <div>
-            <p className="text-[11px] text-slate-400 font-medium">OS Aguardando Vistoria</p>
-            <p className="text-lg font-bold text-white leading-tight">{pendingOrders.length}</p>
+            <p className="text-xs text-[#737D75] font-medium">OS Aguardando Vistoria</p>
+            <p className="text-xl font-bold text-[#252B27] leading-tight">{pendingOrders.length}</p>
           </div>
         </div>
       </div>
 
       {/* Barra de Filtros, Busca e Alternância de Abas */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 font-mono">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
         <div className="relative flex-1 max-w-md">
-          <Search className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+          <Search className="w-4 h-4 text-[#9CA49E] absolute left-3.5 top-1/2 -translate-y-1/2" />
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="BUSCAR POR PLACA, CLIENTE OU MODELO..."
-            className="w-full pl-10 pr-4 py-2 rounded bg-carbon-950 border border-carbon-700 text-white placeholder:text-slate-600 text-xs focus:outline-none focus:border-lime-400/80 uppercase transition-all"
+            placeholder="Buscar por placa, cliente ou modelo..."
+            className="dp-input pl-10"
           />
         </div>
 
         <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs">
           <button
             onClick={() => setViewMode("ALL")}
-            className={`px-3 py-1.5 rounded text-[11px] font-bold whitespace-nowrap transition-all cursor-pointer ${viewMode === "ALL"
-                ? "bg-lime-400 text-black shadow-sm font-extrabold"
-                : "bg-carbon-900 text-slate-400 hover:bg-carbon-800 hover:text-white border border-carbon-700"
-              }`}
+            className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
+              viewMode === "ALL"
+                ? "bg-[#247653] text-white shadow-xs"
+                : "bg-white text-[#737D75] hover:bg-[#F7F8F6] hover:text-[#252B27] border border-[#E7EAE7]"
+            }`}
           >
-            TODAS AS VISTORIAS ({checklists.length})
+            Todas as Vistorias ({checklists.length})
           </button>
 
           <button
             onClick={() => setViewMode("BY_CUSTOMER")}
-            className={`px-3 py-1.5 rounded text-[11px] font-bold whitespace-nowrap transition-all cursor-pointer flex items-center gap-1.5 ${viewMode === "BY_CUSTOMER"
-                ? "bg-lime-400 text-black shadow-sm font-extrabold"
-                : "bg-carbon-900 text-slate-400 hover:bg-carbon-800 hover:text-white border border-carbon-700"
-              }`}
+            className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all cursor-pointer flex items-center gap-1.5 ${
+              viewMode === "BY_CUSTOMER"
+                ? "bg-[#247653] text-white shadow-xs"
+                : "bg-white text-[#737D75] hover:bg-[#F7F8F6] hover:text-[#252B27] border border-[#E7EAE7]"
+            }`}
           >
             <User className="w-3.5 h-3.5" />
-            <span>HISTÓRICO POR CLIENTE ({customerGroups.length})</span>
+            <span>Histórico por Cliente ({customerGroups.length})</span>
           </button>
         </div>
       </div>
 
       {/* Exibição Conforme Modo de Visualização */}
       {loading ? (
-        <div className="h-64 flex flex-col items-center justify-center gap-2 text-slate-400 bg-carbon-900 border border-carbon-700 rounded-xl font-mono">
-          <Loader2 className="w-8 h-8 animate-spin text-lime-400" />
-          <p className="text-xs uppercase tracking-wider">CARREGANDO VISTORIAS DO PÁTIO...</p>
+        <div className="h-64 flex flex-col items-center justify-center gap-2 text-[#737D75] bg-white border border-[#E7EAE7] rounded-xl">
+          <Loader2 className="w-8 h-8 animate-spin text-[#247653]" />
+          <p className="text-xs font-medium">Carregando vistorias do pátio...</p>
         </div>
       ) : viewMode === "BY_CUSTOMER" ? (
-        /* MODO 1: HISTÓRICO INDIVIDUAL DE VISTORIAS POR CLIENTE */
         customerGroups.length === 0 ? (
-          <div className="p-12 text-center text-slate-400 text-xs carbon-card border-carbon-800 font-mono">
+          <div className="p-12 text-center text-[#737D75] text-xs bg-white border border-[#E7EAE7] rounded-xl">
             Nenhum cliente com vistorias registradas para os filtros aplicados.
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5 font-mono">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {customerGroups.map((group, idx) => {
               const cust = group.customer;
               const totalDamages = group.checklists.reduce(
@@ -456,19 +440,19 @@ export default function VistoriaPage() {
               return (
                 <div
                   key={cust.id || idx}
-                  className="p-4 rounded-xl carbon-card border-carbon-700 bg-carbon-900/60 hover:border-lime-500/40 transition-all space-y-3"
+                  className="p-4 rounded-xl bg-white border border-[#E7EAE7] hover:border-[#247653]/50 transition-all space-y-3 shadow-xs"
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
-                      <span className="text-[10px] text-lime-400 uppercase tracking-widest font-bold block mb-0.5">
-                        // CLIENTE
+                      <span className="text-[10px] text-[#247653] uppercase tracking-wider font-bold block mb-0.5">
+                        Cliente
                       </span>
-                      <h3 className="text-sm font-bold text-white truncate">{cust.name}</h3>
+                      <h3 className="text-sm font-bold text-[#252B27] truncate">{cust.name}</h3>
                       {cust.phone && (
-                        <p className="text-[11px] text-slate-400">{cust.phone}</p>
+                        <p className="text-xs text-[#737D75]">{cust.phone}</p>
                       )}
                     </div>
-                    <span className="px-2 py-0.5 rounded bg-carbon-950 text-slate-300 border border-carbon-700 text-[10px] font-bold shrink-0">
+                    <span className="px-2.5 py-0.5 rounded-full bg-[#E9F3EC] text-[#142D26] text-[11px] font-bold shrink-0">
                       {group.checklists.length}{" "}
                       {group.checklists.length === 1 ? "vistoria" : "vistorias"}
                     </span>
@@ -476,14 +460,14 @@ export default function VistoriaPage() {
 
                   {/* Veículos Vistoriados */}
                   <div className="space-y-1 text-xs">
-                    <span className="text-[10px] text-slate-500 uppercase">
+                    <span className="text-[11px] text-[#737D75] font-medium">
                       Veículos Vistoriados:
                     </span>
                     <div className="flex flex-wrap gap-1">
                       {uniquePlates.map((plate) => (
                         <span
                           key={plate}
-                          className="mercosul-plate text-[10px] font-bold px-1.5 py-0.5 inline-block"
+                          className="mercosul-plate text-xs font-bold inline-block"
                         >
                           {plate}
                         </span>
@@ -492,19 +476,18 @@ export default function VistoriaPage() {
                   </div>
 
                   {/* Métricas do Histórico do Cliente */}
-                  <div className="grid grid-cols-2 gap-2 text-xs pt-1 border-t border-carbon-800">
-                    <div className="p-2 rounded bg-carbon-950 border border-carbon-800">
-                      <span className="text-[10px] text-slate-500 block">Total Avarias</span>
-                      <span className="font-bold text-rose-400">{totalDamages} pontos</span>
+                  <div className="grid grid-cols-2 gap-2 text-xs pt-2 border-t border-[#E7EAE7]">
+                    <div className="p-2.5 rounded-lg bg-[#F7F8F6] border border-[#E7EAE7]">
+                      <span className="text-[10px] text-[#737D75] block">Total Avarias</span>
+                      <span className="font-bold text-[#DC4C4C]">{totalDamages} pontos</span>
                     </div>
-                    <div className="p-2 rounded bg-carbon-950 border border-carbon-800">
-                      <span className="text-[10px] text-slate-500 block">Fotos Gravadas</span>
-                      <span className="font-bold text-cyan-400">{totalPhotos} fotos</span>
+                    <div className="p-2.5 rounded-lg bg-[#F7F8F6] border border-[#E7EAE7]">
+                      <span className="text-[10px] text-[#737D75] block">Fotos Gravadas</span>
+                      <span className="font-bold text-[#2563EB]">{totalPhotos} fotos</span>
                     </div>
                   </div>
 
-                  {/* Botão para Abrir Dossiê Completo */}
-                  <div className="pt-2">
+                  <div className="pt-1">
                     <button
                       type="button"
                       onClick={() =>
@@ -514,9 +497,9 @@ export default function VistoriaPage() {
                           phone: cust.whatsapp || cust.phone,
                         })
                       }
-                      className="w-full py-2 rounded bg-carbon-800 hover:bg-lime-400 text-slate-200 hover:text-black border border-carbon-600 hover:border-lime-400 text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer uppercase"
+                      className="dp-btn-secondary w-full text-xs cursor-pointer"
                     >
-                      <FileCheck className="w-3.5 h-3.5" />
+                      <FileCheck className="w-3.5 h-3.5 text-[#247653]" />
                       <span>Ver Histórico Individual</span>
                     </button>
                   </div>
@@ -525,188 +508,186 @@ export default function VistoriaPage() {
             })}
           </div>
         )
+      ) : filteredChecklists.length === 0 ? (
+        <div className="p-12 text-center text-[#737D75] text-xs bg-white border border-[#E7EAE7] rounded-xl">
+          Nenhuma vistoria de entrada encontrada para o filtro informado.
+        </div>
       ) : (
-        /* MODO 2: TODAS AS VISTORIAS */
-        filteredChecklists.length === 0 ? (
-          <div className="p-12 text-center text-slate-400 text-xs carbon-card border-carbon-800 font-mono">
-            Nenhuma vistoria de entrada encontrada para o filtro informado.
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5 font-mono">
-            {filteredChecklists.map((chk) => {
-              const vh = chk.serviceOrder.vehicle;
-              const cust = vh.customer;
-              const photoCount = chk.damageRecords.reduce(
-                (acc, d) => acc + (d.photos?.length || (d.photoUrl ? 1 : 0)),
-                0
-              );
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {filteredChecklists.map((chk) => {
+            const vh = chk.serviceOrder.vehicle;
+            const cust = vh.customer;
+            const photoCount = chk.damageRecords.reduce(
+              (acc, d) => acc + (d.photos?.length || (d.photoUrl ? 1 : 0)),
+              0
+            );
 
-              return (
-                <div
-                  key={chk.id}
-                  className="p-4 rounded-xl carbon-card border-carbon-700 bg-carbon-900/60 hover:border-lime-500/40 transition-all space-y-3"
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <span className="mercosul-plate text-xs font-bold inline-block">
-                        {vh.plate}
-                      </span>
-                      <span className="text-xs font-bold text-white truncate max-w-[150px]">
-                        {vh.brand ? `${vh.brand} ` : ""}
-                        {vh.model}
-                      </span>
-                    </div>
-                    <span className="text-[10px] font-bold text-slate-400 bg-carbon-950 px-2 py-0.5 rounded border border-carbon-800">
-                      OS #{chk.serviceOrder.orderNumber}
+            return (
+              <div
+                key={chk.id}
+                className="p-4 rounded-xl bg-white border border-[#E7EAE7] hover:border-[#247653]/50 transition-all space-y-3 shadow-xs"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="mercosul-plate text-xs font-bold inline-block">
+                      {vh.plate}
+                    </span>
+                    <span className="text-xs font-bold text-[#252B27] truncate max-w-[150px]">
+                      {vh.brand ? `${vh.brand} ` : ""}
+                      {vh.model}
                     </span>
                   </div>
+                  <span className="text-[11px] font-bold text-[#142D26] bg-[#E9F3EC] px-2.5 py-0.5 rounded-full">
+                    OS #{chk.serviceOrder.orderNumber}
+                  </span>
+                </div>
 
-                  <div className="text-xs text-slate-400 space-y-1">
-                    <p>
-                      Cliente:{" "}
-                      {cust ? (
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setHistoryModalCustomer({
-                              id: cust.id || cust.name,
-                              name: cust.name,
-                              phone: cust.whatsapp || cust.phone,
-                            })
-                          }
-                          className="text-lime-400 hover:underline font-bold text-left"
-                          title="Clique para ver o histórico individual deste cliente"
-                        >
-                          {cust.name}
-                        </button>
-                      ) : (
-                        <strong className="text-slate-300">Não informado</strong>
-                      )}
-                    </p>
-                    <p className="text-[11px] text-slate-500">
-                      Porte: {vh.category} {vh.color ? `• ${vh.color}` : ""}
-                    </p>
-                  </div>
-
-                  {/* Resumo da Vistoria */}
-                  <div className="pt-2 border-t border-carbon-800 space-y-1.5 text-xs">
-                    <div className="flex items-center justify-between text-slate-300">
-                      <span className="flex items-center gap-1 text-[11px] text-slate-400">
-                        <Fuel className="w-3.5 h-3.5 text-amber-400" />
-                        <span>Combustível:</span>
-                      </span>
-                      <span className="font-semibold text-amber-400">{chk.fuelLevel}%</span>
-                    </div>
-
-                    <div className="flex items-center justify-between text-slate-300">
-                      <span className="flex items-center gap-1 text-[11px] text-slate-400">
-                        <AlertTriangle className="w-3.5 h-3.5 text-rose-400" />
-                        <span>Avarias Registradas:</span>
-                      </span>
-                      <strong
-                        className={chk.damageRecords.length > 0 ? "text-rose-400" : "text-lime-400"}
-                      >
-                        {chk.damageRecords.length} ponto(s)
-                      </strong>
-                    </div>
-
-                    <div className="flex items-center justify-between text-slate-300">
-                      <span className="flex items-center gap-1 text-[11px] text-slate-400">
-                        <Camera className="w-3.5 h-3.5 text-cyan-400" />
-                        <span>Fotos Anexadas:</span>
-                      </span>
-                      <span className="font-bold text-cyan-400">{photoCount} foto(s)</span>
-                    </div>
-
-                    {chk.valuablesLeft && (
-                      <div className="mt-1.5 p-2 rounded bg-carbon-950 border border-carbon-800 text-[10px] text-slate-300">
-                        <span className="text-slate-500 font-bold uppercase">Pertences: </span>
-                        {chk.valuablesLeft}
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="pt-3 border-t border-carbon-800 flex items-center justify-between text-xs">
-                    <span className="text-[10px] text-slate-500">{formatDateTime(chk.createdAt)}</span>
-
-                    <div className="flex items-center gap-1.5">
+                <div className="text-xs text-[#737D75] space-y-1">
+                  <p>
+                    Cliente:{" "}
+                    {cust ? (
                       <button
-                        onClick={() => sendWhatsAppChecklist(chk)}
-                        title="Enviar comprovante via WhatsApp"
-                        className="p-1.5 rounded bg-emerald-500/10 hover:bg-emerald-500 text-emerald-400 hover:text-black border border-emerald-500/30 transition-all cursor-pointer flex items-center gap-1 text-[11px] font-bold uppercase"
+                        type="button"
+                        onClick={() =>
+                          setHistoryModalCustomer({
+                            id: cust.id || cust.name,
+                            name: cust.name,
+                            phone: cust.whatsapp || cust.phone,
+                          })
+                        }
+                        className="text-[#247653] hover:underline font-bold text-left"
+                        title="Clique para ver o histórico individual deste cliente"
                       >
-                        <Share2 className="w-3.5 h-3.5" />
-                        <span>WhatsApp</span>
+                        {cust.name}
                       </button>
-                      <Link
-                        href={`/vistoria/${chk.id}`}
-                        className="p-1.5 rounded bg-carbon-800 hover:bg-carbon-700 text-slate-300 hover:text-white border border-carbon-600 transition-all text-[11px] font-bold flex items-center gap-1 uppercase"
-                      >
-                        <Eye className="w-3.5 h-3.5 text-lime-400" />
-                        <span>Ver</span>
-                      </Link>
+                    ) : (
+                      <strong className="text-[#343C36]">Não informado</strong>
+                    )}
+                  </p>
+                  <p className="text-[11px] text-[#737D75]">
+                    Porte: {vh.category} {vh.color ? `• ${vh.color}` : ""}
+                  </p>
+                </div>
+
+                {/* Resumo da Vistoria */}
+                <div className="pt-2.5 border-t border-[#E7EAE7] space-y-1.5 text-xs">
+                  <div className="flex items-center justify-between text-[#343C36]">
+                    <span className="flex items-center gap-1 text-xs text-[#737D75]">
+                      <Fuel className="w-3.5 h-3.5 text-[#D97706]" />
+                      <span>Combustível:</span>
+                    </span>
+                    <span className="font-bold text-[#252B27]">{chk.fuelLevel}%</span>
+                  </div>
+
+                  <div className="flex items-center justify-between text-[#343C36]">
+                    <span className="flex items-center gap-1 text-xs text-[#737D75]">
+                      <AlertTriangle className="w-3.5 h-3.5 text-[#DC4C4C]" />
+                      <span>Avarias Registradas:</span>
+                    </span>
+                    <strong
+                      className={chk.damageRecords.length > 0 ? "text-[#DC4C4C]" : "text-[#16A36A]"}
+                    >
+                      {chk.damageRecords.length} ponto(s)
+                    </strong>
+                  </div>
+
+                  <div className="flex items-center justify-between text-[#343C36]">
+                    <span className="flex items-center gap-1 text-xs text-[#737D75]">
+                      <Camera className="w-3.5 h-3.5 text-[#2563EB]" />
+                      <span>Fotos Anexadas:</span>
+                    </span>
+                    <span className="font-bold text-[#2563EB]">{photoCount} foto(s)</span>
+                  </div>
+
+                  {chk.valuablesLeft && (
+                    <div className="mt-1.5 p-2 rounded-lg bg-[#F7F8F6] border border-[#E7EAE7] text-[11px] text-[#343C36]">
+                      <span className="text-[#737D75] font-semibold">Pertences: </span>
+                      {chk.valuablesLeft}
                     </div>
+                  )}
+                </div>
+
+                <div className="pt-3 border-t border-[#E7EAE7] flex items-center justify-between text-xs">
+                  <span className="text-[11px] text-[#737D75]">{formatDateTime(chk.createdAt)}</span>
+
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      onClick={() => sendWhatsAppChecklist(chk)}
+                      title="Enviar comprovante via WhatsApp"
+                      className="px-2.5 py-1.5 rounded-lg bg-[#ECFDF5] hover:bg-[#D1FAE5] text-[#16A36A] border border-[#A7F3D0] transition-all cursor-pointer flex items-center gap-1 text-xs font-semibold"
+                    >
+                      <Share2 className="w-3.5 h-3.5" />
+                      <span>WhatsApp</span>
+                    </button>
+                    <Link
+                      href={`/vistoria/${chk.id}`}
+                      className="dp-btn-secondary py-1.5 px-2.5 text-xs"
+                    >
+                      <Eye className="w-3.5 h-3.5 text-[#247653]" />
+                      <span>Ver</span>
+                    </Link>
                   </div>
                 </div>
-              );
-            })}
-          </div>
-        )
+              </div>
+            );
+          })}
+        </div>
       )}
 
       {/* MODAL DE NOVA VISTORIA & CHECKLIST 360 */}
       {modalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
-          <div className="w-full max-w-4xl p-5 sm:p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto rounded-xl bg-carbon-900 border border-carbon-700 font-mono my-auto">
-            <div className="flex items-center justify-between pb-3 border-b border-carbon-800">
-              <h2 className="text-sm font-black text-white uppercase tracking-wider font-mono flex items-center gap-2">
-                <Camera className="w-4 h-4 text-lime-400" />
-                <span>Recepção de Veículo & Checklist 360º</span>
+        <div className="fixed inset-0 z-50 bg-[#142D26]/45 backdrop-blur-[2px] flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+          <div className="w-full max-w-4xl p-5 sm:p-6 shadow-xl space-y-4 max-h-[90vh] overflow-y-auto rounded-2xl bg-white border border-[#E7EAE7] my-auto">
+            <div className="flex items-center justify-between pb-3 border-b border-[#E7EAE7]">
+              <h2 className="text-base font-bold text-[#252B27] flex items-center gap-2">
+                <Camera className="w-4 h-4 text-[#247653]" />
+                <span>Recepção de Veículo e Checklist 360º</span>
               </h2>
               <button
                 onClick={() => setModalOpen(false)}
-                className="text-slate-400 hover:text-white p-1 rounded hover:bg-slate-800"
+                className="text-[#737D75] hover:text-[#252B27] p-1 rounded-lg hover:bg-[#F7F8F6]"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
             {error && (
-              <div className="p-3 rounded bg-red-500/10 border border-red-500/30 text-red-400 text-xs flex items-center gap-2 font-mono">
+              <div className="p-3 rounded-lg bg-[#FEF2F2] border border-[#FECACA] text-[#DC4C4C] text-xs font-medium flex items-center gap-2">
                 <AlertTriangle className="w-4 h-4 shrink-0" />
                 <span>{error}</span>
               </div>
             )}
 
             <form onSubmit={handleCreateChecklist} className="space-y-4">
-              {/* ETAPA 1: SELEÇÃO DO VEÍCULO - DUPLO MODO: PUXAR DE OS OU BUSCAR CLIENTE */}
-              <div className="p-3.5 bg-[#0c0e14] border border-[#1c2230] rounded space-y-3 font-mono">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 pb-2 border-b border-[#1c2230]">
-                  <label className="text-xs font-bold text-slate-200 uppercase tracking-wider">
-                    1. Identificação do Veículo para Entrada *
+              {/* ETAPA 1: SELEÇÃO DO VEÍCULO */}
+              <div className="p-4 bg-[#F7F8F6] border border-[#E7EAE7] rounded-xl space-y-3">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 pb-2 border-b border-[#E7EAE7]">
+                  <label className="text-xs font-bold text-[#252B27]">
+                    1. Identificação do Veículo para Entrada <span className="text-[#DC4C4C]">*</span>
                   </label>
 
-                  {/* Seletor de Modo */}
-                  <div className="inline-flex p-1 rounded bg-[#07090e] border border-[#1c2230] text-xs font-medium">
+                  <div className="inline-flex p-1 rounded-lg bg-white border border-[#E7EAE7] text-xs">
                     <button
                       type="button"
                       onClick={() => setSelectionMode("TODO_OS")}
-                      className={`px-3 py-1.5 rounded flex items-center gap-1.5 transition cursor-pointer text-xs uppercase tracking-wider ${selectionMode === "TODO_OS"
-                          ? "bg-lime-400 text-black font-black"
-                          : "text-slate-400 hover:text-white"
-                        }`}
+                      className={`px-3 py-1 rounded-md flex items-center gap-1.5 transition cursor-pointer text-xs font-semibold ${
+                        selectionMode === "TODO_OS"
+                          ? "bg-[#247653] text-white"
+                          : "text-[#737D75] hover:text-[#252B27]"
+                      }`}
                     >
                       <ClipboardList className="w-3.5 h-3.5" />
-                      <span>Puxar de OS em &quot;A Fazer&quot; ({pendingOrders.length})</span>
+                      <span>Puxar de OS em &ldquo;A Fazer&rdquo; ({pendingOrders.length})</span>
                     </button>
 
                     <button
                       type="button"
                       onClick={() => setSelectionMode("SEARCH_CUSTOMER")}
-                      className={`px-3 py-1.5 rounded flex items-center gap-1.5 transition cursor-pointer text-xs uppercase tracking-wider ${selectionMode === "SEARCH_CUSTOMER"
-                          ? "bg-lime-400 text-black font-black"
-                          : "text-slate-400 hover:text-white"
-                        }`}
+                      className={`px-3 py-1 rounded-md flex items-center gap-1.5 transition cursor-pointer text-xs font-semibold ${
+                        selectionMode === "SEARCH_CUSTOMER"
+                          ? "bg-[#247653] text-white"
+                          : "text-[#737D75] hover:text-[#252B27]"
+                      }`}
                     >
                       <Search className="w-3.5 h-3.5" />
                       <span>Buscar Cliente / Veículo</span>
@@ -718,31 +699,31 @@ export default function VistoriaPage() {
                 {selectionMode === "TODO_OS" && (
                   <div className="space-y-2">
                     {selectedOrderSummary ? (
-                      <div className="p-3.5 rounded-xl bg-blue-600/15 border border-blue-500/40 flex items-center justify-between gap-3 animate-in fade-in">
+                      <div className="p-3.5 rounded-xl bg-[#E9F3EC] border border-[#247653] flex items-center justify-between gap-3">
                         <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-xl bg-blue-500/20 text-blue-400 flex flex-col items-center justify-center font-bold text-xs shrink-0 border border-blue-500/30">
+                          <div className="w-10 h-10 rounded-xl bg-[#247653] text-white flex flex-col items-center justify-center font-bold text-xs shrink-0">
                             <span>OS</span>
                             <span>#{selectedOrderSummary.orderNumber}</span>
                           </div>
                           <div className="text-xs space-y-1">
                             <div className="flex items-center gap-2">
-                              <span className="font-mono font-bold text-white px-2 py-0.5 rounded bg-slate-900 border border-slate-700 text-xs">
+                              <span className="mercosul-plate text-xs font-bold">
                                 {selectedOrderSummary.vehicle.plate}
                               </span>
-                              <span className="font-semibold text-white">
+                              <span className="font-bold text-[#252B27]">
                                 {selectedOrderSummary.vehicle.brand
                                   ? `${selectedOrderSummary.vehicle.brand} `
                                   : ""}
                                 {selectedOrderSummary.vehicle.model}
                               </span>
-                              <span className="text-[11px] text-blue-400 font-medium">
+                              <span className="text-[11px] text-[#247653] font-semibold">
                                 ({selectedOrderSummary.vehicle.category})
                               </span>
                             </div>
-                            <div className="text-slate-300 text-[11px] flex items-center gap-2">
+                            <div className="text-[#343C36] text-xs flex items-center gap-2">
                               <span>
                                 Cliente:{" "}
-                                <strong className="text-white">
+                                <strong className="text-[#252B27]">
                                   {selectedOrderSummary.vehicle.customer?.name || "Não informado"}
                                 </strong>
                               </span>
@@ -750,7 +731,9 @@ export default function VistoriaPage() {
                                 <span>• Tel: {selectedOrderSummary.vehicle.customer.phone}</span>
                               )}
                               {selectedOrderSummary.box && (
-                                <span className="text-emerald-400">• Box: {selectedOrderSummary.box}</span>
+                                <span className="text-[#16A36A] font-semibold">
+                                  • Box: {selectedOrderSummary.box}
+                                </span>
                               )}
                             </div>
                           </div>
@@ -763,31 +746,31 @@ export default function VistoriaPage() {
                             setSelectedOrderSummary(null);
                             setSelectedVehicleId("");
                           }}
-                          className="text-xs px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition cursor-pointer shrink-0"
+                          className="dp-btn-secondary text-xs py-1.5 px-2.5 cursor-pointer shrink-0"
                         >
                           Trocar OS
                         </button>
                       </div>
                     ) : (
                       <div className="space-y-2">
-                        <p className="text-[11px] text-slate-400">
+                        <p className="text-xs text-[#737D75]">
                           Selecione abaixo uma Ordem de Serviço que já foi criada e está aguardando vistoria no Pátio:
                         </p>
                         {loadingOrders ? (
-                          <div className="p-6 text-center text-slate-400 text-xs flex items-center justify-center gap-2">
-                            <Loader2 className="w-4 h-4 animate-spin text-blue-500" />
+                          <div className="p-6 text-center text-[#737D75] text-xs flex items-center justify-center gap-2">
+                            <Loader2 className="w-4 h-4 animate-spin text-[#247653]" />
                             <span>Carregando ordens em aberto...</span>
                           </div>
                         ) : pendingOrders.length === 0 ? (
-                          <div className="p-6 rounded-xl bg-slate-950 border border-dashed border-slate-800 text-center space-y-2">
-                            <ClipboardList className="w-7 h-7 text-slate-600 mx-auto" />
-                            <p className="text-xs text-slate-400">
-                              Nenhuma OS com status &quot;A Fazer&quot; no pátio no momento.
+                          <div className="p-6 rounded-xl bg-white border border-dashed border-[#E7EAE7] text-center space-y-2">
+                            <ClipboardList className="w-7 h-7 text-[#9CA49E] mx-auto" />
+                            <p className="text-xs text-[#737D75]">
+                              Nenhuma OS com status &ldquo;A Fazer&rdquo; no pátio no momento.
                             </p>
                             <button
                               type="button"
                               onClick={() => setSelectionMode("SEARCH_CUSTOMER")}
-                              className="text-xs text-blue-400 hover:text-blue-300 font-semibold cursor-pointer underline"
+                              className="text-xs text-[#247653] hover:text-[#142D26] font-semibold cursor-pointer underline"
                             >
                               Buscar cliente existente ou cadastrar novo veículo &rarr;
                             </button>
@@ -798,27 +781,27 @@ export default function VistoriaPage() {
                               <div
                                 key={os.id}
                                 onClick={() => handleSelectPendingOrder(os)}
-                                className="p-3 rounded-xl bg-slate-900 border border-slate-800 hover:border-blue-500/60 hover:bg-slate-850/80 cursor-pointer transition text-xs space-y-1.5"
+                                className="p-3 rounded-xl bg-white border border-[#E7EAE7] hover:border-[#247653] cursor-pointer transition text-xs space-y-1.5 shadow-2xs"
                               >
                                 <div className="flex items-center justify-between">
-                                  <span className="font-bold text-blue-400 flex items-center gap-1">
+                                  <span className="font-bold text-[#247653] flex items-center gap-1">
                                     <ClipboardList className="w-3.5 h-3.5" />
                                     <span>OS #{os.orderNumber}</span>
                                   </span>
-                                  <span className="px-2 py-0.5 rounded bg-blue-500/15 text-blue-300 font-mono font-bold text-[11px] border border-blue-500/25">
+                                  <span className="mercosul-plate text-xs font-bold">
                                     {os.vehicle.plate}
                                   </span>
                                 </div>
-                                <div className="font-semibold text-white truncate">
+                                <div className="font-semibold text-[#252B27] truncate">
                                   {os.vehicle.brand ? `${os.vehicle.brand} ` : ""}
                                   {os.vehicle.model}
                                 </div>
-                                <div className="text-[11px] text-slate-400 flex items-center justify-between pt-1 border-t border-slate-800/60">
+                                <div className="text-[11px] text-[#737D75] flex items-center justify-between pt-1 border-t border-[#E7EAE7]">
                                   <span className="truncate max-w-[140px]">
                                     {os.vehicle.customer?.name || "Cliente avulso"}
                                   </span>
                                   {os.box && (
-                                    <span className="text-emerald-400 font-medium text-[10px]">
+                                    <span className="text-[#16A36A] font-semibold text-[11px]">
                                       {os.box}
                                     </span>
                                   )}
@@ -832,7 +815,7 @@ export default function VistoriaPage() {
                   </div>
                 )}
 
-                {/* MODO B: BUSCA POR NOME, CPF OU TELEFONE + SELEÇÃO DOS VEÍCULOS */}
+                {/* MODO B: BUSCA POR NOME, CPF OU TELEFONE */}
                 {selectionMode === "SEARCH_CUSTOMER" && (
                   <div className="space-y-2">
                     <CustomerVehicleSelector
@@ -851,8 +834,8 @@ export default function VistoriaPage() {
               {/* ETAPA 2: PARÂMETROS DE ENTRADA (KM, COMBUSTÍVEL, PERTENCES) */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
-                  <label className="form-label-carbon flex items-center gap-1">
-                    <Gauge className="w-3.5 h-3.5 text-lime-400" />
+                  <label className="block text-xs font-semibold text-[#343C36] mb-1 flex items-center gap-1">
+                    <Gauge className="w-3.5 h-3.5 text-[#247653]" />
                     <span>Quilometragem (KM)</span>
                   </label>
                   <input
@@ -861,17 +844,17 @@ export default function VistoriaPage() {
                     placeholder="Ex: 45200"
                     value={mileage}
                     onChange={(e) => setMileage(e.target.value ? Number(e.target.value) : "")}
-                    className="form-input-carbon w-full font-mono"
+                    className="dp-input"
                   />
                 </div>
 
                 <div>
-                  <label className="form-label-carbon flex items-center justify-between">
+                  <label className="block text-xs font-semibold text-[#343C36] mb-1 flex items-center justify-between">
                     <span className="flex items-center gap-1">
-                      <Fuel className="w-3.5 h-3.5 text-amber-400" />
+                      <Fuel className="w-3.5 h-3.5 text-[#D97706]" />
                       <span>Combustível</span>
                     </span>
-                    <span className="text-amber-400 font-bold">{fuelLevel}%</span>
+                    <span className="text-[#D97706] font-bold">{fuelLevel}%</span>
                   </label>
                   <input
                     type="range"
@@ -880,20 +863,20 @@ export default function VistoriaPage() {
                     step="5"
                     value={fuelLevel}
                     onChange={(e) => setFuelLevel(Number(e.target.value))}
-                    className="w-full h-2 bg-slate-800 rounded appearance-none cursor-pointer accent-lime-400 mt-2"
+                    className="w-full h-2 bg-[#E7EAE7] rounded-lg appearance-none cursor-pointer accent-[#247653] mt-2"
                   />
                 </div>
 
                 <div>
-                  <label className="form-label-carbon">
+                  <label className="block text-xs font-semibold text-[#343C36] mb-1">
                     Pertences / Objetos de Valor
                   </label>
                   <input
                     type="text"
-                    placeholder="Ex: Óculos Ray-Ban no porta-luvas"
+                    placeholder="Ex: Óculos no porta-luvas"
                     value={valuablesLeft}
                     onChange={(e) => setValuablesLeft(e.target.value)}
-                    className="form-input-carbon w-full"
+                    className="dp-input"
                   />
                 </div>
               </div>
@@ -904,51 +887,51 @@ export default function VistoriaPage() {
               </div>
 
               {/* ETAPA 4: OBSERVAÇÕES & CONFIRMAÇÃO DO CLIENTE */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-[#1c2230]">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-3 border-t border-[#E7EAE7]">
                 <div>
-                  <label className="form-label-carbon">
+                  <label className="block text-xs font-semibold text-[#343C36] mb-1">
                     Observações Adicionais de Entrada
                   </label>
                   <textarea
                     rows={2}
-                    placeholder="Ex: Cliente autorizou não aspirar porta-malas..."
+                    placeholder="Ex: Cliente solicitou não aspirar o porta-malas..."
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
-                    className="form-input-carbon w-full"
+                    className="dp-input"
                   />
                 </div>
 
-                <div className="flex flex-col justify-center space-y-2">
-                  <label className="flex items-center gap-2 text-xs text-slate-200 cursor-pointer font-mono">
+                <div className="flex flex-col justify-center space-y-1.5">
+                  <label className="flex items-center gap-2 text-xs font-semibold text-[#252B27] cursor-pointer">
                     <input
                       type="checkbox"
                       checked={customerConfirmed}
                       onChange={(e) => setCustomerConfirmed(e.target.checked)}
-                      className="form-checkbox-carbon"
+                      className="rounded accent-[#247653] w-4 h-4"
                     />
                     <span>Cliente presenciou e validou o checklist de avarias</span>
                   </label>
-                  <p className="text-[11px] text-slate-400 font-mono">
+                  <p className="text-xs text-[#737D75]">
                     O aceite registra o carimbo de data, horário e responsável pela vistoria no pátio.
                   </p>
                 </div>
               </div>
 
-              <div className="pt-3 border-t border-[#1c2230] flex items-center justify-end gap-2">
+              <div className="pt-3 border-t border-[#E7EAE7] flex items-center justify-end gap-2">
                 <button
                   type="button"
                   onClick={() => setModalOpen(false)}
-                  className="px-3.5 py-2 rounded text-xs font-mono uppercase tracking-wider text-slate-400 hover:text-slate-200 cursor-pointer"
+                  className="dp-btn-secondary text-xs cursor-pointer"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
                   disabled={saving}
-                  className="btn-engine-start px-5 py-2 text-xs flex items-center gap-1.5 disabled:opacity-50 cursor-pointer"
+                  className="dp-btn-primary text-xs cursor-pointer"
                 >
                   {saving && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-                  <span>Concluir Vistoria & Entrada</span>
+                  <span>Concluir Vistoria e Entrada</span>
                 </button>
               </div>
             </form>
