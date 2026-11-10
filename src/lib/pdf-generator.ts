@@ -2,6 +2,27 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { translateArea, translateDamageType } from "./damage-dictionary";
 
+export function formatVehicleCategory(category?: string): string {
+  if (!category) return "Hatch / Sedan";
+  const upper = category.toUpperCase().trim();
+  switch (upper) {
+    case "HATCH":
+      return "Hatch";
+    case "SEDAN":
+      return "Sedan";
+    case "SUV_PICKUP":
+    case "SUV":
+    case "PICKUP":
+      return "SUV / Caminhonete";
+    case "MOTORCYCLE":
+      return "Motocicleta";
+    case "SPECIAL_UTILITY":
+      return "Utilitário Especial";
+    default:
+      return category;
+  }
+}
+
 // ==========================================
 // PALETA DE CORES INSTITUCIONAL (DetailPro)
 // ==========================================

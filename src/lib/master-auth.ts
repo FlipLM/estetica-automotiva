@@ -1,7 +1,5 @@
 import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
-import { prisma } from "./prisma";
-import { AUTH_COOKIE_NAME, getSession } from "./auth";
 
 export const MASTER_COOKIE_NAME = "saas_master_session";
 
@@ -9,25 +7,31 @@ const MASTER_JWT_SECRET = new TextEncoder().encode(
   process.env.JWT_SECRET || "master-saas-super-secret-key-2026-secure"
 );
 
+export function getMasterCredentials() {
+  return {
+    email: (process.env.MASTER_ADMIN_EMAIL || "admin@detailpro.com").trim().toLowerCase(),
+    password: process.env.MASTER_ADMIN_PASSWORD || "M@sterDetailPro2026!",
+  };
+}
+
 export interface MasterSessionPayload {
-  userId?: string;
   email: string;
-  name?: string;
+  name: string;
   isMaster: true;
 }
 
-export async function signMasterToken(payload: { email: string; userId?: string; name?: string }): Promise<string> {
-  return new SignJWT({ ...payload, isMaster: true })
+export async function signMasterToken(email: string, name: string = "Administrador Geral"): Promise<string> {
+  return new SignJWT({ email, name, isMaster: true })
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
-    .setExpirationTime("24h")
+    .setExpirationTime("4h") // Sessão master dura 4 horas
     .sign(MASTER_JWT_SECRET);
 }
 
 export async function verifyMasterToken(token: string): Promise<MasterSessionPayload | null> {
   try {
     const { payload } = await jwtVerify(token, MASTER_JWT_SECRET);
-    if (payload.isMaster === true) {
+    if (payload.isMaster === true && payload.email) {
       return payload as unknown as MasterSessionPayload;
     }
     return null;
@@ -36,37 +40,45 @@ export async function verifyMasterToken(token: string): Promise<MasterSessionPay
   }
 }
 
+/**
+ * Autenticação 100% PRÓPRIA e ISOLADA.
+ * NÃO herda cookies de oficina, NÃO possui bypass nem fallback.
+ * Exige obrigatoriamente o token assinado da sessão master.
+ */
 export async function isMasterAuthenticated(): Promise<{ authenticated: boolean; user?: any }> {
   const cookieStore = cookies();
-  
-  // 1. Verifica cookie de sessão master dedicada
   const masterToken = cookieStore.get(MASTER_COOKIE_NAME)?.value;
-  if (masterToken) {
-    const payload = await verifyMasterToken(masterToken);
-    if (payload) {
-      return { authenticated: true, user: { email: payload.email, name: payload.name || "Administrador Master" } };
-    }
+
+  if (!masterToken) {
+    return { authenticated: false };
   }
 
-  // 2. Verifica se o usuário já está logado como ADMIN na sessão principal
-  const regularSession = await getSession();
-  if (regularSession && regularSession.role === "ADMIN") {
-    return {
-      authenticated: true,
-      user: {
-        id: regularSession.userId,
-        email: regularSession.email,
-        name: regularSession.name,
-      },
-    };
+  const payload = await verifyMasterToken(masterToken);
+  if (!payload) {
+    return { authenticated: false };
   }
 
-  return { authenticated: false };
+  return {
+    authenticated: true,
+    user: {
+      email: payload.email,
+      name: payload.name || "Administrador Geral",
+    },
+  };
 }
 
-export async function requireMasterAuth(): Promise<void> {
-  const { authenticated } = await isMasterAuthenticated();
-  if (!authenticated) {
-    throw new Error("Acesso negado. Faça login como Administrador para acessar este painel.");
+export async function requireMasterAuth(): Promise<MasterSessionPayload> {
+  const cookieStore = cookies();
+  const masterToken = cookieStore.get(MASTER_COOKIE_NAME)?.value;
+
+  if (!masterToken) {
+    throw new Error("Sessão master não encontrada. Efetue login para continuar.");
   }
+
+  const payload = await verifyMasterToken(masterToken);
+  if (!payload) {
+    throw new Error("Sessão master expirada ou inválida. Faça login novamente.");
+  }
+
+  return payload;
 }
