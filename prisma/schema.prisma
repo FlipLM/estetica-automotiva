@@ -302,6 +302,7 @@ model DamageRecord {
   description        String?
   photoUrl           String?
   photosUrls         String?   // JSON array de múltiplas URLs de fotos da mesma avaria
+  anchor3D           String?   // JSON da âncora 3D { version, modelVersion, node, part, position, normal, revealAny }
   createdAt          DateTime  @default(now())
 
   checklist          Checklist @relation(fields: [checklistId], references: [id], onDelete: Cascade)

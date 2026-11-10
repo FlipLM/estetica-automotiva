@@ -92,6 +92,7 @@ export default function ChecklistDetailPage() {
       description: d.description || "",
       photoUrl: photosList[0] || d.photoUrl || undefined,
       photos: photosList,
+      anchor3D: d.anchor3D,
     };
   });
 

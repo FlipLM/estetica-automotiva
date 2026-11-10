@@ -58,10 +58,19 @@ export async function GET(
       if (photos.length === 0 && d.photoUrl) {
         photos = [d.photoUrl];
       }
+      let anchor3D = null;
+      if ((d as any).anchor3D) {
+        try {
+          anchor3D = typeof (d as any).anchor3D === "string" ? JSON.parse((d as any).anchor3D) : (d as any).anchor3D;
+        } catch {
+          anchor3D = null;
+        }
+      }
       return {
         ...d,
         photos,
         photoUrl: photos[0] || d.photoUrl || null,
+        anchor3D,
       };
     });
 

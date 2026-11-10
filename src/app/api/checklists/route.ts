@@ -13,6 +13,7 @@ const damageSchema = z.object({
   description: z.string().optional().nullable(),
   photoUrl: z.string().optional().nullable(),
   photos: z.array(z.string()).optional().default([]),
+  anchor3D: z.any().optional().nullable(),
 });
 
 const checklistCreateSchema = z.object({
@@ -104,10 +105,19 @@ export async function GET(req: NextRequest) {
         if (photos.length === 0 && d.photoUrl) {
           photos = [d.photoUrl];
         }
+        let anchor3D = null;
+        if ((d as any).anchor3D) {
+          try {
+            anchor3D = typeof (d as any).anchor3D === "string" ? JSON.parse((d as any).anchor3D) : (d as any).anchor3D;
+          } catch {
+            anchor3D = null;
+          }
+        }
         return {
           ...d,
           photos,
           photoUrl: photos[0] || d.photoUrl || null,
+          anchor3D,
         };
       });
 
@@ -231,6 +241,7 @@ export async function POST(req: NextRequest) {
                 description: d.description || null,
                 photoUrl: photosArray[0] || null,
                 photosUrls: JSON.stringify(photosArray),
+                anchor3D: d.anchor3D ? (typeof d.anchor3D === "string" ? d.anchor3D : JSON.stringify(d.anchor3D)) : null,
               };
             }),
           },

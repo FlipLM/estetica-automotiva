@@ -26,6 +26,21 @@ export const DAMAGE_AREAS: Record<string, string> = {
   LEFT: "Lateral Esquerda",
   RIGHT: "Lateral Direita",
   GLASS: "Vidros / Para-brisa",
+  // Mapeamento de Peças 3D (Modelo Interativo)
+  door_lf: "Porta Dianteira Esquerda",
+  door_rf: "Porta Dianteira Direita",
+  door_lr: "Porta Traseira Esquerda",
+  door_rr: "Porta Traseira Direita",
+  hood: "Capô / Cofre do Motor",
+  trunk: "Tampa Traseira / Porta-Malas",
+  engine: "Compartimento do Motor",
+  cargo: "Compartimento de Carga / Porta-malas",
+  interior: "Interior / Cabine",
+  body: "Carroceria Geral / Lataria",
+  apex_wheel_lf: "Roda Diant. Esquerda / Pneu",
+  apex_wheel_rf: "Roda Diant. Direita / Pneu",
+  apex_wheel_lr: "Roda Tras. Esquerda / Pneu",
+  apex_wheel_rr: "Roda Tras. Direita / Pneu",
 };
 
 export const DAMAGE_TYPES: Record<string, string> = {
