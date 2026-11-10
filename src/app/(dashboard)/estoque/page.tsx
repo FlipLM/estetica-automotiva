@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import {
   Package,
   Plus,
@@ -19,6 +19,10 @@ import {
   Clock,
   BarChart3,
   Eye,
+  Search,
+  ChevronDown,
+  Check,
+  X,
 } from "lucide-react";
 import {
   Button,
@@ -146,6 +150,9 @@ export default function EstoquePage() {
   // Modal de Nova Movimentação (Entrada com Valor Pago, Saída ou Perda)
   const [showMovementModal, setShowMovementModal] = useState(false);
   const [movementProductId, setMovementProductId] = useState<string>("");
+  const [productSearchQuery, setProductSearchQuery] = useState("");
+  const [isProductDropdownOpen, setIsProductDropdownOpen] = useState(false);
+  const productDropdownRef = useRef<HTMLDivElement>(null);
   const [movementForm, setMovementForm] = useState({
     type: "IN" as "IN" | "OUT" | "LOSS",
     quantity: "",
@@ -213,6 +220,35 @@ export default function EstoquePage() {
     () => products.find((p) => p.id === movementProductId) || null,
     [products, movementProductId]
   );
+
+  // Produtos filtrados pela barra de busca do dropdown no modal de movimentação
+  const filteredMovementProducts = useMemo(() => {
+    const q = productSearchQuery.trim().toLowerCase();
+    if (!q) return products;
+    return products.filter((p) => {
+      const catName = (CATEGORY_NAMES[p.category] || "").toLowerCase();
+      return (
+        p.name.toLowerCase().includes(q) ||
+        (p.supplier && p.supplier.toLowerCase().includes(q)) ||
+        catName.includes(q) ||
+        p.unit.toLowerCase().includes(q)
+      );
+    });
+  }, [products, productSearchQuery]);
+
+  // Fecha o dropdown de seleção de produto ao clicar fora
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        productDropdownRef.current &&
+        !productDropdownRef.current.contains(event.target as Node)
+      ) {
+        setIsProductDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   // Listas achatadas de movimentações para as abas Entradas, Saídas e Perdas
   const allMovementsWithProduct = useMemo(() => {
@@ -414,6 +450,8 @@ export default function EstoquePage() {
       return;
     }
     setMovementProductId(targetProduct.id);
+    setProductSearchQuery("");
+    setIsProductDropdownOpen(false);
     setMovementForm({
       type,
       quantity: "",
@@ -1986,18 +2024,171 @@ export default function EstoquePage() {
             </div>
           </div>
 
-          {/* Seletor do Produto */}
-          <Select
-            label="Produto / Insumo *"
-            value={movementProductId}
-            onChange={(e) => setMovementProductId(e.target.value)}
-            options={products.map((p) => ({
-              value: p.id,
-              label: `${p.name} (Saldo: ${p.currentStock} ${p.unit} • Médio: ${fmtUnitCost(
-                p.averageUnitCost
-              )}/${p.unit})`,
-            }))}
-          />
+          {/* Seletor do Produto com Barra de Busca + Dropdown */}
+          <div ref={productDropdownRef} className="relative">
+            <label className="form-label">Produto / Insumo *</label>
+            <div className="relative">
+              <Search className="w-4 h-4 text-[#737D75] absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+              <input
+                type="text"
+                value={
+                  isProductDropdownOpen
+                    ? productSearchQuery
+                    : selectedMovementProduct
+                    ? `${selectedMovementProduct.name} (Saldo: ${selectedMovementProduct.currentStock} ${selectedMovementProduct.unit} • Médio: ${fmtUnitCost(
+                        selectedMovementProduct.averageUnitCost
+                      )}/${selectedMovementProduct.unit})`
+                    : productSearchQuery
+                }
+                onFocus={() => setIsProductDropdownOpen(true)}
+                onClick={() => setIsProductDropdownOpen(true)}
+                onChange={(e) => {
+                  setProductSearchQuery(e.target.value);
+                  if (!isProductDropdownOpen) setIsProductDropdownOpen(true);
+                }}
+                placeholder={
+                  selectedMovementProduct
+                    ? `Buscar outro produto (Atual: ${selectedMovementProduct.name})...`
+                    : "Digite para buscar produto por nome, fornecedor ou categoria..."
+                }
+                className="w-full h-10 pl-9 pr-16 text-sm text-[#252B27] bg-white border border-[#E7EAE7] rounded-lg focus:outline-none focus:border-[#247653] focus:ring-2 focus:ring-[#247653]/15 transition-all"
+              />
+              <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                {isProductDropdownOpen && productSearchQuery && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setProductSearchQuery("");
+                    }}
+                    className="p-1 rounded-md text-[#737D75] hover:text-[#252B27] hover:bg-[#F1F3F1] cursor-pointer"
+                    title="Limpar busca"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() =>
+                    setIsProductDropdownOpen((prev) => !prev)
+                  }
+                  className="p-1 rounded-md text-[#737D75] hover:text-[#252B27] hover:bg-[#F1F3F1] cursor-pointer"
+                  title="Abrir lista de produtos"
+                >
+                  <ChevronDown
+                    className={`w-4 h-4 transition-transform duration-150 ${
+                      isProductDropdownOpen ? "rotate-180 text-[#247653]" : ""
+                    }`}
+                  />
+                </button>
+              </div>
+            </div>
+
+            {/* Dropdown Flutuante de Seleção de Produto */}
+            {isProductDropdownOpen && (
+              <div className="absolute left-0 right-0 top-full mt-1.5 bg-white border border-[#E7EAE7] rounded-xl shadow-lg z-50 overflow-hidden">
+                <div className="px-3.5 py-2 bg-[#F7F8F6] border-b border-[#E7EAE7] flex items-center justify-between text-[11px] text-[#737D75] font-medium">
+                  <span>
+                    {filteredMovementProducts.length} produto(s) encontrado(s)
+                  </span>
+                  <span>Clique para selecionar</span>
+                </div>
+
+                {filteredMovementProducts.length === 0 ? (
+                  <div className="p-5 text-center space-y-2">
+                    <p className="text-xs text-[#737D75]">
+                      Nenhum produto encontrado para &ldquo;{productSearchQuery}&rdquo;.
+                    </p>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setIsProductDropdownOpen(false);
+                        setShowMovementModal(false);
+                        handleOpenCreateProduct();
+                      }}
+                      leftIcon={<Plus className="w-3.5 h-3.5" />}
+                    >
+                      Cadastrar Novo Produto
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="max-h-60 overflow-y-auto divide-y divide-[#F1F3F1]">
+                    {filteredMovementProducts.map((p) => {
+                      const isSelected = p.id === movementProductId;
+                      return (
+                        <button
+                          key={p.id}
+                          type="button"
+                          onClick={() => {
+                            setMovementProductId(p.id);
+                            setProductSearchQuery("");
+                            setIsProductDropdownOpen(false);
+                          }}
+                          className={`w-full text-left px-3.5 py-2.5 flex items-center justify-between gap-3 transition-colors cursor-pointer ${
+                            isSelected
+                              ? "bg-[#E9F3EC]/80 hover:bg-[#E9F3EC]"
+                              : "hover:bg-[#F7F8F6]"
+                          }`}
+                        >
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2">
+                              <span
+                                className={`text-sm truncate ${
+                                  isSelected
+                                    ? "font-bold text-[#142D26]"
+                                    : "font-semibold text-[#252B27]"
+                                }`}
+                              >
+                                {p.name}
+                              </span>
+                              {p.isLowStock && (
+                                <Badge variant="error" size="sm">
+                                  Crítico
+                                </Badge>
+                              )}
+                            </div>
+                            <div className="text-xs text-[#737D75] truncate">
+                              {CATEGORY_NAMES[p.category] || p.category}
+                              {p.supplier ? ` • ${p.supplier}` : ""}
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-2.5 shrink-0 text-right">
+                            <div>
+                              <div
+                                className={`text-xs font-bold ${
+                                  p.isLowStock
+                                    ? "text-[#DC4C4C]"
+                                    : "text-[#252B27]"
+                                }`}
+                              >
+                                Saldo: {p.currentStock.toLocaleString("pt-BR")}{" "}
+                                {p.unit}
+                              </div>
+                              <div className="text-[11px] text-[#737D75]">
+                                Médio: {fmtUnitCost(p.averageUnitCost)}/{p.unit}
+                              </div>
+                            </div>
+                            <div
+                              className={`w-5 h-5 rounded-full flex items-center justify-center ${
+                                isSelected
+                                  ? "bg-[#247653] text-white"
+                                  : "border border-[#D5DBD5] text-transparent"
+                              }`}
+                            >
+                              <Check className="w-3 h-3" />
+                            </div>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
 
           <div
             className={`grid grid-cols-1 ${
