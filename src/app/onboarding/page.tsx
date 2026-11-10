@@ -1,25 +1,26 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import {
-  Car,
   Building2,
   Layers,
   Users,
   Wrench,
   Package,
-  CheckCircle2,
-  ArrowRight,
-  ArrowLeft,
   Plus,
   Trash2,
+  ArrowRight,
+  ArrowLeft,
   Sparkles,
-  Camera,
-  DollarSign,
+  CheckCircle2,
+  Car,
   Loader2,
+  Upload,
+  Image as ImageIcon,
+  Tag,
+  SkipForward,
 } from "lucide-react";
-import { Card, Button, Input } from "@/components/ui";
 
 interface BoxItem {
   name: string;
@@ -41,8 +42,8 @@ interface ServiceItem {
   priceHatch: number;
   priceSedan: number;
   priceSuvPickup: number;
-  estimatedMinutes: number;
-  defaultCommission: number;
+  estimatedMinutes?: number;
+  defaultCommission?: number;
 }
 
 interface ProductItem {
@@ -56,7 +57,7 @@ interface ProductItem {
 
 const DEFAULT_SERVICES: ServiceItem[] = [
   {
-    name: "Lavagem Técnica Detalhada",
+    name: "Lavagem Detalhada Completa",
     category: "LAVAGEM",
     priceHatch: 90,
     priceSedan: 110,
@@ -65,16 +66,16 @@ const DEFAULT_SERVICES: ServiceItem[] = [
     defaultCommission: 15,
   },
   {
-    name: "Polimento Comercial (Brilho & Proteção)",
+    name: "Polimento Técnico Comercial",
     category: "POLIMENTO",
     priceHatch: 450,
     priceSedan: 550,
-    priceSuvPickup: 680,
-    estimatedMinutes: 180,
+    priceSuvPickup: 700,
+    estimatedMinutes: 240,
     defaultCommission: 20,
   },
   {
-    name: "Polimento Técnico & Correção de Pintura",
+    name: "Polimento Técnico Detalhado (Correção)",
     category: "POLIMENTO",
     priceHatch: 850,
     priceSedan: 1050,
@@ -148,9 +149,12 @@ const DEFAULT_PRODUCTS: ProductItem[] = [
 
 export default function OnboardingPage() {
   const router = useRouter();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // Passo 1: Identidade
@@ -161,7 +165,19 @@ export default function OnboardingPage() {
   const [address, setAddress] = useState("");
   const [logoUrl, setLogoUrl] = useState("");
 
-  // Passo 2: Boxes
+  // Passo 2: Boxes e Categorias de Box
+  const [boxCategories, setBoxCategories] = useState<string[]>([
+    "LAVAGEM",
+    "POLIMENTO",
+    "HIGIENIZACAO",
+    "GERAL",
+    "VITRIFICACAO",
+    "PPF_INSULFILM",
+    "ESTUFA",
+    "RAMPA",
+  ]);
+  const [newBoxCategory, setNewBoxCategory] = useState("");
+  const [showAddBoxCat, setShowAddBoxCat] = useState(false);
   const [boxes, setBoxes] = useState<BoxItem[]>([
     { name: "Box 01 - Lavagem & Detalhamento", type: "LAVAGEM", capacity: 1, color: "#3B82F6" },
     { name: "Box 02 - Polimento Técnico", type: "POLIMENTO", capacity: 1, color: "#D97706" },
@@ -174,11 +190,39 @@ export default function OnboardingPage() {
   const [newEmpPhone, setNewEmpPhone] = useState("");
   const [newEmpCommission, setNewEmpCommission] = useState(15);
 
-  // Passo 4: Serviços
+  // Passo 4: Serviços e Categorias de Serviços
+  const [serviceCategories, setServiceCategories] = useState<string[]>([
+    "LAVAGEM",
+    "POLIMENTO",
+    "HIGIENIZACAO",
+    "VITRIFICACAO",
+    "CRISTALIZACAO",
+    "PPF_PELICULAS",
+    "MARTELINHO",
+    "ESTETICA_RODAS",
+    "OUTROS",
+  ]);
+  const [newServiceCategory, setNewServiceCategory] = useState("");
+  const [showAddServiceCat, setShowAddServiceCat] = useState(false);
   const [services, setServices] = useState<ServiceItem[]>(DEFAULT_SERVICES);
+  
+  // Novo serviço formulário
+  const [showAddServiceModal, setShowAddServiceModal] = useState(false);
+  const [newServiceName, setNewServiceName] = useState("");
+  const [newServiceCat, setNewServiceCat] = useState("LAVAGEM");
+  const [newServiceHatch, setNewServiceHatch] = useState(100);
+  const [newServiceSedan, setNewServiceSedan] = useState(120);
+  const [newServiceSuv, setNewServiceSuv] = useState(150);
+  const [newServiceMinutes, setNewServiceMinutes] = useState(60);
 
   // Passo 5: Estoque
   const [products, setProducts] = useState<ProductItem[]>(DEFAULT_PRODUCTS);
+  const [showAddProductModal, setShowAddProductModal] = useState(false);
+  const [newProdName, setNewProdName] = useState("");
+  const [newProdCat, setNewProdCat] = useState("CHEMICAL");
+  const [newProdUnit, setNewProdUnit] = useState("UN");
+  const [newProdCost, setNewProdCost] = useState(0);
+  const [newProdStock, setNewProdStock] = useState(1);
 
   useEffect(() => {
     async function loadInitial() {
@@ -203,6 +247,31 @@ export default function OnboardingPage() {
                 }))
               );
             }
+            if (data.tenant.services && data.tenant.services.length > 0) {
+              setServices(
+                data.tenant.services.map((s: any) => ({
+                  name: s.name,
+                  category: s.category || "LAVAGEM",
+                  priceHatch: s.priceHatch || 80,
+                  priceSedan: s.priceSedan || 100,
+                  priceSuvPickup: s.priceSuvPickup || 130,
+                  estimatedMinutes: s.estimatedMinutes || 60,
+                  defaultCommission: s.defaultCommission || 15,
+                }))
+              );
+            }
+            if (data.tenant.products && data.tenant.products.length > 0) {
+              setProducts(
+                data.tenant.products.map((p: any) => ({
+                  name: p.name,
+                  category: p.category || "CHEMICAL",
+                  unit: p.unit || "UN",
+                  currentStock: p.currentStock || 0,
+                  minStock: p.minStock || 1,
+                  costPrice: p.costPrice || 0,
+                }))
+              );
+            }
           }
         }
       } catch (err) {
@@ -214,6 +283,34 @@ export default function OnboardingPage() {
     loadInitial();
   }, []);
 
+  async function handleLogoUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadingLogo(true);
+    setError(null);
+
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const res = await fetch("/api/uploads", {
+        method: "POST",
+        body: formData,
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Erro no upload da logomarca.");
+
+      setLogoUrl(data.url);
+    } catch (err: any) {
+      setError(err.message || "Falha ao enviar arquivo.");
+    } finally {
+      setUploadingLogo(false);
+    }
+  }
+
+  // Ações de Boxes
   function handleAddBox() {
     const nextNum = boxes.length + 1;
     setBoxes([
@@ -228,13 +325,20 @@ export default function OnboardingPage() {
   }
 
   function handleRemoveBox(idx: number) {
-    if (boxes.length <= 1) {
-      alert("A oficina precisa ter no mínimo 1 box de atendimento.");
-      return;
-    }
     setBoxes(boxes.filter((_, i) => i !== idx));
   }
 
+  function handleCreateBoxCategory() {
+    const clean = newBoxCategory.trim().toUpperCase().replace(/\s+/g, "_");
+    if (!clean) return;
+    if (!boxCategories.includes(clean)) {
+      setBoxCategories([...boxCategories, clean]);
+    }
+    setNewBoxCategory("");
+    setShowAddBoxCat(false);
+  }
+
+  // Ações de Colaboradores
   function handleAddEmployee() {
     if (!newEmpName.trim()) return;
     setEmployees([
@@ -255,10 +359,9 @@ export default function OnboardingPage() {
     setEmployees(employees.filter((_, i) => i !== idx));
   }
 
-  function handleToggleService(idx: number, checked: boolean) {
-    if (!checked) {
-      setServices(services.filter((_, i) => i !== idx));
-    }
+  // Ações de Serviços
+  function handleRemoveService(idx: number) {
+    setServices(services.filter((_, i) => i !== idx));
   }
 
   function handleUpdateServicePrice(idx: number, field: "priceHatch" | "priceSedan" | "priceSuvPickup", val: number) {
@@ -267,35 +370,90 @@ export default function OnboardingPage() {
     setServices(next);
   }
 
-  async function handleFinish() {
+  function handleCreateServiceCategory() {
+    const clean = newServiceCategory.trim().toUpperCase().replace(/\s+/g, "_");
+    if (!clean) return;
+    if (!serviceCategories.includes(clean)) {
+      setServiceCategories([...serviceCategories, clean]);
+    }
+    setNewServiceCategory("");
+    setShowAddServiceCat(false);
+  }
+
+  function handleAddNewService() {
+    if (!newServiceName.trim()) return;
+    setServices([
+      ...services,
+      {
+        name: newServiceName.trim(),
+        category: newServiceCat,
+        priceHatch: Number(newServiceHatch) || 80,
+        priceSedan: Number(newServiceSedan) || 100,
+        priceSuvPickup: Number(newServiceSuv) || 130,
+        estimatedMinutes: Number(newServiceMinutes) || 60,
+        defaultCommission: 15,
+      },
+    ]);
+    setNewServiceName("");
+    setShowAddServiceModal(false);
+  }
+
+  // Ações de Produtos
+  function handleRemoveProduct(idx: number) {
+    setProducts(products.filter((_, i) => i !== idx));
+  }
+
+  function handleAddNewProduct() {
+    if (!newProdName.trim()) return;
+    setProducts([
+      ...products,
+      {
+        name: newProdName.trim(),
+        category: newProdCat,
+        unit: newProdUnit,
+        costPrice: Number(newProdCost) || 0,
+        currentStock: Number(newProdStock) || 0,
+        minStock: 1,
+      },
+    ]);
+    setNewProdName("");
+    setNewProdCost(0);
+    setNewProdStock(1);
+    setShowAddProductModal(false);
+  }
+
+  async function handleFinish(skipAll = false) {
     setSaving(true);
     setError(null);
 
     try {
+      const payload = {
+        companyName: companyName.trim() || "Minha Estética Automotiva",
+        tradingName: tradingName.trim() || companyName.trim() || "Estética Automotiva",
+        phone: phone.trim() || null,
+        whatsapp: whatsapp.trim() || phone.trim() || null,
+        address: address.trim() || null,
+        logoUrl: logoUrl || null,
+        boxes: skipAll ? [] : boxes,
+        employees: skipAll ? [] : employees,
+        services: skipAll ? [] : services,
+        products: skipAll ? [] : products,
+      };
+
       const res = await fetch("/api/onboarding", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          companyName: companyName || "Minha Estética Automotiva",
-          tradingName: tradingName || companyName,
-          phone,
-          whatsapp: whatsapp || phone,
-          address,
-          logoUrl: logoUrl || null,
-          boxes,
-          employees,
-          services,
-          products,
-        }),
+        body: JSON.stringify(payload),
       });
 
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Erro ao salvar pré-configuração.");
 
-      // Redireciona para o Pátio com a oficina configurada
+      // Redireciona para o Pátio com a oficina pronta
       window.location.href = "/patio";
     } catch (err: any) {
-      setError(err.message || "Falha na conexão.");
+      console.error(err);
+      setError(err.message || "Falha na conexão com o servidor.");
       setSaving(false);
     }
   }
@@ -331,9 +489,22 @@ export default function OnboardingPage() {
           </div>
         </div>
 
-        <span className="text-xs font-semibold px-3 py-1 rounded-full bg-[#E9F3EC] text-[#142D26]">
-          Passo {step} de 5
-        </span>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => handleFinish(true)}
+            disabled={saving}
+            className="text-xs font-semibold px-3 py-1.5 rounded-lg border border-[#E7EAE7] bg-white hover:bg-[#F1F3F1] text-[#737D75] hover:text-[#252B27] transition flex items-center gap-1.5 cursor-pointer"
+            title="Pular todas as etapas e configurar mais tarde nas opções do sistema"
+          >
+            <SkipForward className="w-3.5 h-3.5 text-[#737D75]" />
+            <span className="hidden sm:inline">Pular tudo e ir ao Pátio</span>
+          </button>
+
+          <span className="text-xs font-bold px-3 py-1.5 rounded-full bg-[#E9F3EC] text-[#142D26]">
+            Passo {step} de 5
+          </span>
+        </div>
       </div>
 
       {/* Stepper Navigation */}
@@ -345,9 +516,11 @@ export default function OnboardingPage() {
             const isCurrent = s.num === step;
 
             return (
-              <div
+              <button
+                type="button"
                 key={s.num}
-                className={`p-3 rounded-xl border flex flex-col items-center text-center transition-all ${
+                onClick={() => setStep(s.num)}
+                className={`p-3 rounded-xl border flex flex-col items-center text-center transition-all cursor-pointer ${
                   isCurrent
                     ? "bg-white border-[#247653] shadow-xs"
                     : isDone
@@ -367,7 +540,7 @@ export default function OnboardingPage() {
                   {isDone ? <CheckCircle2 className="w-4 h-4" /> : <Icon className="w-3.5 h-3.5" />}
                 </div>
                 <span className="text-[11px] font-bold hidden sm:inline">{s.title}</span>
-              </div>
+              </button>
             );
           })}
         </div>
@@ -377,8 +550,15 @@ export default function OnboardingPage() {
       <div className="max-w-4xl mx-auto w-full my-auto">
         <div className="bg-white border border-[#E7EAE7] rounded-3xl p-6 sm:p-10 shadow-lg space-y-6">
           {error && (
-            <div className="p-3.5 rounded-xl bg-[#FEF2F2] border border-[#FECACA] text-xs font-semibold text-[#DC4C4C]">
-              {error}
+            <div className="p-3.5 rounded-xl bg-[#FEF2F2] border border-[#FECACA] text-xs font-semibold text-[#DC4C4C] flex items-center justify-between">
+              <span>{error}</span>
+              <button
+                type="button"
+                onClick={() => setError(null)}
+                className="text-[#DC4C4C] hover:opacity-75 font-bold text-xs"
+              >
+                ✕
+              </button>
             </div>
           )}
 
@@ -430,7 +610,7 @@ export default function OnboardingPage() {
 
                 <div>
                   <label className="block text-xs font-bold text-[#343C36] mb-1">
-                    WhatsApp Comercial (Envio de Laudos e Avisos de Conclusão)
+                    WhatsApp Comercial (Envio de Laudos e Avisos)
                   </label>
                   <input
                     type="text"
@@ -443,59 +623,174 @@ export default function OnboardingPage() {
 
                 <div>
                   <label className="block text-xs font-bold text-[#343C36] mb-1">
-                    Endereço Completo
+                    Telefone Fixo / Adicional
                   </label>
                   <input
                     type="text"
-                    value={address}
-                    onChange={(e) => setAddress(e.target.value)}
-                    placeholder="Av. Principal, 1500 - Bairro, Cidade/UF"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    placeholder="(11) 3333-4444"
                     className="w-full h-10 px-3 text-xs bg-[#F7F8F6] border border-[#E7EAE7] rounded-xl focus:outline-none focus:border-[#247653]"
                   />
                 </div>
 
                 <div className="sm:col-span-2">
                   <label className="block text-xs font-bold text-[#343C36] mb-1">
-                    URL da Logomarca (Opcional - pode ser configurada depois)
+                    Endereço Completo
                   </label>
                   <input
                     type="text"
-                    value={logoUrl}
-                    onChange={(e) => setLogoUrl(e.target.value)}
-                    placeholder="https://sua-empresa.com.br/logo.png"
+                    value={address}
+                    onChange={(e) => setAddress(e.target.value)}
+                    placeholder="Av. dos Bandeirantes, 1500 - São Paulo, SP"
                     className="w-full h-10 px-3 text-xs bg-[#F7F8F6] border border-[#E7EAE7] rounded-xl focus:outline-none focus:border-[#247653]"
                   />
+                </div>
+
+                {/* Upload de Logo */}
+                <div className="sm:col-span-2 p-4 rounded-2xl bg-[#F7F8F6] border border-[#E7EAE7]">
+                  <label className="block text-xs font-bold text-[#343C36] mb-2">
+                    Logomarca da sua Estética (PNG ou JPG)
+                  </label>
+                  <div className="flex items-center gap-4">
+                    {logoUrl ? (
+                      <div className="relative w-20 h-20 rounded-xl border border-[#E7EAE7] bg-white overflow-hidden p-1 flex items-center justify-center shrink-0">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={logoUrl}
+                          alt="Logo Preview"
+                          className="max-h-full max-w-full object-contain"
+                        />
+                      </div>
+                    ) : (
+                      <div className="w-20 h-20 rounded-xl border border-dashed border-[#D2D7D3] bg-white flex flex-col items-center justify-center text-[#9CA49E] shrink-0">
+                        <ImageIcon className="w-6 h-6 mb-1" />
+                        <span className="text-[10px]">Sem logo</span>
+                      </div>
+                    )}
+
+                    <div className="space-y-2 flex-1">
+                      <input
+                        type="file"
+                        ref={fileInputRef}
+                        accept="image/png,image/jpeg,image/webp"
+                        onChange={handleLogoUpload}
+                        className="hidden"
+                      />
+
+                      <div className="flex flex-wrap items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => fileInputRef.current?.click()}
+                          disabled={uploadingLogo}
+                          className="px-3.5 py-2 rounded-xl bg-[#247653] hover:bg-[#1E6346] text-white text-xs font-bold flex items-center gap-1.5 transition cursor-pointer"
+                        >
+                          {uploadingLogo ? (
+                            <>
+                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                              <span>Enviando foto...</span>
+                            </>
+                          ) : (
+                            <>
+                              <Upload className="w-3.5 h-3.5" />
+                              <span>Selecionar Imagem</span>
+                            </>
+                          )}
+                        </button>
+
+                        {logoUrl && (
+                          <button
+                            type="button"
+                            onClick={() => setLogoUrl("")}
+                            className="px-3 py-2 rounded-xl text-xs font-bold text-[#DC4C4C] hover:bg-[#FEF2F2] transition cursor-pointer"
+                          >
+                            Remover
+                          </button>
+                        )}
+                      </div>
+
+                      <p className="text-[11px] text-[#737D75]">
+                        Sua marca sairá com destaque nos laudos PDF gerados para os seus clientes.
+                      </p>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
           )}
 
           {/* ========================================================
-              PASSO 2: BOXES E CAPACIDADE DO PÁTIO
+              PASSO 2: BOXES E VAGAS OPERACIONAIS
              ======================================================== */}
           {step === 2 && (
             <div className="space-y-6">
-              <div className="space-y-1">
-                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#E9F3EC] text-[#142D26] text-xs font-bold">
-                  <Layers className="w-3.5 h-3.5 text-[#247653]" />
-                  <span>Passo 2: Capacidade do seu Pátio</span>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="space-y-1">
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#E9F3EC] text-[#142D26] text-xs font-bold">
+                    <Layers className="w-3.5 h-3.5 text-[#247653]" />
+                    <span>Passo 2: Boxes & Pátio Operacional</span>
+                  </div>
+                  <h2 className="text-xl sm:text-2xl font-extrabold text-[#142D26]">
+                    Defina a estrutura física e categorias de boxes
+                  </h2>
+                  <p className="text-xs text-[#737D75]">
+                    Organize as baias de lavagem, salas de polimento ou crie novas categorias conforme a sua oficina.
+                  </p>
                 </div>
-                <h2 className="text-xl sm:text-2xl font-extrabold text-[#142D26]">
-                  Quantas vagas e boxes sua oficina possui?
-                </h2>
-                <p className="text-xs text-[#737D75]">
-                  Cada box representa uma estação de trabalho no Kanban ao vivo e ajuda no cálculo de ocupação.
-                </p>
+
+                <button
+                  type="button"
+                  onClick={() => setShowAddBoxCat(!showAddBoxCat)}
+                  className="px-3 py-1.5 rounded-xl border border-[#247653]/30 bg-[#ECFDF5] text-[#247653] hover:bg-[#D1FAE5] text-xs font-bold flex items-center gap-1.5 shrink-0 self-start sm:self-center transition cursor-pointer"
+                >
+                  <Tag className="w-3.5 h-3.5" />
+                  <span>+ Criar Categoria de Box</span>
+                </button>
               </div>
 
+              {/* Modal / Card para criar nova categoria */}
+              {showAddBoxCat && (
+                <div className="p-4 rounded-2xl bg-[#ECFDF5] border border-[#A7F3D0] space-y-2">
+                  <span className="text-xs font-bold text-[#065F46] block">
+                    Nome da Nova Categoria de Box / Baia:
+                  </span>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={newBoxCategory}
+                      onChange={(e) => setNewBoxCategory(e.target.value)}
+                      placeholder="Ex: PPF / Insulfilm, Rampa 3D, Estufa de Secagem..."
+                      className="flex-1 h-9 px-3 text-xs bg-white border border-[#A7F3D0] rounded-lg"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleCreateBoxCategory}
+                      className="px-4 h-9 rounded-lg bg-[#247653] text-white text-xs font-bold hover:bg-[#1E6346] transition cursor-pointer"
+                    >
+                      Salvar Categoria
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setShowAddBoxCat(false)}
+                      className="px-3 h-9 rounded-lg border border-[#A7F3D0] text-[#065F46] text-xs font-bold hover:bg-white transition cursor-pointer"
+                    >
+                      Cancelar
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Lista de Boxes */}
               <div className="space-y-3">
                 {boxes.map((box, bIdx) => (
                   <div
                     key={bIdx}
-                    className="p-3.5 rounded-2xl bg-[#F7F8F6] border border-[#E7EAE7] flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+                    className="p-3.5 rounded-2xl bg-[#F7F8F6] border border-[#E7EAE7] flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3"
                   >
-                    <div className="flex-1 space-y-1">
-                      <span className="text-[10px] uppercase font-bold text-[#737D75]">Box #{bIdx + 1}</span>
+                    <div className="flex-1">
+                      <span className="text-[10px] uppercase font-bold text-[#737D75] block mb-0.5">
+                        Nome do Box #{bIdx + 1}
+                      </span>
                       <input
                         type="text"
                         value={box.name}
@@ -509,8 +804,10 @@ export default function OnboardingPage() {
                     </div>
 
                     <div className="flex items-center gap-2">
-                      <div>
-                        <span className="text-[10px] uppercase font-bold text-[#737D75] block">Tipo</span>
+                      <div className="flex-1 sm:w-44">
+                        <span className="text-[10px] uppercase font-bold text-[#737D75] block mb-0.5">
+                          Categoria / Tipo
+                        </span>
                         <select
                           value={box.type}
                           onChange={(e) => {
@@ -518,35 +815,38 @@ export default function OnboardingPage() {
                             next[bIdx].type = e.target.value;
                             setBoxes(next);
                           }}
-                          className="h-9 px-2 text-xs bg-white border border-[#E7EAE7] rounded-lg font-semibold"
+                          className="w-full h-9 px-2 text-xs bg-white border border-[#E7EAE7] rounded-lg font-semibold"
                         >
-                          <option value="LAVAGEM">Lavagem</option>
-                          <option value="POLIMENTO">Polimento</option>
-                          <option value="HIGIENIZACAO">Higienização</option>
-                          <option value="GERAL">Geral / Acabamento</option>
+                          {boxCategories.map((cat) => (
+                            <option key={cat} value={cat}>
+                              {cat}
+                            </option>
+                          ))}
                         </select>
                       </div>
 
-                      <div>
-                        <span className="text-[10px] uppercase font-bold text-[#737D75] block">Vagas</span>
+                      <div className="w-16">
+                        <span className="text-[10px] uppercase font-bold text-[#737D75] block mb-0.5">
+                          Vagas
+                        </span>
                         <input
                           type="number"
                           min={1}
-                          max={10}
+                          max={20}
                           value={box.capacity}
                           onChange={(e) => {
                             const next = [...boxes];
                             next[bIdx].capacity = parseInt(e.target.value) || 1;
                             setBoxes(next);
                           }}
-                          className="w-16 h-9 px-2 text-center text-xs bg-white border border-[#E7EAE7] rounded-lg font-bold"
+                          className="w-full h-9 px-2 text-center text-xs bg-white border border-[#E7EAE7] rounded-lg font-bold"
                         />
                       </div>
 
                       <button
                         type="button"
                         onClick={() => handleRemoveBox(bIdx)}
-                        className="p-2 mt-4 rounded-lg text-[#DC4C4C] hover:bg-[#FEF2F2] transition cursor-pointer"
+                        className="p-2 mt-4 rounded-lg text-[#DC4C4C] hover:bg-[#FEF2F2] transition cursor-pointer shrink-0"
                         title="Remover Box"
                       >
                         <Trash2 className="w-4 h-4" />
@@ -661,6 +961,7 @@ export default function OnboardingPage() {
                         type="button"
                         onClick={() => handleRemoveEmployee(eIdx)}
                         className="text-[#DC4C4C] hover:bg-[#FEF2F2] p-1.5 rounded-lg transition cursor-pointer"
+                        title="Remover colaborador"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
@@ -669,7 +970,7 @@ export default function OnboardingPage() {
                 </div>
               ) : (
                 <div className="p-6 text-center text-xs text-[#737D75] bg-[#F7F8F6] rounded-2xl border border-dashed border-[#E7EAE7]">
-                  Trabalha sozinho no momento? Sem problemas! Você pode avançar e adicionar a equipe depois.
+                  Trabalha sozinho no momento? Sem problemas! Você pode avançar ou pular esta etapa e cadastrar a equipe depois.
                 </div>
               )}
             </div>
@@ -680,20 +981,162 @@ export default function OnboardingPage() {
              ======================================================== */}
           {step === 4 && (
             <div className="space-y-6">
-              <div className="space-y-1">
-                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#E9F3EC] text-[#142D26] text-xs font-bold">
-                  <Wrench className="w-3.5 h-3.5 text-[#247653]" />
-                  <span>Passo 4: Catálogo de Serviços</span>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="space-y-1">
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#E9F3EC] text-[#142D26] text-xs font-bold">
+                    <Wrench className="w-3.5 h-3.5 text-[#247653]" />
+                    <span>Passo 4: Catálogo de Serviços</span>
+                  </div>
+                  <h2 className="text-xl sm:text-2xl font-extrabold text-[#142D26]">
+                    Ajuste seus serviços, categorias e preços
+                  </h2>
+                  <p className="text-xs text-[#737D75]">
+                    Você pode remover itens que não faz, alterar preços ou cadastrar novos serviços e categorias.
+                  </p>
                 </div>
-                <h2 className="text-xl sm:text-2xl font-extrabold text-[#142D26]">
-                  Ajuste seus principais serviços e preços por porte
-                </h2>
-                <p className="text-xs text-[#737D75]">
-                  Defina os valores cobrados por categoria de veículo (Hatch, Sedan, SUV/Caminhonete).
-                </p>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowAddServiceCat(!showAddServiceCat)}
+                    className="px-3 py-1.5 rounded-xl border border-[#247653]/30 bg-[#ECFDF5] text-[#247653] hover:bg-[#D1FAE5] text-xs font-bold flex items-center gap-1 transition cursor-pointer"
+                  >
+                    <Tag className="w-3.5 h-3.5" />
+                    <span>+ Categoria</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setShowAddServiceModal(!showAddServiceModal)}
+                    className="px-3.5 py-1.5 rounded-xl bg-[#247653] text-white hover:bg-[#1E6346] text-xs font-bold flex items-center gap-1 transition cursor-pointer"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Novo Serviço</span>
+                  </button>
+                </div>
               </div>
 
-              <div className="space-y-3 max-h-[420px] overflow-y-auto pr-1">
+              {/* Card Nova Categoria de Serviço */}
+              {showAddServiceCat && (
+                <div className="p-4 rounded-2xl bg-[#ECFDF5] border border-[#A7F3D0] space-y-2">
+                  <span className="text-xs font-bold text-[#065F46] block">
+                    Nome da Nova Categoria de Serviço:
+                  </span>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={newServiceCategory}
+                      onChange={(e) => setNewServiceCategory(e.target.value)}
+                      placeholder="Ex: PPF_PELICULAS, MARTELINHO, PINTURA_RODAS..."
+                      className="flex-1 h-9 px-3 text-xs bg-white border border-[#A7F3D0] rounded-lg"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleCreateServiceCategory}
+                      className="px-4 h-9 rounded-lg bg-[#247653] text-white text-xs font-bold hover:bg-[#1E6346] transition cursor-pointer"
+                    >
+                      Salvar
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setShowAddServiceCat(false)}
+                      className="px-3 h-9 rounded-lg border border-[#A7F3D0] text-[#065F46] text-xs font-bold hover:bg-white transition cursor-pointer"
+                    >
+                      Cancelar
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Card Formulário Novo Serviço */}
+              {showAddServiceModal && (
+                <div className="p-4 rounded-2xl bg-[#F7F8F6] border border-[#247653] space-y-3">
+                  <span className="text-xs font-bold text-[#142D26] block">
+                    Cadastrar Novo Serviço
+                  </span>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-[10px] font-bold text-[#737D75] mb-1">
+                        Nome do Serviço
+                      </label>
+                      <input
+                        type="text"
+                        value={newServiceName}
+                        onChange={(e) => setNewServiceName(e.target.value)}
+                        placeholder="Ex: Espelhamento 3M"
+                        className="w-full h-8 px-3 text-xs bg-white border border-[#E7EAE7] rounded-lg"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] font-bold text-[#737D75] mb-1">
+                        Categoria
+                      </label>
+                      <select
+                        value={newServiceCat}
+                        onChange={(e) => setNewServiceCat(e.target.value)}
+                        className="w-full h-8 px-2 text-xs bg-white border border-[#E7EAE7] rounded-lg font-semibold"
+                      >
+                        {serviceCategories.map((c) => (
+                          <option key={c} value={c}>
+                            {c}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-2 sm:col-span-2">
+                      <div>
+                        <label className="block text-[10px] font-bold text-[#737D75] mb-0.5">Preço Hatch (R$)</label>
+                        <input
+                          type="number"
+                          value={newServiceHatch}
+                          onChange={(e) => setNewServiceHatch(parseFloat(e.target.value) || 0)}
+                          className="w-full h-8 px-2 text-xs font-bold bg-white border border-[#E7EAE7] rounded-lg"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-bold text-[#737D75] mb-0.5">Preço Sedan (R$)</label>
+                        <input
+                          type="number"
+                          value={newServiceSedan}
+                          onChange={(e) => setNewServiceSedan(parseFloat(e.target.value) || 0)}
+                          className="w-full h-8 px-2 text-xs font-bold bg-white border border-[#E7EAE7] rounded-lg"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-bold text-[#737D75] mb-0.5">Preço SUV (R$)</label>
+                        <input
+                          type="number"
+                          value={newServiceSuv}
+                          onChange={(e) => setNewServiceSuv(parseFloat(e.target.value) || 0)}
+                          className="w-full h-8 px-2 text-xs font-bold bg-white border border-[#E7EAE7] rounded-lg"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end gap-2 pt-2">
+                    <button
+                      type="button"
+                      onClick={() => setShowAddServiceModal(false)}
+                      className="px-3 h-8 rounded-lg border border-[#E7EAE7] text-xs font-bold hover:bg-white transition cursor-pointer"
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleAddNewService}
+                      className="px-4 h-8 rounded-lg bg-[#247653] text-white text-xs font-bold hover:bg-[#1E6346] transition cursor-pointer"
+                    >
+                      Adicionar Serviço
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Lista de Serviços */}
+              <div className="space-y-3 max-h-[380px] overflow-y-auto pr-1">
                 {services.map((srv, sIdx) => (
                   <div
                     key={sIdx}
@@ -704,9 +1147,19 @@ export default function OnboardingPage() {
                         <span className="w-2.5 h-2.5 rounded-full bg-[#16A36A]" />
                         <span className="font-bold text-xs text-[#252B27]">{srv.name}</span>
                       </div>
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-white border border-[#E7EAE7] text-[#737D75]">
-                        {srv.category}
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-white border border-[#E7EAE7] text-[#737D75]">
+                          {srv.category}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveService(sIdx)}
+                          className="p-1 rounded-md text-[#DC4C4C] hover:bg-[#FEF2F2] transition cursor-pointer"
+                          title="Remover este serviço"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                     </div>
 
                     <div className="grid grid-cols-3 gap-2.5">
@@ -772,48 +1225,174 @@ export default function OnboardingPage() {
              ======================================================== */}
           {step === 5 && (
             <div className="space-y-6">
-              <div className="space-y-1">
-                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#E9F3EC] text-[#142D26] text-xs font-bold">
-                  <Package className="w-3.5 h-3.5 text-[#247653]" />
-                  <span>Passo 5: Estoque Inicial Recomendado</span>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="space-y-1">
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#E9F3EC] text-[#142D26] text-xs font-bold">
+                    <Package className="w-3.5 h-3.5 text-[#247653]" />
+                    <span>Passo 5: Estoque Inicial Recomendado</span>
+                  </div>
+                  <h2 className="text-xl sm:text-2xl font-extrabold text-[#142D26]">
+                    Controle de insumos e produtos da oficina
+                  </h2>
+                  <p className="text-xs text-[#737D75]">
+                    Remova itens pré-definidos se não utilizar, ou adicione os produtos da sua marca favorita.
+                  </p>
                 </div>
-                <h2 className="text-xl sm:text-2xl font-extrabold text-[#142D26]">
-                  Controle inicial de insumos da oficina
-                </h2>
-                <p className="text-xs text-[#737D75]">
-                  Deixamos produtos essenciais pré-carregados para você controlar baixas e alertas de reposição.
-                </p>
+
+                <button
+                  type="button"
+                  onClick={() => setShowAddProductModal(!showAddProductModal)}
+                  className="px-3.5 py-1.5 rounded-xl bg-[#247653] text-white hover:bg-[#1E6346] text-xs font-bold flex items-center gap-1.5 shrink-0 self-start sm:self-center transition cursor-pointer"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>+ Adicionar Produto</span>
+                </button>
               </div>
 
-              <div className="space-y-2.5">
-                {products.map((prod, pIdx) => (
-                  <div
-                    key={pIdx}
-                    className="p-3 rounded-xl bg-[#F7F8F6] border border-[#E7EAE7] flex items-center justify-between text-xs"
-                  >
-                    <div>
-                      <p className="font-bold text-[#252B27]">{prod.name}</p>
-                      <p className="text-[11px] text-[#737D75]">
-                        Unidade: {prod.unit} • Custo Estimado: R$ {prod.costPrice}
-                      </p>
+              {/* Modal / Card para Adicionar Novo Produto */}
+              {showAddProductModal && (
+                <div className="p-4 rounded-2xl bg-[#F7F8F6] border border-[#247653] space-y-3">
+                  <span className="text-xs font-bold text-[#142D26] block">
+                    Cadastrar Insumo / Produto
+                  </span>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div className="sm:col-span-2">
+                      <label className="block text-[10px] font-bold text-[#737D75] mb-1">
+                        Nome do Produto
+                      </label>
+                      <input
+                        type="text"
+                        value={newProdName}
+                        onChange={(e) => setNewProdName(e.target.value)}
+                        placeholder="Ex: Cera Carnaúba Express Vonixx"
+                        className="w-full h-8 px-3 text-xs bg-white border border-[#E7EAE7] rounded-lg"
+                      />
                     </div>
 
-                    <div className="flex items-center gap-2">
-                      <span className="text-[11px] text-[#737D75]">Qtd Inicial:</span>
+                    <div>
+                      <label className="block text-[10px] font-bold text-[#737D75] mb-1">
+                        Unidade
+                      </label>
+                      <select
+                        value={newProdUnit}
+                        onChange={(e) => setNewProdUnit(e.target.value)}
+                        className="w-full h-8 px-2 text-xs bg-white border border-[#E7EAE7] rounded-lg font-bold"
+                      >
+                        <option value="UN">UN (Unidade)</option>
+                        <option value="L">L (Litro)</option>
+                        <option value="ML">ML (Mililitro)</option>
+                        <option value="KG">KG (Quilo)</option>
+                        <option value="G">G (Grama)</option>
+                        <option value="CX">CX (Caixa)</option>
+                        <option value="PCT">PCT (Pacote)</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] font-bold text-[#737D75] mb-1">
+                        Categoria
+                      </label>
+                      <select
+                        value={newProdCat}
+                        onChange={(e) => setNewProdCat(e.target.value)}
+                        className="w-full h-8 px-2 text-xs bg-white border border-[#E7EAE7] rounded-lg font-bold"
+                      >
+                        <option value="CHEMICAL">Químico / Solução</option>
+                        <option value="ACCESSORY">Acessório / Pano</option>
+                        <option value="TOOL">Equipamento / Boina</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] font-bold text-[#737D75] mb-1">
+                        Custo Estimado (R$)
+                      </label>
                       <input
                         type="number"
                         min={0}
-                        value={prod.currentStock}
-                        onChange={(e) => {
-                          const next = [...products];
-                          next[pIdx].currentStock = parseFloat(e.target.value) || 0;
-                          setProducts(next);
-                        }}
-                        className="w-16 h-8 px-2 text-center text-xs font-bold bg-white border border-[#E7EAE7] rounded-lg"
+                        value={newProdCost}
+                        onChange={(e) => setNewProdCost(parseFloat(e.target.value) || 0)}
+                        className="w-full h-8 px-2 text-xs font-bold bg-white border border-[#E7EAE7] rounded-lg"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] font-bold text-[#737D75] mb-1">
+                        Quantidade Inicial
+                      </label>
+                      <input
+                        type="number"
+                        min={0}
+                        value={newProdStock}
+                        onChange={(e) => setNewProdStock(parseFloat(e.target.value) || 0)}
+                        className="w-full h-8 px-2 text-xs font-bold bg-white border border-[#E7EAE7] rounded-lg"
                       />
                     </div>
                   </div>
-                ))}
+
+                  <div className="flex justify-end gap-2 pt-2">
+                    <button
+                      type="button"
+                      onClick={() => setShowAddProductModal(false)}
+                      className="px-3 h-8 rounded-lg border border-[#E7EAE7] text-xs font-bold hover:bg-white transition cursor-pointer"
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleAddNewProduct}
+                      className="px-4 h-8 rounded-lg bg-[#247653] text-white text-xs font-bold hover:bg-[#1E6346] transition cursor-pointer"
+                    >
+                      Salvar Produto
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Lista de Produtos com Remoção */}
+              <div className="space-y-2.5">
+                {products.length > 0 ? (
+                  products.map((prod, pIdx) => (
+                    <div
+                      key={pIdx}
+                      className="p-3 rounded-xl bg-[#F7F8F6] border border-[#E7EAE7] flex items-center justify-between text-xs"
+                    >
+                      <div>
+                        <p className="font-bold text-[#252B27]">{prod.name}</p>
+                        <p className="text-[11px] text-[#737D75]">
+                          Unidade: {prod.unit} • Custo: R$ {prod.costPrice} • Categoria: {prod.category}
+                        </p>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <span className="text-[11px] text-[#737D75]">Qtd Inicial:</span>
+                        <input
+                          type="number"
+                          min={0}
+                          value={prod.currentStock}
+                          onChange={(e) => {
+                            const next = [...products];
+                            next[pIdx].currentStock = parseFloat(e.target.value) || 0;
+                            setProducts(next);
+                          }}
+                          className="w-16 h-8 px-2 text-center text-xs font-bold bg-white border border-[#E7EAE7] rounded-lg"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveProduct(pIdx)}
+                          className="p-1.5 rounded-lg text-[#DC4C4C] hover:bg-[#FEF2F2] transition cursor-pointer"
+                          title="Remover produto do estoque"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="p-6 text-center text-xs text-[#737D75] bg-[#F7F8F6] rounded-2xl border border-dashed border-[#E7EAE7]">
+                    Nenhum insumo adicionado. Você pode concluir ou cadastrar produtos quando quiser.
+                  </div>
+                )}
               </div>
 
               <div className="p-4 rounded-2xl bg-[#ECFDF5] border border-[#A7F3D0] flex items-start gap-3">
@@ -828,58 +1407,85 @@ export default function OnboardingPage() {
             </div>
           )}
 
-          {/* Botões de Ação do Wizard */}
-          <div className="pt-4 border-t border-[#E7EAE7] flex items-center justify-between gap-3">
-            {step > 1 ? (
-              <button
-                type="button"
-                onClick={() => setStep(step - 1)}
-                disabled={saving}
-                className="px-4 py-2.5 rounded-xl border border-[#E7EAE7] bg-[#F7F8F6] hover:bg-[#E9F3EC] text-xs font-bold text-[#343C36] flex items-center gap-1.5 transition cursor-pointer"
-              >
-                <ArrowLeft className="w-4 h-4" />
-                <span>Voltar</span>
-              </button>
-            ) : (
-              <div />
-            )}
+          {/* Botões de Ação do Wizard com Pular Etapa */}
+          <div className="pt-4 border-t border-[#E7EAE7] flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              {step > 1 && (
+                <button
+                  type="button"
+                  onClick={() => setStep(step - 1)}
+                  disabled={saving}
+                  className="px-4 py-2.5 rounded-xl border border-[#E7EAE7] bg-[#F7F8F6] hover:bg-[#E9F3EC] text-xs font-bold text-[#343C36] flex items-center gap-1.5 transition cursor-pointer"
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                  <span>Voltar</span>
+                </button>
+              )}
 
-            {step < 5 ? (
-              <button
-                type="button"
-                onClick={() => {
-                  if (step === 1 && !companyName.trim()) {
-                    setError("Informe o nome da sua estética automotiva.");
-                    return;
-                  }
-                  setError(null);
-                  setStep(step + 1);
-                }}
-                className="px-6 py-2.5 rounded-xl bg-[#247653] hover:bg-[#1E6346] text-white text-xs font-bold flex items-center gap-1.5 shadow-xs transition cursor-pointer"
-              >
-                <span>Próximo Passo</span>
-                <ArrowRight className="w-4 h-4" />
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={handleFinish}
-                disabled={saving}
-                className="px-7 py-3 rounded-xl bg-[#16A36A] hover:bg-[#15803D] text-white text-xs font-bold flex items-center gap-2 shadow-sm transition cursor-pointer"
-              >
-                {saving ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    <span>Configurando Sua Oficina...</span>
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="w-4 h-4" />
-                    <span>Concluir e Acessar Meu Pátio</span>
-                  </>
-                )}
-              </button>
-            )}
+              {/* Botão Pular Esta Etapa */}
+              {step < 5 ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setError(null);
+                    setStep(step + 1);
+                  }}
+                  className="px-3.5 py-2.5 rounded-xl text-xs font-semibold text-[#737D75] hover:text-[#252B27] hover:bg-[#F1F3F1] transition flex items-center gap-1 cursor-pointer"
+                >
+                  <SkipForward className="w-3.5 h-3.5" />
+                  <span>Pular esta etapa</span>
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => handleFinish(false)}
+                  disabled={saving}
+                  className="px-3.5 py-2.5 rounded-xl text-xs font-semibold text-[#737D75] hover:text-[#252B27] hover:bg-[#F1F3F1] transition flex items-center gap-1 cursor-pointer"
+                >
+                  <SkipForward className="w-3.5 h-3.5" />
+                  <span>Pular estoque e finalizar</span>
+                </button>
+              )}
+            </div>
+
+            <div className="flex items-center gap-2">
+              {step < 5 ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (step === 1 && !companyName.trim()) {
+                      setError("Informe o nome da sua estética automotiva.");
+                      return;
+                    }
+                    setError(null);
+                    setStep(step + 1);
+                  }}
+                  className="px-6 py-2.5 rounded-xl bg-[#247653] hover:bg-[#1E6346] text-white text-xs font-bold flex items-center gap-1.5 shadow-xs transition cursor-pointer"
+                >
+                  <span>Próximo Passo</span>
+                  <ArrowRight className="w-4 h-4" />
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => handleFinish(false)}
+                  disabled={saving}
+                  className="px-7 py-3 rounded-xl bg-[#16A36A] hover:bg-[#15803D] text-white text-xs font-bold flex items-center gap-2 shadow-sm transition cursor-pointer"
+                >
+                  {saving ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>Configurando Sua Oficina...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-4 h-4" />
+                      <span>Concluir e Acessar Meu Pátio</span>
+                    </>
+                  )}
+                </button>
+              )}
+            </div>
           </div>
         </div>
       </div>
