@@ -430,14 +430,47 @@ export default function OnboardingPage() {
       const payload = {
         companyName: companyName.trim() || "Minha Estética Automotiva",
         tradingName: tradingName.trim() || companyName.trim() || "Estética Automotiva",
-        phone: phone.trim() || null,
-        whatsapp: whatsapp.trim() || phone.trim() || null,
-        address: address.trim() || null,
-        logoUrl: logoUrl || null,
-        boxes: skipAll ? [] : boxes,
-        employees: skipAll ? [] : employees,
-        services: skipAll ? [] : services,
-        products: skipAll ? [] : products,
+        phone: phone.trim() || "",
+        whatsapp: whatsapp.trim() || phone.trim() || "",
+        address: address.trim() || "",
+        logoUrl: logoUrl.trim() || "",
+        boxes: skipAll
+          ? []
+          : boxes.map((b) => ({
+              name: b.name.trim(),
+              type: b.type || "GERAL",
+              capacity: Number(b.capacity) || 1,
+              color: b.color || "#16A36A",
+            })),
+        employees: skipAll
+          ? []
+          : employees.map((e) => ({
+              name: e.name.trim(),
+              phone: e.phone ? e.phone.trim() : "",
+              role: e.role || "OPERATOR",
+              commissionRate: Number(e.commissionRate) || 15,
+            })),
+        services: skipAll
+          ? []
+          : services.map((s) => ({
+              name: s.name.trim(),
+              category: s.category || "LAVAGEM",
+              priceHatch: Number(s.priceHatch) || 80,
+              priceSedan: Number(s.priceSedan) || 100,
+              priceSuvPickup: Number(s.priceSuvPickup) || 130,
+              estimatedMinutes: Number(s.estimatedMinutes) || 60,
+              defaultCommission: Number(s.defaultCommission) || 15,
+            })),
+        products: skipAll
+          ? []
+          : products.map((p) => ({
+              name: p.name.trim(),
+              category: p.category || "CHEMICAL",
+              unit: p.unit || "UN",
+              currentStock: Number(p.currentStock) || 0,
+              minStock: Number(p.minStock) || 1,
+              costPrice: Number(p.costPrice) || 0,
+            })),
       };
 
       const res = await fetch("/api/onboarding", {

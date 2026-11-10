@@ -9,23 +9,23 @@ export const dynamic = "force-dynamic";
 const onboardingSchema = z.object({
   // Passo 1: Identidade da Estética
   companyName: z.string().min(2, "Nome da empresa é obrigatório."),
-  tradingName: z.string().optional(),
-  phone: z.string().optional(),
-  whatsapp: z.string().optional(),
-  address: z.string().optional(),
-  logoUrl: z.string().optional().nullable(),
+  tradingName: z.string().nullish(),
+  phone: z.string().nullish(),
+  whatsapp: z.string().nullish(),
+  address: z.string().nullish(),
+  logoUrl: z.string().nullish(),
 
   // Passo 2: Boxes e Vagas
   boxes: z
     .array(
       z.object({
         name: z.string().min(1, "Nome do box obrigatório."),
-        type: z.string().default("GERAL"),
-        capacity: z.number().int().min(1).default(1),
-        color: z.string().default("#16A36A"),
+        type: z.string().nullish().default("GERAL"),
+        capacity: z.number().int().min(1).nullish().default(1),
+        color: z.string().nullish().default("#16A36A"),
       })
     )
-    .optional()
+    .nullish()
     .default([]),
 
   // Passo 3: Colaboradores / Funcionários
@@ -33,12 +33,12 @@ const onboardingSchema = z.object({
     .array(
       z.object({
         name: z.string().min(2, "Nome do colaborador obrigatório."),
-        phone: z.string().optional(),
-        role: z.enum(["OPERATOR", "ADMIN"]).default("OPERATOR"),
-        commissionRate: z.number().min(0).max(100).default(15),
+        phone: z.string().nullish(),
+        role: z.enum(["OPERATOR", "ADMIN"]).nullish().default("OPERATOR"),
+        commissionRate: z.number().min(0).max(100).nullish().default(15),
       })
     )
-    .optional()
+    .nullish()
     .default([]),
 
   // Passo 4: Catálogo de Serviços
@@ -46,15 +46,15 @@ const onboardingSchema = z.object({
     .array(
       z.object({
         name: z.string().min(2, "Nome do serviço obrigatório."),
-        category: z.string().default("LAVAGEM"),
-        priceHatch: z.number().min(0).default(80),
-        priceSedan: z.number().min(0).default(100),
-        priceSuvPickup: z.number().min(0).default(130),
-        estimatedMinutes: z.number().int().min(10).default(60),
-        defaultCommission: z.number().min(0).max(100).default(15),
+        category: z.string().nullish().default("LAVAGEM"),
+        priceHatch: z.number().min(0).nullish().default(80),
+        priceSedan: z.number().min(0).nullish().default(100),
+        priceSuvPickup: z.number().min(0).nullish().default(130),
+        estimatedMinutes: z.number().int().min(10).nullish().default(60),
+        defaultCommission: z.number().min(0).max(100).nullish().default(15),
       })
     )
-    .optional()
+    .nullish()
     .default([]),
 
   // Passo 5: Estoque Inicial
@@ -62,14 +62,14 @@ const onboardingSchema = z.object({
     .array(
       z.object({
         name: z.string().min(2, "Nome do produto obrigatório."),
-        category: z.string().default("CHEMICAL"),
-        unit: z.string().default("UN"),
-        currentStock: z.number().min(0).default(1),
-        minStock: z.number().min(0).default(1),
-        costPrice: z.number().min(0).default(0),
+        category: z.string().nullish().default("CHEMICAL"),
+        unit: z.string().nullish().default("UN"),
+        currentStock: z.number().min(0).nullish().default(1),
+        minStock: z.number().min(0).nullish().default(1),
+        costPrice: z.number().min(0).nullish().default(0),
       })
     )
-    .optional()
+    .nullish()
     .default([]),
 });
 
