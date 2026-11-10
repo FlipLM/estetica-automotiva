@@ -7,7 +7,7 @@ import {
   Plus,
   Share2,
   ArrowRight,
-  Printer,
+  Eye,
   X,
   Trash2,
   AlertCircle,
@@ -366,7 +366,7 @@ export default function BudgetsPage() {
                     href={`/orcamentos/${b.id}`}
                     className="dp-btn-secondary py-1.5 px-3 text-xs"
                   >
-                    <Printer className="w-3.5 h-3.5 text-[#247653]" />
+                    <Eye className="w-3.5 h-3.5 text-[#247653]" />
                     <span>Ver / PDF</span>
                   </Link>
                 </div>

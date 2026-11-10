@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import {
-  Printer,
   Share2,
   ArrowLeft,
   ArrowRight,
@@ -158,7 +157,7 @@ export default function BudgetDetailPage() {
             title="Montar e baixar arquivo PDF vetorial oficial"
           >
             <FileDown className="w-3.5 h-3.5" />
-            <span>Baixar PDF (Oficial)</span>
+            <span>Baixar PDF</span>
           </button>
 
           <button
@@ -168,15 +167,6 @@ export default function BudgetDetailPage() {
           >
             <Eye className="w-3.5 h-3.5 text-[#737D75]" />
             <span>Visualizar</span>
-          </button>
-
-          <button
-            onClick={() => window.print()}
-            className="px-3 py-2 rounded-lg bg-white hover:bg-[#F1F3F1] border border-[#E7EAE7] text-[#737D75] hover:text-[#252B27] text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer"
-            title="Imprimir na impressora"
-          >
-            <Printer className="w-3.5 h-3.5" />
-            <span>Imprimir</span>
           </button>
         </div>
       </div>

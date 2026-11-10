@@ -26,3 +26,4 @@ export function readAnchor(value: unknown): Anchor | undefined {
     return undefined;
   }
 }
+

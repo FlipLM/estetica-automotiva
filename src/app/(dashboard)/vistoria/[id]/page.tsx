@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import {
-  Printer,
   Share2,
   ArrowLeft,
   Fuel,
@@ -96,10 +95,6 @@ export default function ChecklistDetailPage() {
     };
   });
 
-  function handlePrint() {
-    window.print();
-  }
-
   async function handleDownloadPdf() {
     setGeneratingPdf(true);
     try {
@@ -164,14 +159,14 @@ export default function ChecklistDetailPage() {
             onClick={handleDownloadPdf}
             disabled={generatingPdf}
             className="px-3.5 py-2 rounded-lg bg-[#247653] hover:bg-[#1E6346] disabled:opacity-60 text-white text-xs font-semibold flex items-center gap-1.5 shadow-xs transition-all cursor-pointer"
-            title="Montar e baixar arquivo PDF oficial do Laudo de Vistoria com fotos"
+            title="Montar e baixar arquivo PDF do Laudo de Vistoria com fotos"
           >
             {generatingPdf ? (
               <Loader2 className="w-3.5 h-3.5 animate-spin" />
             ) : (
               <FileDown className="w-3.5 h-3.5" />
             )}
-            <span>{generatingPdf ? "Montando Laudo..." : "Baixar Laudo PDF (Oficial)"}</span>
+            <span>{generatingPdf ? "Montando PDF..." : "Baixar PDF"}</span>
           </button>
 
           <button
@@ -182,15 +177,6 @@ export default function ChecklistDetailPage() {
           >
             <Eye className="w-3.5 h-3.5 text-[#737D75]" />
             <span>Visualizar</span>
-          </button>
-
-          <button
-            onClick={handlePrint}
-            className="px-3 py-2 rounded-lg bg-white hover:bg-[#F1F3F1] border border-[#E7EAE7] text-[#737D75] hover:text-[#252B27] text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer"
-            title="Imprimir na impressora"
-          >
-            <Printer className="w-3.5 h-3.5" />
-            <span>Imprimir</span>
           </button>
         </div>
       </div>

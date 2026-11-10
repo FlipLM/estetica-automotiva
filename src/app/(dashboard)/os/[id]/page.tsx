@@ -19,7 +19,7 @@ import {
   Clock,
   Receipt,
   FileDown,
-  Printer,
+  Eye,
 } from "lucide-react";
 import { formatCurrency, formatDateTime } from "@/lib/utils";
 import { ManageOrderServicesModal } from "@/components/modules/manage-order-services-modal";
@@ -211,6 +211,7 @@ export default function OrderDetailPage() {
             className="px-3 py-2 rounded-lg bg-white hover:bg-[#F1F3F1] border border-[#E7EAE7] text-[#252B27] text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer"
             title="Visualizar OS em PDF"
           >
+            <Eye className="w-3.5 h-3.5 text-[#737D75]" />
             <span>Visualizar</span>
           </button>
 

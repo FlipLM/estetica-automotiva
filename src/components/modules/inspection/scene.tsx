@@ -339,3 +339,4 @@ export default function InspectionScene(props: Props) {
     </Canvas>
   );
 }
+
