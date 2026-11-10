@@ -23,7 +23,7 @@ async function main() {
   await prisma.user.deleteMany({});
   await prisma.tenant.deleteMany({});
 
-  // 1. Criação do Tenant Demonstrativo Oficial
+  // 1. Criação do Tenant Demonstrativo Oficial (Master Tenant Ativo Permanente)
   const tenant = await prisma.tenant.create({
     data: {
       name: "Estúdio Prime Detailing & Estética Automotiva",
@@ -34,6 +34,9 @@ async function main() {
       email: "contato@primedetailing.com.br",
       address: "Av. dos Bandeirantes, 1500 - São Paulo, SP",
       active: true,
+      plan: "ACTIVE",
+      trialExpiresAt: null,
+      isCustomPlan: true,
     },
   });
 

@@ -17,6 +17,7 @@ import {
 import { VehicleSilhouette360, DamagePin } from "@/components/modules/vehicle-silhouette-360";
 import { formatDateTime } from "@/lib/utils";
 import { generateInspectionPdf } from "@/lib/pdf-generator";
+import { translateArea, translateDamageType } from "@/lib/damage-dictionary";
 
 export default function ChecklistDetailPage() {
   const params = useParams();
@@ -24,6 +25,7 @@ export default function ChecklistDetailPage() {
 
   const [checklist, setChecklist] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [generatingPdf, setGeneratingPdf] = useState(false);
   const [selectedPreviewPhoto, setSelectedPreviewPhoto] = useState<string | null>(null);
 
   useEffect(() => {
@@ -97,23 +99,29 @@ export default function ChecklistDetailPage() {
     window.print();
   }
 
-  function handleDownloadPdf() {
+  async function handleDownloadPdf() {
+    setGeneratingPdf(true);
     try {
-      generateInspectionPdf(checklist, { download: true });
+      await generateInspectionPdf(checklist, { download: true });
     } catch (e) {
       console.error("Erro ao gerar PDF de vistoria:", e);
       alert("Erro ao montar o laudo PDF.");
+    } finally {
+      setGeneratingPdf(false);
     }
   }
 
-  function handleViewPdf() {
+  async function handleViewPdf() {
+    setGeneratingPdf(true);
     try {
-      const { doc } = generateInspectionPdf(checklist, { download: false });
+      const { doc } = await generateInspectionPdf(checklist, { download: false });
       const blobUrl = doc.output("bloburl");
       window.open(blobUrl, "_blank");
     } catch (e) {
       console.error("Erro ao visualizar laudo PDF:", e);
       alert("Erro ao abrir visualização do PDF.");
+    } finally {
+      setGeneratingPdf(false);
     }
   }
 
@@ -153,16 +161,22 @@ export default function ChecklistDetailPage() {
 
           <button
             onClick={handleDownloadPdf}
-            className="px-3.5 py-2 rounded-lg bg-[#247653] hover:bg-[#1E6346] text-white text-xs font-semibold flex items-center gap-1.5 shadow-xs transition-all cursor-pointer"
-            title="Montar e baixar arquivo PDF oficial do Laudo de Vistoria"
+            disabled={generatingPdf}
+            className="px-3.5 py-2 rounded-lg bg-[#247653] hover:bg-[#1E6346] disabled:opacity-60 text-white text-xs font-semibold flex items-center gap-1.5 shadow-xs transition-all cursor-pointer"
+            title="Montar e baixar arquivo PDF oficial do Laudo de Vistoria com fotos"
           >
-            <FileDown className="w-3.5 h-3.5" />
-            <span>Baixar Laudo PDF (Oficial)</span>
+            {generatingPdf ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            ) : (
+              <FileDown className="w-3.5 h-3.5" />
+            )}
+            <span>{generatingPdf ? "Montando Laudo..." : "Baixar Laudo PDF (Oficial)"}</span>
           </button>
 
           <button
             onClick={handleViewPdf}
-            className="px-3 py-2 rounded-lg bg-white hover:bg-[#F1F3F1] border border-[#E7EAE7] text-[#252B27] text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer"
+            disabled={generatingPdf}
+            className="px-3 py-2 rounded-lg bg-white hover:bg-[#F1F3F1] disabled:opacity-60 border border-[#E7EAE7] text-[#252B27] text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer"
             title="Visualizar documento PDF em nova aba"
           >
             <Eye className="w-3.5 h-3.5 text-[#737D75]" />
@@ -309,7 +323,7 @@ export default function ChecklistDetailPage() {
                           {dIdx + 1}
                         </span>
                         <span className="font-bold text-[#252B27]">
-                          {d.damageType} — {d.area}
+                          {translateArea(d.area)} — {translateDamageType(d.damageType)}
                         </span>
                       </div>
                       <span className="text-[11px] text-[#737D75]">

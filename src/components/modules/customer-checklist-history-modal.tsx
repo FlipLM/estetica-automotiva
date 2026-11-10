@@ -14,6 +14,7 @@ import {
   Eye,
 } from "lucide-react";
 import { formatDateTime } from "@/lib/utils";
+import { translateArea, translateDamageType } from "@/lib/damage-dictionary";
 
 interface CustomerChecklistHistoryModalProps {
   customerId: string;
@@ -286,7 +287,7 @@ export function CustomerChecklistHistoryModal({
                                       {dIdx + 1}
                                     </span>
                                     <span className="font-bold text-[#252B27] truncate">
-                                      {d.damageType} — {d.area}
+                                      {translateArea(d.area)} — {translateDamageType(d.damageType)}
                                     </span>
                                   </div>
                                   <span className="text-[11px] text-[#737D75] shrink-0">

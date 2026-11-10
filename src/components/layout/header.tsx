@@ -13,6 +13,10 @@ import {
   User,
   Clock,
   Sparkles,
+  ShieldCheck,
+  CheckCircle2,
+  X,
+  MessageCircle,
 } from "lucide-react";
 
 interface HeaderProps {
@@ -59,6 +63,7 @@ export function Header({ userName, userRole, tenantName, plan, trialExpiresAt }:
   const [loggingOut, setLoggingOut] = useState(false);
   const [searchPlate, setSearchPlate] = useState("");
   const [boxes, setBoxes] = useState<BoxTelemetry[]>([]);
+  const [trialModalOpen, setTrialModalOpen] = useState(false);
 
   // Calcula horas / dias restantes do período de teste
   const isTrial = plan === "TRIAL";
@@ -69,6 +74,12 @@ export function Header({ userName, userRole, tenantName, plan, trialExpiresAt }:
     const diffDays = Math.ceil(diffHours / 24);
     trialRemainingText = diffHours > 24 ? `${diffDays} dias restantes` : `${diffHours}h restantes`;
   }
+
+  const supportWhatsapp = process.env.NEXT_PUBLIC_SUPPORT_WHATSAPP || "5511988887777";
+  const cleanPhone = supportWhatsapp.replace(/\D/g, "");
+  const whatsappTrialText = encodeURIComponent(
+    `Olá! Estou testando o DetailPro para a empresa *${tenantName}* e gostaria de informações sobre planos definitivos ou contratação de um sistema sob medida!`
+  );
 
   useEffect(() => {
     async function loadBoxes() {
@@ -164,17 +175,18 @@ export function Header({ userName, userRole, tenantName, plan, trialExpiresAt }:
         )}
 
         {isTrial && (
-          <Link
-            href="/bloqueado"
+          <button
+            type="button"
+            onClick={() => setTrialModalOpen(true)}
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#FFFBEB] hover:bg-[#FEF3C7] border border-[#FDE68A] text-[#B45309] text-xs font-bold transition-all shadow-xs cursor-pointer"
-            title="Seu período de teste no DetailPro. Clique para ver planos ou solicitar sistema personalizado."
+            title="Seu período de teste no DetailPro. Clique para ver detalhes e opções de liberação."
           >
             <Clock className="w-3.5 h-3.5 text-[#D97706] animate-pulse" />
             <span>Teste: {trialRemainingText || "3 dias"}</span>
             <span className="hidden md:inline px-1.5 py-0.2 rounded-md bg-[#D97706] text-white text-[10px] font-semibold ml-0.5">
               Assinar
             </span>
-          </Link>
+          </button>
         )}
 
         <Link
@@ -215,6 +227,95 @@ export function Header({ userName, userRole, tenantName, plan, trialExpiresAt }:
           </button>
         </div>
       </div>
+
+      {/* Modal Informativo do Período de Teste */}
+      {trialModalOpen && (
+        <div
+          onClick={() => setTrialModalOpen(false)}
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#142D26]/75 backdrop-blur-xs animate-in fade-in duration-150"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-lg bg-white rounded-2xl border border-[#E7EAE7] shadow-2xl p-6 sm:p-7 space-y-5"
+          >
+            <div className="flex items-start justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-11 h-11 rounded-xl bg-[#FFFBEB] border border-[#FDE68A] text-[#D97706] flex items-center justify-center shrink-0">
+                  <Clock className="w-6 h-6 animate-pulse" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-base text-[#142D26]">
+                    Período de Demonstração Gratuito
+                  </h3>
+                  <p className="text-xs text-[#737D75]">
+                    Empresa: <strong className="text-[#252B27]">{tenantName}</strong>
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setTrialModalOpen(false)}
+                className="p-1.5 rounded-lg text-[#737D75] hover:text-[#252B27] hover:bg-[#F1F3F1] transition cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="p-4 rounded-xl bg-[#FFFBEB] border border-[#FDE68A] space-y-1.5">
+              <div className="flex items-center justify-between text-xs font-bold text-[#92400E]">
+                <span>Status do Período de Avaliação:</span>
+                <span className="px-2 py-0.5 rounded-full bg-[#FEF3C7] border border-[#FDE68A]">
+                  {trialRemainingText || "3 dias disponíveis"}
+                </span>
+              </div>
+              <p className="text-[12px] text-[#B45309]">
+                Todas as funcionalidades (Pátio, Vistorias com Fotos, Orçamentos PDF, Ordens de Serviço e Financeiro) estão liberadas para você validar a operação.
+              </p>
+            </div>
+
+            <div className="space-y-2 text-xs text-[#343C36]">
+              <p className="font-semibold text-[#142D26]">
+                Deseja ativar seu plano definitivo ou solicitar um sistema próprio?
+              </p>
+              <ul className="space-y-1.5 text-[12px] text-[#737D75]">
+                <li className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-[#16A36A] shrink-0" />
+                  <span>Liberação permanente de todos os seus dados e ordens de serviço</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-[#16A36A] shrink-0" />
+                  <span>Possibilidade de domínio exclusivo com a marca da sua estética</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-[#16A36A] shrink-0" />
+                  <span>Suporte prioritário via WhatsApp</span>
+                </li>
+              </ul>
+            </div>
+
+            <div className="pt-2 flex flex-col sm:flex-row gap-2.5">
+              <a
+                href={`https://wa.me/${cleanPhone}?text=${whatsappTrialText}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex-1 py-2.5 px-4 rounded-xl bg-[#16A36A] hover:bg-[#15803D] text-white text-xs font-bold flex items-center justify-center gap-2 shadow-xs transition-all cursor-pointer"
+              >
+                <MessageCircle className="w-4 h-4" />
+                <span>Falar no WhatsApp para Ativar</span>
+              </a>
+
+              <button
+                type="button"
+                onClick={() => setTrialModalOpen(false)}
+                className="py-2.5 px-4 rounded-xl border border-[#E7EAE7] bg-[#F7F8F6] hover:bg-[#E9F3EC] text-[#252B27] text-xs font-semibold transition-all cursor-pointer"
+              >
+                Continuar Testando
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </header>
   );
 }

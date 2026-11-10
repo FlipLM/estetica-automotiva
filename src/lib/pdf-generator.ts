@@ -1,5 +1,6 @@
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import { translateArea, translateDamageType } from "./damage-dictionary";
 
 // ==========================================
 // PALETA DE CORES INSTITUCIONAL (DetailPro)
@@ -408,10 +409,30 @@ export function generateBudgetPdf(order: any, options: { download?: boolean } = 
   return { doc, filename };
 }
 
+async function loadImgDataUrl(url: string): Promise<string | null> {
+  if (typeof window === "undefined") return null;
+  try {
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    const blob = await res.blob();
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        resolve(reader.result as string);
+      };
+      reader.onerror = () => resolve(null);
+      reader.readAsDataURL(blob);
+    });
+  } catch (e) {
+    console.warn("Falha ao carregar fotografia para o PDF:", url, e);
+    return null;
+  }
+}
+
 // =========================================================================
-// 2. GERADOR DE LAUDO DE VISTORIA VEICULAR (Inspection Report PDF)
+// 2. GERADOR DE LAUDO DE VISTORIA VEICULAR (Inspection Report PDF com Fotos)
 // =========================================================================
-export function generateInspectionPdf(
+export async function generateInspectionPdf(
   checklist: any,
   options: { download?: boolean } = { download: true }
 ) {
@@ -422,6 +443,7 @@ export function generateInspectionPdf(
   });
 
   const pageWidth = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight();
   const serviceOrder = checklist.serviceOrder || {};
   const tenant = serviceOrder.tenant || {};
   const vehicle = serviceOrder.vehicle || {};
@@ -582,7 +604,7 @@ export function generateInspectionPdf(
   y += fuelBoxHeight + 8;
 
   // -------------------------------------------------------------
-  // TABELA DE AVARIAS MAPEADAS (Riscos, Amassados, Manchas)
+  // TABELA DE AVARIAS MAPEADAS (100% em Português Amigável)
   // -------------------------------------------------------------
   doc.setFontSize(9.5);
   doc.setFont("helvetica", "bold");
@@ -618,18 +640,8 @@ export function generateInspectionPdf(
     });
   } else {
     const damageRows = damageRecords.map((d: any, idx: number) => {
-      let areaLabel = d.area || "Geral";
-      if (areaLabel === "FRONT") areaLabel = "Dianteira / Capô";
-      if (areaLabel === "REAR") areaLabel = "Traseira / Porta-Malas";
-      if (areaLabel === "LEFT") areaLabel = "Lateral Esquerda";
-      if (areaLabel === "RIGHT") areaLabel = "Lateral Direita";
-      if (areaLabel === "ROOF") areaLabel = "Teto";
-
-      let typeLabel = d.damageType || "Risco";
-      if (typeLabel === "SCRATCH") typeLabel = "Risco / Arranhão";
-      if (typeLabel === "DENT") typeLabel = "Amassado / Pique";
-      if (typeLabel === "STAIN") typeLabel = "Mancha / Desgaste";
-      if (typeLabel === "CRACK") typeLabel = "Trinca / Quebrado";
+      const areaLabel = translateArea(d.area);
+      const typeLabel = translateDamageType(d.damageType);
 
       return [
         String(idx + 1).padStart(2, "0"),
@@ -660,8 +672,8 @@ export function generateInspectionPdf(
       },
       columnStyles: {
         0: { cellWidth: 10, halign: "center" },
-        1: { cellWidth: 35, halign: "left", fontStyle: "bold" },
-        2: { cellWidth: 35, halign: "left" },
+        1: { cellWidth: 38, halign: "left", fontStyle: "bold" },
+        2: { cellWidth: 36, halign: "left" },
         3: { cellWidth: "auto", halign: "left" },
       },
       alternateRowStyles: {
@@ -733,6 +745,160 @@ export function generateInspectionPdf(
   doc.setTextColor(...COLORS.textMuted);
   const inspectorName = serviceOrder.assignedUser?.name || "DetailPro Vistorias";
   doc.text(inspectorName, sig2X + sigLineWidth / 2, y + 8, { align: "center" });
+
+  // -----------------------------------------------------------------------
+  // EVIDÊNCIAS FOTOGRÁFICAS DAS AVARIAS (Incorporadas diretamente no PDF)
+  // -----------------------------------------------------------------------
+  const damagesWithPhotos: Array<{
+    index: number;
+    area: string;
+    damageType: string;
+    description: string;
+    photosDataUrls: string[];
+  }> = [];
+
+  for (let i = 0; i < damageRecords.length; i++) {
+    const d = damageRecords[i];
+    let urls: string[] = [];
+    if (Array.isArray(d.photos) && d.photos.length > 0) {
+      urls = d.photos;
+    } else if (d.photosUrls) {
+      try {
+        urls = JSON.parse(d.photosUrls);
+      } catch {
+        urls = [];
+      }
+    }
+    if (urls.length === 0 && d.photoUrl) {
+      urls = [d.photoUrl];
+    }
+
+    if (urls.length > 0) {
+      const loadedPhotos: string[] = [];
+      for (const u of urls) {
+        const dataUrl = await loadImgDataUrl(u);
+        if (dataUrl) loadedPhotos.push(dataUrl);
+      }
+      if (loadedPhotos.length > 0) {
+        damagesWithPhotos.push({
+          index: i + 1,
+          area: translateArea(d.area),
+          damageType: translateDamageType(d.damageType),
+          description: d.description || "",
+          photosDataUrls: loadedPhotos,
+        });
+      }
+    }
+  }
+
+  if (damagesWithPhotos.length > 0) {
+    doc.addPage();
+    let photoY = 16;
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(12);
+    doc.setTextColor(...COLORS.primary);
+    doc.text("REGISTRO FOTOGRÁFICO DE AVARIAS E EVIDÊNCIAS", 14, photoY);
+    photoY += 4.5;
+
+    doc.setFontSize(8);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(...COLORS.textMuted);
+    doc.text(
+      "Fotografias registradas digitalmente no ato da recepção do veículo para garantia mútua.",
+      14,
+      photoY
+    );
+    photoY += 6;
+
+    doc.setDrawColor(...COLORS.brand);
+    doc.setLineWidth(0.5);
+    doc.line(14, photoY, pageWidth - 14, photoY);
+    photoY += 7;
+
+    for (const item of damagesWithPhotos) {
+      // Se não houver espaço suficiente para cabeçalho + foto, pula para próxima página
+      if (photoY > pageHeight - 65) {
+        doc.addPage();
+        photoY = 16;
+      }
+
+      // Faixa destacada para identificar a avaria
+      doc.setFillColor(...COLORS.bgLight);
+      doc.setDrawColor(...COLORS.border);
+      doc.roundedRect(14, photoY, pageWidth - 28, 7.5, 1.5, 1.5, "FD");
+
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(8.5);
+      doc.setTextColor(...COLORS.primary);
+      const title = `#${String(item.index).padStart(2, "0")} — ${item.area}  •  ${item.damageType}`;
+      doc.text(title, 18, photoY + 5.2);
+
+      photoY += 11;
+
+      if (item.description) {
+        doc.setFont("helvetica", "italic");
+        doc.setFontSize(7.5);
+        doc.setTextColor(...COLORS.textDark);
+        doc.text(`Nota: "${item.description}"`, 16, photoY);
+        photoY += 5;
+      }
+
+      // Grid de Fotos: 3 colunas de 56mm x 42mm
+      const imgWidth = 56;
+      const imgHeight = 42;
+      const gap = 6;
+      const marginX = 14;
+
+      let col = 0;
+      for (let p = 0; p < item.photosDataUrls.length; p++) {
+        if (col === 3) {
+          col = 0;
+          photoY += imgHeight + gap;
+        }
+
+        if (photoY + imgHeight > pageHeight - 16) {
+          doc.addPage();
+          photoY = 16;
+          col = 0;
+        }
+
+        const x = marginX + col * (imgWidth + gap);
+
+        try {
+          doc.setFillColor(...COLORS.bgLight);
+          doc.setDrawColor(...COLORS.border);
+          doc.setLineWidth(0.3);
+          doc.roundedRect(x, photoY, imgWidth, imgHeight, 1.5, 1.5, "FD");
+
+          doc.addImage(
+            item.photosDataUrls[p],
+            "JPEG",
+            x + 1,
+            photoY + 1,
+            imgWidth - 2,
+            imgHeight - 2,
+            undefined,
+            "FAST"
+          );
+
+          // Tag com número da foto
+          doc.setFillColor(...COLORS.primary);
+          doc.roundedRect(x + 2, photoY + 2, 8, 4.5, 1, 1, "F");
+          doc.setFontSize(6.5);
+          doc.setFont("helvetica", "bold");
+          doc.setTextColor(...COLORS.white);
+          doc.text(`#${p + 1}`, x + 6, photoY + 5.2, { align: "center" });
+        } catch (imgErr) {
+          console.warn("Erro ao renderizar imagem no PDF:", imgErr);
+        }
+
+        col++;
+      }
+
+      photoY += imgHeight + 8;
+    }
+  }
 
   addHeaderAndFooters(doc, "LAUDO DE VISTORIA", tenant, checklistNum, badgeText);
 

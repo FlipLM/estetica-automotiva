@@ -1,8 +1,18 @@
 import { NextResponse } from "next/server";
-import { clearAuthCookie } from "@/lib/auth";
+import { AUTH_COOKIE_NAME } from "@/lib/auth";
 
 export async function POST() {
-  clearAuthCookie();
-  return NextResponse.json({ success: true, message: "Sessão encerrada com sucesso." });
+  const response = NextResponse.json({
+    success: true,
+    message: "Sessão encerrada com sucesso.",
+  });
+
+  response.cookies.set(AUTH_COOKIE_NAME, "", {
+    httpOnly: true,
+    path: "/",
+    maxAge: 0,
+  });
+
+  return response;
 }
 

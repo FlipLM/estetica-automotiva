@@ -198,11 +198,6 @@ export function Sidebar({ role, tenantName }: SidebarProps) {
                 icon: UserCheck,
               },
               {
-                name: "Design System",
-                href: "/design-system",
-                icon: Palette,
-              },
-              {
                 name: "Configurações",
                 href: "/configuracoes",
                 icon: Settings,

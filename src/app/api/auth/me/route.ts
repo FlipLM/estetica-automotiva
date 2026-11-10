@@ -28,6 +28,9 @@ export async function GET() {
           phone: true,
           whatsapp: true,
           logoUrl: true,
+          plan: true,
+          trialExpiresAt: true,
+          isCustomPlan: true,
         },
       },
     },
@@ -39,6 +42,11 @@ export async function GET() {
 
   return NextResponse.json({
     authenticated: true,
-    user,
+    user: {
+      ...user,
+      plan: user.tenant.plan,
+      trialExpiresAt: user.tenant.trialExpiresAt,
+      isTrialExpired: session.isTrialExpired,
+    },
   });
 }

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { hashPassword, signToken, setAuthCookie } from "@/lib/auth";
+import { hashPassword, signToken, AUTH_COOKIE_NAME } from "@/lib/auth";
 
 const registerSchema = z.object({
   companyName: z.string().min(3, "Nome da empresa deve ter no mínimo 3 caracteres."),
@@ -251,10 +251,13 @@ export async function POST(req: NextRequest) {
       trialExpiresAt: result.tenant.trialExpiresAt?.toISOString() || null,
     });
 
-    setAuthCookie(token);
+    const isHttps =
+      req.url.startsWith("https://") ||
+      req.headers.get("x-forwarded-proto") === "https";
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
+      token,
       message: "Empresa e administrador cadastrados com sucesso!",
       user: {
         id: result.user.id,
@@ -264,9 +267,21 @@ export async function POST(req: NextRequest) {
         tenant: {
           id: result.tenant.id,
           name: result.tenant.name,
+          plan: result.tenant.plan,
+          trialExpiresAt: result.tenant.trialExpiresAt,
         },
       },
     });
+
+    response.cookies.set(AUTH_COOKIE_NAME, token, {
+      httpOnly: true,
+      secure: isHttps,
+      sameSite: "lax",
+      path: "/",
+      maxAge: 60 * 60 * 24 * 7, // 7 dias
+    });
+
+    return response;
   } catch (error) {
     console.error("Erro no registro:", error);
     return NextResponse.json(

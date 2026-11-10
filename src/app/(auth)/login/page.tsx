@@ -13,8 +13,7 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  async function handleLogin(e: React.FormEvent) {
-    e.preventDefault();
+  async function performLogin(targetEmail: string, targetPass: string) {
     setLoading(true);
     setError(null);
 
@@ -22,7 +21,7 @@ export default function LoginPage() {
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email: targetEmail, password: targetPass }),
       });
 
       const data = await res.json();
@@ -31,23 +30,24 @@ export default function LoginPage() {
         throw new Error(data.error || "Erro ao realizar login.");
       }
 
-      if (data.user.role === "OPERATOR") {
-        router.push("/patio");
-      } else {
-        router.push("/dashboard");
-      }
-      router.refresh();
+      // Redirecionamento nativo instantâneo para carregar a sessão com cookie confirmado
+      const dest = data.user.role === "OPERATOR" ? "/patio" : "/dashboard";
+      window.location.href = dest;
     } catch (err: any) {
       setError(err.message || "Falha na conexão com o servidor.");
-    } finally {
       setLoading(false);
     }
   }
 
-  function setQuickCredentials(userEmail: string) {
+  async function handleLogin(e: React.FormEvent) {
+    e.preventDefault();
+    await performLogin(email, password);
+  }
+
+  function handleQuickLogin(userEmail: string) {
     setEmail(userEmail);
     setPassword("senha123");
-    setError(null);
+    performLogin(userEmail, "senha123");
   }
 
   return (
@@ -119,12 +119,13 @@ export default function LoginPage() {
             <div className="grid grid-cols-2 gap-2.5">
               <button
                 type="button"
-                onClick={() => setQuickCredentials("admin@detailing.com")}
-                className="p-2.5 rounded-[8px] bg-[#F7F8F6] hover:bg-[#E9F3EC] border border-[#E7EAE7] hover:border-[#247653]/40 text-left transition-all cursor-pointer"
+                disabled={loading}
+                onClick={() => handleQuickLogin("admin@detailing.com")}
+                className="p-2.5 rounded-[8px] bg-[#F7F8F6] hover:bg-[#E9F3EC] border border-[#E7EAE7] hover:border-[#247653]/40 text-left transition-all cursor-pointer disabled:opacity-60"
               >
                 <div className="flex items-center gap-1.5 text-[#142D26] font-semibold text-[12px] mb-0.5">
                   <ShieldCheck className="w-3.5 h-3.5 text-[#247653]" />
-                  <span>Administrador</span>
+                  <span>Entrar como Admin</span>
                 </div>
                 <p className="text-[11px] text-[#737D75] truncate">
                   admin@detailing.com
@@ -133,12 +134,13 @@ export default function LoginPage() {
 
               <button
                 type="button"
-                onClick={() => setQuickCredentials("operador@detailing.com")}
-                className="p-2.5 rounded-[8px] bg-[#F7F8F6] hover:bg-[#E9F3EC] border border-[#E7EAE7] hover:border-[#247653]/40 text-left transition-all cursor-pointer"
+                disabled={loading}
+                onClick={() => handleQuickLogin("operador@detailing.com")}
+                className="p-2.5 rounded-[8px] bg-[#F7F8F6] hover:bg-[#E9F3EC] border border-[#E7EAE7] hover:border-[#247653]/40 text-left transition-all cursor-pointer disabled:opacity-60"
               >
                 <div className="flex items-center gap-1.5 text-[#142D26] font-semibold text-[12px] mb-0.5">
                   <KeyRound className="w-3.5 h-3.5 text-[#247653]" />
-                  <span>Operador Pátio</span>
+                  <span>Entrar como Operador</span>
                 </div>
                 <p className="text-[11px] text-[#737D75] truncate">
                   operador@detailing.com

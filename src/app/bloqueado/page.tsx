@@ -76,25 +76,58 @@ export default function BlockedPage() {
 
       {/* Conteúdo Central / Paywall */}
       <div className="max-w-3xl mx-auto w-full my-6 bg-white border border-[#E7EAE7] rounded-3xl p-6 sm:p-10 shadow-lg space-y-8">
-        {/* Badge & Título */}
-        <div className="text-center space-y-3">
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-[#FFFBEB] border border-[#FDE68A] text-[#D97706] mb-1 shadow-xs">
-            <Lock className="w-7 h-7" />
-          </div>
+        {session && (!session.isTrialExpired || session.plan === "ACTIVE") ? (
+          <div className="text-center space-y-4 py-6">
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-[#ECFDF5] border border-[#A7F3D0] text-[#16A36A] mb-1 shadow-xs">
+              <CheckCircle2 className="w-9 h-9" />
+            </div>
 
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#FFFBEB] border border-[#FDE68A] text-[#B45309] text-xs font-bold tracking-wide uppercase">
-            <ShieldAlert className="w-3.5 h-3.5" />
-            <span>Período de Testes Expirado (3 Dias)</span>
-          </div>
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#ECFDF5] border border-[#A7F3D0] text-[#065F46] text-xs font-bold tracking-wide uppercase">
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>Acesso Ativo e Liberado</span>
+            </div>
 
-          <h2 className="text-2xl sm:text-3xl font-extrabold text-[#142D26] tracking-tight">
-            Seu tempo de demonstração encerrou, {userName}!
-          </h2>
-          <p className="text-sm text-[#737D75] max-w-xl mx-auto">
-            A empresa <strong className="text-[#252B27]">{companyName}</strong> atingiu o limite do período de testes gratuito.
-            Para continuar utilizando e não perder seus dados, desbloqueie seu plano ou encomende um sistema próprio e exclusivo.
-          </p>
-        </div>
+            <h2 className="text-2xl sm:text-3xl font-extrabold text-[#142D26] tracking-tight">
+              Olá, {userName}! Sua conta está liberada.
+            </h2>
+            <p className="text-sm text-[#737D75] max-w-xl mx-auto">
+              A empresa <strong className="text-[#252B27]">{companyName}</strong> está com plano ativo ({session.plan === "ACTIVE" ? "Vitalício / Administrador" : "Período de Demonstração em andamento"}). Você pode acessar o painel operacional normalmente.
+            </p>
+
+            <div className="pt-4 flex justify-center">
+              <button
+                type="button"
+                onClick={() => {
+                  window.location.href = session.role === "OPERATOR" ? "/patio" : "/dashboard";
+                }}
+                className="px-6 py-3 rounded-xl bg-[#247653] hover:bg-[#1E6346] text-white text-sm font-bold flex items-center gap-2 shadow-sm transition cursor-pointer"
+              >
+                <span>Acessar Painel da Oficina</span>
+                <ArrowRight className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        ) : (
+          <>
+            {/* Badge & Título */}
+            <div className="text-center space-y-3">
+              <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-[#FFFBEB] border border-[#FDE68A] text-[#D97706] mb-1 shadow-xs">
+                <Lock className="w-7 h-7" />
+              </div>
+
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#FFFBEB] border border-[#FDE68A] text-[#B45309] text-xs font-bold tracking-wide uppercase">
+                <ShieldAlert className="w-3.5 h-3.5" />
+                <span>Período de Testes Expirado (3 Dias)</span>
+              </div>
+
+              <h2 className="text-2xl sm:text-3xl font-extrabold text-[#142D26] tracking-tight">
+                Seu tempo de demonstração encerrou, {userName}!
+              </h2>
+              <p className="text-sm text-[#737D75] max-w-xl mx-auto">
+                A empresa <strong className="text-[#252B27]">{companyName}</strong> atingiu o limite do período de testes gratuito.
+                Para continuar utilizando e não perder seus dados, desbloqueie seu plano ou encomende um sistema próprio e exclusivo.
+              </p>
+            </div>
 
         {/* 2 Opções de Conversão: Plano Mensal ou Sistema Sob Medida */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -209,7 +242,9 @@ export default function BlockedPage() {
             <ArrowRight className="w-3.5 h-3.5" />
           </a>
         </div>
-      </div>
+      </>
+      )}
+    </div>
 
       {/* Rodapé */}
       <div className="text-center text-xs text-[#737D75] py-2">

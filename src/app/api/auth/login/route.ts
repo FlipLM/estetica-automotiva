@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { comparePassword, signToken, setAuthCookie } from "@/lib/auth";
+import { comparePassword, signToken, AUTH_COOKIE_NAME } from "@/lib/auth";
 
 const loginSchema = z.object({
   email: z.string().email("E-mail inválido."),
@@ -51,9 +51,9 @@ export async function POST(req: NextRequest) {
       name: user.name,
       role: user.role as "ADMIN" | "OPERATOR",
       tenantName: user.tenant.tradingName || user.tenant.name,
+      plan: user.tenant.plan,
+      trialExpiresAt: user.tenant.trialExpiresAt?.toISOString() || null,
     });
-
-    setAuthCookie(token);
 
     // Registra auditoria de login
     await prisma.auditLog.create({
@@ -67,8 +67,13 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    return NextResponse.json({
+    const isHttps =
+      req.url.startsWith("https://") ||
+      req.headers.get("x-forwarded-proto") === "https";
+
+    const response = NextResponse.json({
       success: true,
+      token,
       user: {
         id: user.id,
         name: user.name,
@@ -78,9 +83,21 @@ export async function POST(req: NextRequest) {
           id: user.tenant.id,
           name: user.tenant.name,
           tradingName: user.tenant.tradingName,
+          plan: user.tenant.plan,
+          trialExpiresAt: user.tenant.trialExpiresAt,
         },
       },
     });
+
+    response.cookies.set(AUTH_COOKIE_NAME, token, {
+      httpOnly: true,
+      secure: isHttps,
+      sameSite: "lax",
+      path: "/",
+      maxAge: 60 * 60 * 24 * 7, // 7 dias
+    });
+
+    return response;
   } catch (error) {
     console.error("Erro no login:", error);
     return NextResponse.json(

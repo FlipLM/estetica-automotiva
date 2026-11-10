@@ -599,6 +599,31 @@ export default function VistoriaPage() {
                     <span className="font-bold text-[#2563EB]">{photoCount} foto(s)</span>
                   </div>
 
+                  {photoCount > 0 && (
+                    <div className="pt-2 flex items-center gap-1.5 overflow-x-auto pb-1">
+                      {chk.damageRecords.flatMap((d) => {
+                        const photos = d.photos && d.photos.length > 0 ? d.photos : d.photoUrl ? [d.photoUrl] : [];
+                        return photos;
+                      }).slice(0, 4).map((url, imgIdx) => (
+                        <div
+                          key={imgIdx}
+                          className="w-11 h-11 rounded-lg overflow-hidden border border-[#E7EAE7] bg-[#F7F8F6] shrink-0"
+                        >
+                          <img
+                            src={url}
+                            alt="Foto da avaria"
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                      ))}
+                      {photoCount > 4 && (
+                        <span className="text-[10px] font-bold text-[#737D75] bg-[#F7F8F6] border border-[#E7EAE7] px-1.5 py-1 rounded-md">
+                          +{photoCount - 4}
+                        </span>
+                      )}
+                    </div>
+                  )}
+
                   {chk.valuablesLeft && (
                     <div className="mt-1.5 p-2 rounded-lg bg-[#F7F8F6] border border-[#E7EAE7] text-[11px] text-[#343C36]">
                       <span className="text-[#737D75] font-semibold">Pertences: </span>
