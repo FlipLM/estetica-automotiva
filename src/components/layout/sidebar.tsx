@@ -194,12 +194,6 @@ export function Sidebar({ role, tenantName }: SidebarProps) {
             title: "SISTEMA",
             items: [
               {
-                name: "Gestão SaaS & Leads",
-                href: "/admin",
-                icon: Globe2,
-                badge: "Master",
-              },
-              {
                 name: "Equipe",
                 href: "/funcionarios",
                 icon: UserCheck,
