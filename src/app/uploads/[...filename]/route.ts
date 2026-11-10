@@ -47,3 +47,4 @@ export async function GET(
     return new NextResponse("Fotografia não encontrada", { status: 404 });
   }
 }
+

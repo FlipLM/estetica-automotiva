@@ -27,9 +27,10 @@ model Tenant {
   active         Boolean  @default(true)
   
   // Controle de Assinatura, MVP e Trial de 3 Dias para Leads
-  plan           String   @default("TRIAL") // TRIAL | ACTIVE | EXPIRED | BLOCKED
-  trialExpiresAt DateTime?                  // Data limite do período de testes (now + 3 dias)
-  isCustomPlan   Boolean  @default(false)   // Se é um cliente pagante com sistema/customizações próprias
+  plan                String   @default("TRIAL") // TRIAL | ACTIVE | EXPIRED | BLOCKED
+  trialExpiresAt      DateTime?                  // Data limite do período de testes (now + 3 dias)
+  isCustomPlan        Boolean  @default(false)   // Se é um cliente pagante com sistema/customizações próprias
+  onboardingCompleted Boolean  @default(false)   // Se o usuário concluiu o fluxo de configuração inicial da oficina
 
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt

@@ -37,6 +37,7 @@ async function main() {
       plan: "ACTIVE",
       trialExpiresAt: null,
       isCustomPlan: true,
+      onboardingCompleted: true,
     },
   });
 

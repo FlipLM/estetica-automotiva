@@ -53,7 +53,8 @@ const ROUTE_LABELS: Record<string, string> = {
   "/crm": "CRM e Retenção",
   "/funcionarios": "Equipe e Colaboradores",
   "/configuracoes": "Configurações da Empresa",
-  "/design-system": "Design System & Protótipos",
+  "/admin": "Gestão SaaS & Leads (Master Admin)",
+  "/onboarding": "Configuração Inicial da Oficina",
   "/temas": "Identidades Visuais",
 };
 

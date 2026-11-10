@@ -19,6 +19,11 @@ export default async function DashboardLayout({
     redirect("/bloqueado");
   }
 
+  // Se o cliente ainda não completou a pré-configuração guiada da oficina, direciona para o onboarding
+  if (session.onboardingCompleted === false) {
+    redirect("/onboarding");
+  }
+
   return (
     <div className="min-h-screen flex bg-[#F7F8F6] text-[#252B27] antialiased overflow-x-hidden w-full max-w-full print:bg-white print:overflow-visible print:min-h-0 print:block">
       {/* Barra Lateral Desktop & Navegação Mobile */}

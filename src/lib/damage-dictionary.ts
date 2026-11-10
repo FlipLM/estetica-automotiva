@@ -63,3 +63,4 @@ export function translateDamageType(type?: string | null): string {
     .toLowerCase()
     .replace(/(^\w|\s\w)/g, (m) => m.toUpperCase());
 }
+

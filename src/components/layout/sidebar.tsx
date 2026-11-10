@@ -26,6 +26,7 @@ import {
   X,
   Plus,
   Car,
+  Globe2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -192,6 +193,12 @@ export function Sidebar({ role, tenantName }: SidebarProps) {
           {
             title: "SISTEMA",
             items: [
+              {
+                name: "Gestão SaaS & Leads",
+                href: "/admin",
+                icon: Globe2,
+                badge: "Master",
+              },
               {
                 name: "Equipe",
                 href: "/funcionarios",

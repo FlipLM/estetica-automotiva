@@ -19,6 +19,7 @@ export interface SessionPayload {
   plan?: string;
   trialExpiresAt?: string | null;
   isTrialExpired?: boolean;
+  onboardingCompleted?: boolean;
 }
 
 export async function hashPassword(password: string): Promise<string> {
@@ -74,6 +75,7 @@ export async function getSession(): Promise<SessionPayload | null> {
           plan: tenant?.plan || "ACTIVE",
           trialExpiresAt: tenant?.trialExpiresAt?.toISOString() || null,
           isTrialExpired: !!isTrialExpired,
+          onboardingCompleted: tenant?.onboardingCompleted ?? true,
         };
       }
     } catch {
@@ -88,7 +90,7 @@ export async function getSession(): Promise<SessionPayload | null> {
   try {
     const tenant = await prisma.tenant.findUnique({
       where: { id: session.tenantId },
-      select: { plan: true, trialExpiresAt: true, active: true },
+      select: { plan: true, trialExpiresAt: true, active: true, onboardingCompleted: true },
     });
 
     if (tenant) {
@@ -102,6 +104,7 @@ export async function getSession(): Promise<SessionPayload | null> {
         plan: tenant.plan,
         trialExpiresAt: tenant.trialExpiresAt?.toISOString() || null,
         isTrialExpired: !!isTrialExpired,
+        onboardingCompleted: tenant.onboardingCompleted,
       };
     }
   } catch {
