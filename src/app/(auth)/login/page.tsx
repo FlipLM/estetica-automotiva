@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ShieldCheck, Car, KeyRound, ArrowRight } from "lucide-react";
+import { Car, ArrowRight } from "lucide-react";
 import { Button, Input, Alert, Card } from "@/components/ui";
 
 export default function LoginPage() {
@@ -42,12 +42,6 @@ export default function LoginPage() {
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
     await performLogin(email, password);
-  }
-
-  function handleQuickLogin(userEmail: string) {
-    setEmail(userEmail);
-    setPassword("senha123");
-    performLogin(userEmail, "senha123");
   }
 
   return (
@@ -110,44 +104,6 @@ export default function LoginPage() {
               Entrar no Sistema
             </Button>
           </form>
-
-          {/* Atalhos de Demonstração / Teste Local */}
-          <div className="mt-6 pt-5 border-t border-[#E7EAE7]">
-            <p className="text-[11px] font-semibold uppercase tracking-wider text-[#737D75] mb-2.5 text-center">
-              Acesso Rápido de Demonstração
-            </p>
-            <div className="grid grid-cols-2 gap-2.5">
-              <button
-                type="button"
-                disabled={loading}
-                onClick={() => handleQuickLogin("admin@detailing.com")}
-                className="p-2.5 rounded-[8px] bg-[#F7F8F6] hover:bg-[#E9F3EC] border border-[#E7EAE7] hover:border-[#247653]/40 text-left transition-all cursor-pointer disabled:opacity-60"
-              >
-                <div className="flex items-center gap-1.5 text-[#142D26] font-semibold text-[12px] mb-0.5">
-                  <ShieldCheck className="w-3.5 h-3.5 text-[#247653]" />
-                  <span>Entrar como Admin</span>
-                </div>
-                <p className="text-[11px] text-[#737D75] truncate">
-                  admin@detailing.com
-                </p>
-              </button>
-
-              <button
-                type="button"
-                disabled={loading}
-                onClick={() => handleQuickLogin("operador@detailing.com")}
-                className="p-2.5 rounded-[8px] bg-[#F7F8F6] hover:bg-[#E9F3EC] border border-[#E7EAE7] hover:border-[#247653]/40 text-left transition-all cursor-pointer disabled:opacity-60"
-              >
-                <div className="flex items-center gap-1.5 text-[#142D26] font-semibold text-[12px] mb-0.5">
-                  <KeyRound className="w-3.5 h-3.5 text-[#247653]" />
-                  <span>Entrar como Operador</span>
-                </div>
-                <p className="text-[11px] text-[#737D75] truncate">
-                  operador@detailing.com
-                </p>
-              </button>
-            </div>
-          </div>
         </Card>
 
         <p className="text-center text-[13px] text-[#737D75] mt-6">
