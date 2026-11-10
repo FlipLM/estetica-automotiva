@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { writeFile } from "fs/promises";
+import { writeFile, mkdir } from "fs/promises";
 import path from "path";
 import crypto from "crypto";
 import { requireAuth, handleAuthError } from "@/lib/permissions";
@@ -42,6 +42,7 @@ export async function POST(req: NextRequest) {
     const ext = path.extname(file.name) || ".jpg";
     const filename = `vistoria_${Date.now()}_${crypto.randomBytes(4).toString("hex")}${ext}`;
     const uploadDir = path.join(process.cwd(), "public", "uploads");
+    await mkdir(uploadDir, { recursive: true });
     const filepath = path.join(uploadDir, filename);
 
     await writeFile(filepath, buffer);

@@ -11,12 +11,16 @@ import {
   Plus,
   Car,
   User,
+  Clock,
+  Sparkles,
 } from "lucide-react";
 
 interface HeaderProps {
   userName: string;
   userRole: "ADMIN" | "OPERATOR";
   tenantName: string;
+  plan?: string;
+  trialExpiresAt?: string | null;
 }
 
 interface BoxTelemetry {
@@ -49,12 +53,22 @@ const ROUTE_LABELS: Record<string, string> = {
   "/temas": "Identidades Visuais",
 };
 
-export function Header({ userName, userRole, tenantName }: HeaderProps) {
+export function Header({ userName, userRole, tenantName, plan, trialExpiresAt }: HeaderProps) {
   const router = useRouter();
   const pathname = usePathname();
   const [loggingOut, setLoggingOut] = useState(false);
   const [searchPlate, setSearchPlate] = useState("");
   const [boxes, setBoxes] = useState<BoxTelemetry[]>([]);
+
+  // Calcula horas / dias restantes do período de teste
+  const isTrial = plan === "TRIAL";
+  let trialRemainingText = "";
+  if (isTrial && trialExpiresAt) {
+    const diffMs = new Date(trialExpiresAt).getTime() - Date.now();
+    const diffHours = Math.max(0, Math.floor(diffMs / (1000 * 60 * 60)));
+    const diffDays = Math.ceil(diffHours / 24);
+    trialRemainingText = diffHours > 24 ? `${diffDays} dias restantes` : `${diffHours}h restantes`;
+  }
 
   useEffect(() => {
     async function loadBoxes() {
@@ -145,6 +159,20 @@ export function Header({ userName, userRole, tenantName }: HeaderProps) {
             <span className="text-[#737D75]">Pátio:</span>
             <span className="font-semibold text-[#142D26]">
               {occupiedSlots}/{totalSlots} vagas
+            </span>
+          </Link>
+        )}
+
+        {isTrial && (
+          <Link
+            href="/bloqueado"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#FFFBEB] hover:bg-[#FEF3C7] border border-[#FDE68A] text-[#B45309] text-xs font-bold transition-all shadow-xs cursor-pointer"
+            title="Seu período de teste no DetailPro. Clique para ver planos ou solicitar sistema personalizado."
+          >
+            <Clock className="w-3.5 h-3.5 text-[#D97706] animate-pulse" />
+            <span>Teste: {trialRemainingText || "3 dias"}</span>
+            <span className="hidden md:inline px-1.5 py-0.2 rounded-md bg-[#D97706] text-white text-[10px] font-semibold ml-0.5">
+              Assinar
             </span>
           </Link>
         )}

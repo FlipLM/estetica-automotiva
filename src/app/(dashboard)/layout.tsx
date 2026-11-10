@@ -14,6 +14,11 @@ export default async function DashboardLayout({
     redirect("/login");
   }
 
+  // Se o período de teste de 3 dias expirou, bloqueia o acesso e direciona para a tela de conversão
+  if (session.isTrialExpired) {
+    redirect("/bloqueado");
+  }
+
   return (
     <div className="min-h-screen flex bg-[#F7F8F6] text-[#252B27] antialiased overflow-x-hidden w-full max-w-full print:bg-white print:overflow-visible print:min-h-0 print:block">
       {/* Barra Lateral Desktop & Navegação Mobile */}
@@ -25,6 +30,8 @@ export default async function DashboardLayout({
           userName={session.name}
           userRole={session.role}
           tenantName={session.tenantName || "DetailPro"}
+          plan={session.plan}
+          trialExpiresAt={session.trialExpiresAt}
         />
         <main className="flex-1 p-3.5 sm:p-6 pb-24 lg:pb-8 overflow-y-auto overflow-x-hidden max-w-[1600px] w-full mx-auto print:p-0 print:pb-0 print:m-0 print:overflow-visible print:max-w-none print:w-full print:block">
           {children}

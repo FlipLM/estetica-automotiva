@@ -16,6 +16,9 @@ export interface SessionPayload {
   name: string;
   role: "ADMIN" | "OPERATOR";
   tenantName?: string;
+  plan?: string;
+  trialExpiresAt?: string | null;
+  isTrialExpired?: boolean;
 }
 
 export async function hashPassword(password: string): Promise<string> {
@@ -55,13 +58,22 @@ export async function getSession(): Promise<SessionPayload | null> {
         include: { tenant: true },
       });
       if (defaultUser) {
+        const tenant = defaultUser.tenant;
+        const isTrialExpired =
+          tenant?.plan === "TRIAL" &&
+          tenant?.trialExpiresAt &&
+          new Date() > new Date(tenant.trialExpiresAt);
+
         return {
           userId: defaultUser.id,
           tenantId: defaultUser.tenantId,
           email: defaultUser.email,
           name: defaultUser.name,
           role: defaultUser.role as "ADMIN" | "OPERATOR",
-          tenantName: defaultUser.tenant?.name,
+          tenantName: tenant?.name,
+          plan: tenant?.plan || "ACTIVE",
+          trialExpiresAt: tenant?.trialExpiresAt?.toISOString() || null,
+          isTrialExpired: !!isTrialExpired,
         };
       }
     } catch {
@@ -69,7 +81,34 @@ export async function getSession(): Promise<SessionPayload | null> {
     }
     return null;
   }
-  return verifyToken(token);
+
+  const session = await verifyToken(token);
+  if (!session) return null;
+
+  try {
+    const tenant = await prisma.tenant.findUnique({
+      where: { id: session.tenantId },
+      select: { plan: true, trialExpiresAt: true, active: true },
+    });
+
+    if (tenant) {
+      const isTrialExpired =
+        tenant.plan === "TRIAL" &&
+        tenant.trialExpiresAt &&
+        new Date() > new Date(tenant.trialExpiresAt);
+
+      return {
+        ...session,
+        plan: tenant.plan,
+        trialExpiresAt: tenant.trialExpiresAt?.toISOString() || null,
+        isTrialExpired: !!isTrialExpired,
+      };
+    }
+  } catch {
+    // Se o banco falhar, usa a sessão já decodificada
+  }
+
+  return session;
 }
 
 export function setAuthCookie(token: string) {
