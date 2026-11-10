@@ -90,6 +90,9 @@ export default function PatioKanbanPage() {
   // Modal de Transferência Rápida de Box
   const [transferringOrder, setTransferringOrder] = useState<Order | null>(null);
 
+  // Modal de Alteração Rápida de Status (para facilitar em telas mobile)
+  const [statusModalOrder, setStatusModalOrder] = useState<Order | null>(null);
+
   async function loadPatio() {
     try {
       setLoading(true);
@@ -543,8 +546,37 @@ export default function PatioKanbanPage() {
                           </div>
                         )}
 
-                        {/* Botões de Ação */}
-                        <div className="pt-2.5 border-t border-[#F1F3F1] space-y-1.5">
+                        {/* Botões de Ação Rápidos (Ideais para Mobile & 1-Clique) */}
+                        <div className="pt-2.5 border-t border-[#F1F3F1] space-y-2">
+                          {/* Ações de Gestão Rápida: Mudar Status & Mudar Box */}
+                          <div className="grid grid-cols-2 gap-1.5">
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setStatusModalOrder(os);
+                              }}
+                              className="w-full py-1.5 px-2 rounded-lg bg-[#F7F8F6] hover:bg-[#E9F3EC] border border-[#E7EAE7] hover:border-[#247653]/30 text-[11px] font-semibold text-[#252B27] flex items-center justify-center gap-1 transition-all cursor-pointer"
+                              title="Alterar status da OS sem arrastar"
+                            >
+                              <RefreshCw className="w-3 h-3 text-[#247653]" />
+                              <span>Mudar Status</span>
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setTransferringOrder(os);
+                              }}
+                              className="w-full py-1.5 px-2 rounded-lg bg-[#F7F8F6] hover:bg-[#E9F3EC] border border-[#E7EAE7] hover:border-[#247653]/30 text-[11px] font-semibold text-[#252B27] flex items-center justify-center gap-1 transition-all cursor-pointer"
+                              title="Transferir de box ou vaga sem arrastar"
+                            >
+                              <ArrowRightLeft className="w-3 h-3 text-[#247653]" />
+                              <span>Mudar Box</span>
+                            </button>
+                          </div>
+
                           {os.status !== "PAID" && (
                             <Button
                               variant="outline"
@@ -758,7 +790,36 @@ export default function PatioKanbanPage() {
                           </button>
                         </div>
 
-                        <div className="pt-2 border-t border-[#F1F3F1]">
+                        <div className="pt-2 border-t border-[#F1F3F1] space-y-2">
+                          {/* Ações de Gestão Rápida: Mudar Status & Mudar Box */}
+                          <div className="grid grid-cols-2 gap-1.5">
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setStatusModalOrder(os);
+                              }}
+                              className="w-full py-1.5 px-2 rounded-lg bg-[#F7F8F6] hover:bg-[#E9F3EC] border border-[#E7EAE7] hover:border-[#247653]/30 text-[11px] font-semibold text-[#252B27] flex items-center justify-center gap-1 transition-all cursor-pointer"
+                              title="Alterar status da OS sem arrastar"
+                            >
+                              <RefreshCw className="w-3 h-3 text-[#247653]" />
+                              <span>Mudar Status</span>
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setTransferringOrder(os);
+                              }}
+                              className="w-full py-1.5 px-2 rounded-lg bg-[#F7F8F6] hover:bg-[#E9F3EC] border border-[#E7EAE7] hover:border-[#247653]/30 text-[11px] font-semibold text-[#252B27] flex items-center justify-center gap-1 transition-all cursor-pointer"
+                              title="Transferir de box ou vaga sem arrastar"
+                            >
+                              <ArrowRightLeft className="w-3 h-3 text-[#247653]" />
+                              <span>Mudar Box</span>
+                            </button>
+                          </div>
+
                           {os.status === "TODO" && (
                             <Button
                               variant="primary"
@@ -908,6 +969,127 @@ export default function PatioKanbanPage() {
           </div>
         </div>
       )}
+
+      {/* MODAL DE ALTERAÇÃO RÁPIDA DE STATUS (SEM ARRASTAR) */}
+      <Modal
+        isOpen={!!statusModalOrder}
+        onClose={() => setStatusModalOrder(null)}
+        title={statusModalOrder ? `Mudar Status — OS #${statusModalOrder.orderNumber}` : "Mudar Status"}
+        description="Selecione o novo status da ordem de serviço para avançar na linha de produção."
+        size="md"
+      >
+        {statusModalOrder && (
+          <div className="space-y-4">
+            <div className="p-3 bg-[#F7F8F6] rounded-xl border border-[#E7EAE7] flex items-center justify-between text-xs">
+              <div>
+                <span className="text-[#737D75]">Veículo:</span>{" "}
+                <strong className="text-[#252B27]">{statusModalOrder.plate} — {statusModalOrder.model}</strong>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="text-[#737D75]">Atual:</span>
+                <StatusBadge status={statusModalOrder.status} size="sm" />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              {[
+                {
+                  id: "TODO",
+                  title: "Aguardando Início",
+                  desc: "Veículo na fila aguardando operador",
+                  icon: Clock,
+                  bg: "hover:bg-[#F1F3F1]",
+                  border: "border-[#E7EAE7]",
+                  active: statusModalOrder.status === "TODO",
+                },
+                {
+                  id: "IN_PROGRESS",
+                  title: "Em Execução",
+                  desc: "Serviço em andamento no box",
+                  icon: Wrench,
+                  bg: "hover:bg-[#EFF6FF]",
+                  border: "border-[#BFDBFE]",
+                  active: statusModalOrder.status === "IN_PROGRESS",
+                },
+                {
+                  id: "DONE",
+                  title: "Finalizado",
+                  desc: "Pronto para entrega e vistoria final",
+                  icon: CheckCircle2,
+                  bg: "hover:bg-[#ECFDF5]",
+                  border: "border-[#A7F3D0]",
+                  active: statusModalOrder.status === "DONE",
+                },
+                {
+                  id: "PAID",
+                  title: "Pago & Entregue",
+                  desc: "Baixa financeira e saída do pátio",
+                  icon: Receipt,
+                  bg: "hover:bg-[#FAF5FF]",
+                  border: "border-[#E9D5FF]",
+                  active: statusModalOrder.status === "PAID",
+                },
+              ].map((st) => (
+                <button
+                  key={st.id}
+                  type="button"
+                  onClick={() => {
+                    const targetOrder = statusModalOrder;
+                    setStatusModalOrder(null);
+                    if (st.id === "PAID") {
+                      if (role === "ADMIN") {
+                        setPaymentModalOrder(targetOrder);
+                      } else {
+                        alert("Apenas administradores podem registrar o pagamento e dar baixa na OS.");
+                      }
+                    } else {
+                      updateOrderStatus(targetOrder.id, st.id as any);
+                    }
+                  }}
+                  className={`p-3 rounded-xl border text-left transition-all cursor-pointer flex items-start gap-3 ${
+                    st.active
+                      ? "bg-[#E9F3EC] border-[#247653] ring-2 ring-[#247653]/15 shadow-xs"
+                      : `bg-white ${st.border} ${st.bg}`
+                  }`}
+                >
+                  <div
+                    className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
+                      st.active
+                        ? "bg-[#247653] text-white"
+                        : "bg-[#F1F3F1] text-[#737D75]"
+                    }`}
+                  >
+                    <st.icon className="w-4 h-4" />
+                  </div>
+                  <div className="min-w-0">
+                    <span
+                      className={`text-xs block font-bold leading-tight ${
+                        st.active ? "text-[#142D26]" : "text-[#252B27]"
+                      }`}
+                    >
+                      {st.title} {st.active && "(Atual)"}
+                    </span>
+                    <span className="text-[11px] text-[#737D75] mt-0.5 block leading-tight">
+                      {st.desc}
+                    </span>
+                  </div>
+                </button>
+              ))}
+            </div>
+
+            <div className="flex justify-end pt-3 border-t border-[#E7EAE7]">
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                onClick={() => setStatusModalOrder(null)}
+              >
+                Fechar
+              </Button>
+            </div>
+          </div>
+        )}
+      </Modal>
 
       {/* MODAL DE TRANSFERÊNCIA DE BOX */}
       {transferringOrder && (
