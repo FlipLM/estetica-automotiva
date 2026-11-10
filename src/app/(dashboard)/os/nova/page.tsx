@@ -11,6 +11,7 @@ import {
   AlertCircle,
   AlertTriangle,
   Gauge,
+  User,
 } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 import CustomerVehicleSelector from "@/components/modules/customer-vehicle-selector";
@@ -30,6 +31,9 @@ export default function NewOrderPage() {
   const [vehicles, setVehicles] = useState<any[]>([]);
   const [servicesCatalog, setServicesCatalog] = useState<any[]>([]);
   const [boxes, setBoxes] = useState<WorkBay[]>([]);
+  const [employees, setEmployees] = useState<Array<{ id: string; name: string; role: string; active?: boolean }>>([]);
+  const [assignedUserId, setAssignedUserId] = useState<string>("");
+  const [currentUser, setCurrentUser] = useState<{ id: string; name: string } | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -48,20 +52,38 @@ export default function NewOrderPage() {
     async function loadData() {
       try {
         setLoading(true);
-        const [resVehicles, resServices, resBoxes] = await Promise.all([
+        const [resVehicles, resServices, resBoxes, resMe, resEmployees] = await Promise.all([
           fetch("/api/vehicles"),
           fetch("/api/services?active=true"),
           fetch("/api/boxes"),
+          fetch("/api/auth/me"),
+          fetch("/api/employees").catch(() => null),
         ]);
         const jsonVehicles = await resVehicles.json();
         const jsonServices = await resServices.json();
         const jsonBoxes = await resBoxes.json();
+        const jsonMe = resMe.ok ? await resMe.json() : null;
+        const jsonEmployees = resEmployees && resEmployees.ok ? await resEmployees.json() : null;
 
         setVehicles(jsonVehicles.vehicles || []);
         setServicesCatalog(jsonServices.services || []);
 
         const loadedBoxes: WorkBay[] = jsonBoxes.boxes || [];
         setBoxes(loadedBoxes);
+
+        // Identifica o colaborador logado
+        if (jsonMe?.user) {
+          setCurrentUser({ id: jsonMe.user.id, name: jsonMe.user.name });
+          // Define por padrão o colaborador logado como responsável inicial
+          setAssignedUserId(jsonMe.user.id);
+        }
+
+        // Colaboradores da equipe
+        if (jsonEmployees?.employees) {
+          setEmployees(jsonEmployees.employees.filter((e: any) => e.active !== false));
+        } else if (jsonMe?.user) {
+          setEmployees([{ id: jsonMe.user.id, name: jsonMe.user.name, role: jsonMe.user.role }]);
+        }
 
         const firstAvailable = loadedBoxes.find((b) => !b.isFull);
         if (firstAvailable) {
@@ -176,6 +198,7 @@ export default function NewOrderPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           vehicleId: selectedVehicleId,
+          assignedUserId: assignedUserId || null,
           status: "TODO",
           box,
           mileage: mileage ? Number(mileage) : null,
@@ -359,7 +382,38 @@ export default function NewOrderPage() {
             </div>
           </div>
 
-          {/* 3. Seleção de Serviços do Catálogo */}
+          {/* 3. Responsável / Colaborador pelo Serviço (Opcional & Auto-Preenchido com o Usuário Logado) */}
+          <div className="p-3.5 bg-[#F7F8F6] border border-[#E7EAE7] rounded-xl space-y-2">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1">
+              <label className="text-xs font-semibold text-[#343C36] flex items-center gap-1.5">
+                <User className="w-3.5 h-3.5 text-[#247653]" />
+                <span>Colaborador / Operador Responsável (Opcional)</span>
+              </label>
+              {currentUser && (
+                <span className="text-[11px] text-[#737D75]">
+                  Logado como: <strong className="text-[#247653]">{currentUser.name}</strong>
+                </span>
+              )}
+            </div>
+
+            <select
+              value={assignedUserId}
+              onChange={(e) => setAssignedUserId(e.target.value)}
+              className="dp-input bg-white"
+            >
+              <option value="">Nenhum colaborador atribuído agora (Definir depois)</option>
+              {employees.map((emp) => (
+                <option key={emp.id} value={emp.id}>
+                  {emp.name} {emp.id === currentUser?.id ? "— (Você)" : ""} {emp.role === "ADMIN" ? "[Admin]" : "[Operador]"}
+                </option>
+              ))}
+            </select>
+            <p className="text-[11px] text-[#737D75]">
+              O colaborador logado foi selecionado por padrão. Você pode alterar para outro membro da equipe ou deixar em branco para atribuir durante a execução no pátio.
+            </p>
+          </div>
+
+          {/* 4. Seleção de Serviços do Catálogo */}
           <div className="space-y-1.5">
             <label className="block text-xs font-semibold text-[#343C36]">
               2. Serviços a serem Executados <span className="text-[#DC4C4C]">*</span>

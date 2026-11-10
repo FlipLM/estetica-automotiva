@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { requireAdmin, handleAuthError } from "@/lib/permissions";
+import { requireAuth, requireAdmin, handleAuthError } from "@/lib/permissions";
 import { hashPassword } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
@@ -18,7 +18,7 @@ const employeeSchema = z.object({
 
 export async function GET(req: NextRequest) {
   try {
-    const session = await requireAdmin();
+    const session = await requireAuth();
     const { tenantId } = session;
 
     const employees = await prisma.user.findMany({

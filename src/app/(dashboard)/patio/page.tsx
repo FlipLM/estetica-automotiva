@@ -19,6 +19,8 @@ import {
   Sparkles,
   Droplets,
   Eye,
+  MessageCircle,
+  Phone,
 } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 import { ManageOrderServicesModal } from "@/components/modules/manage-order-services-modal";
@@ -617,23 +619,65 @@ export default function PatioKanbanPage() {
                           )}
 
                           {os.status === "DONE" && (
-                            <Button
-                              variant="primary"
-                              size="sm"
-                              fullWidth
-                              onClick={() => {
-                                if (role === "ADMIN") {
-                                  setPaymentModalOrder(os);
-                                } else {
-                                  alert(
-                                    "Apenas administradores podem registrar a baixa de pagamento da OS."
-                                  );
-                                }
-                              }}
-                              leftIcon={<Receipt className="w-3.5 h-3.5" />}
-                            >
-                              Registrar Pagamento
-                            </Button>
+                            <div className="space-y-1.5">
+                              {/* Botões de Contato Rápido com o Cliente: WhatsApp ou Ligar */}
+                              <div className="p-2 bg-[#ECFDF5] border border-[#A7F3D0] rounded-lg space-y-1.5">
+                                <span className="text-[10px] font-bold text-[#065F46] uppercase tracking-wider block">
+                                  Veículo Pronto para Retirada:
+                                </span>
+                                <div className="grid grid-cols-2 gap-1.5">
+                                  {os.customerPhone ? (
+                                    <>
+                                      <a
+                                        href={`https://wa.me/55${os.customerPhone.replace(/\D/g, "")}?text=${encodeURIComponent(
+                                          `Olá, ${os.customerName}! Seu veículo (${os.model} - ${os.plate}) já está com os serviços concluídos na DetailPro e pronto para retirada! 🚗✨`
+                                        )}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        onClick={(e) => e.stopPropagation()}
+                                        className="py-1.5 px-2 rounded-md bg-[#16A36A] hover:bg-[#15803D] text-white text-[11px] font-semibold flex items-center justify-center gap-1 shadow-xs transition-colors"
+                                        title="Avisar cliente no WhatsApp"
+                                      >
+                                        <MessageCircle className="w-3.5 h-3.5" />
+                                        <span>WhatsApp</span>
+                                      </a>
+
+                                      <a
+                                        href={`tel:${os.customerPhone.replace(/\D/g, "")}`}
+                                        onClick={(e) => e.stopPropagation()}
+                                        className="py-1.5 px-2 rounded-md bg-white hover:bg-[#F1F3F1] border border-[#A7F3D0] text-[#065F46] text-[11px] font-semibold flex items-center justify-center gap-1 transition-colors"
+                                        title="Ligar para o cliente"
+                                      >
+                                        <Phone className="w-3.5 h-3.5 text-[#16A36A]" />
+                                        <span>Ligar</span>
+                                      </a>
+                                    </>
+                                  ) : (
+                                    <div className="col-span-2 text-[10px] text-[#737D75] italic text-center py-1">
+                                      Telefone não cadastrado
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+
+                              <Button
+                                variant="primary"
+                                size="sm"
+                                fullWidth
+                                onClick={() => {
+                                  if (role === "ADMIN") {
+                                    setPaymentModalOrder(os);
+                                  } else {
+                                    alert(
+                                      "Apenas administradores podem registrar a baixa de pagamento da OS."
+                                    );
+                                  }
+                                }}
+                                leftIcon={<Receipt className="w-3.5 h-3.5" />}
+                              >
+                                Registrar Pagamento
+                              </Button>
+                            </div>
                           )}
 
                           {os.status === "PAID" && (
@@ -845,21 +889,63 @@ export default function PatioKanbanPage() {
                           )}
 
                           {os.status === "DONE" && (
-                            <Button
-                              variant="primary"
-                              size="sm"
-                              fullWidth
-                              onClick={() => {
-                                if (role === "ADMIN") {
-                                  setPaymentModalOrder(os);
-                                } else {
-                                  alert("Apenas administradores podem registrar a baixa da OS.");
-                                }
-                              }}
-                              leftIcon={<Receipt className="w-3.5 h-3.5" />}
-                            >
-                              Registrar Pagamento
-                            </Button>
+                            <div className="space-y-1.5">
+                              {/* Botões de Contato Rápido com o Cliente: WhatsApp ou Ligar */}
+                              <div className="p-2 bg-[#ECFDF5] border border-[#A7F3D0] rounded-lg space-y-1.5">
+                                <span className="text-[10px] font-bold text-[#065F46] uppercase tracking-wider block">
+                                  Veículo Pronto para Retirada:
+                                </span>
+                                <div className="grid grid-cols-2 gap-1.5">
+                                  {os.customerPhone ? (
+                                    <>
+                                      <a
+                                        href={`https://wa.me/55${os.customerPhone.replace(/\D/g, "")}?text=${encodeURIComponent(
+                                          `Olá, ${os.customerName}! Seu veículo (${os.model} - ${os.plate}) já está com os serviços concluídos na DetailPro e pronto para retirada! 🚗✨`
+                                        )}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        onClick={(e) => e.stopPropagation()}
+                                        className="py-1.5 px-2 rounded-md bg-[#16A36A] hover:bg-[#15803D] text-white text-[11px] font-semibold flex items-center justify-center gap-1 shadow-xs transition-colors"
+                                        title="Avisar cliente no WhatsApp"
+                                      >
+                                        <MessageCircle className="w-3.5 h-3.5" />
+                                        <span>WhatsApp</span>
+                                      </a>
+
+                                      <a
+                                        href={`tel:${os.customerPhone.replace(/\D/g, "")}`}
+                                        onClick={(e) => e.stopPropagation()}
+                                        className="py-1.5 px-2 rounded-md bg-white hover:bg-[#F1F3F1] border border-[#A7F3D0] text-[#065F46] text-[11px] font-semibold flex items-center justify-center gap-1 transition-colors"
+                                        title="Ligar para o cliente"
+                                      >
+                                        <Phone className="w-3.5 h-3.5 text-[#16A36A]" />
+                                        <span>Ligar</span>
+                                      </a>
+                                    </>
+                                  ) : (
+                                    <div className="col-span-2 text-[10px] text-[#737D75] italic text-center py-1">
+                                      Telefone não cadastrado
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+
+                              <Button
+                                variant="primary"
+                                size="sm"
+                                fullWidth
+                                onClick={() => {
+                                  if (role === "ADMIN") {
+                                    setPaymentModalOrder(os);
+                                  } else {
+                                    alert("Apenas administradores podem registrar a baixa da OS.");
+                                  }
+                                }}
+                                leftIcon={<Receipt className="w-3.5 h-3.5" />}
+                              >
+                                Registrar Pagamento
+                              </Button>
+                            </div>
                           )}
                         </div>
                       </div>
