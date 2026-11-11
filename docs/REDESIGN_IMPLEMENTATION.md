@@ -1,13 +1,13 @@
-# Relatório de Implementação — Redesign DetailPro Clean Professional
+# Relatório de Implementação — Redesign Vulpto Clean Professional
 
 **Branch:** `design/novos-designs`  
-**Identidade Visual:** DetailPro — Clean Professional
+**Identidade Visual:** Vulpto — Clean Professional
 
 ---
 
 ## 1. Resumo Arquitetural
 
-A reformulação visual e de experiência do **DetailPro SaaS** reconstruiu integralmente a camada de apresentação e usabilidade do sistema mantendo 100% da arquitetura tecnológica existente (Next.js 14 App Router, React 18, TypeScript, Tailwind CSS, Prisma ORM, JWT HttpOnly e Zod).
+A reformulação visual e de experiência do **Vulpto** reconstruiu integralmente a camada de apresentação e usabilidade do sistema mantendo 100% da arquitetura tecnológica existente (Next.js 14 App Router, React 18, TypeScript, Tailwind CSS, Prisma ORM, JWT HttpOnly e Zod).
 
 ### Principais Melhorias Estruturais
 1. **Eliminação Definitiva de Recortes de Modal (`clip-path`):** A antiga classe `.carbon-card` utilizava `clip-path: polygon(...)`, que criava um novo bloco de contenção no navegador e cortava modais filhos (como o cadastro rápido de cliente dentro da tela de Orçamentos). O novo sistema removeu todos os `clip-path` e adotou `createPortal(..., document.body)` no componente `Modal` e no `CustomerVehicleSelector`.

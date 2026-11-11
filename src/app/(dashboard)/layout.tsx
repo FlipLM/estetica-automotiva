@@ -34,7 +34,7 @@ export default async function DashboardLayout({
         <Header
           userName={session.name}
           userRole={session.role}
-          tenantName={session.tenantName || "DetailPro"}
+          tenantName={session.tenantName || "Vulpto"}
           plan={session.plan}
           trialExpiresAt={session.trialExpiresAt}
         />

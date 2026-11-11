@@ -47,7 +47,7 @@ export default function BlockedPage() {
   const userName = session?.name || "Gestor";
 
   const customSystemWhatsappText = encodeURIComponent(
-    `Olá! Meu período de testes de 3 dias no DetailPro expirou para a empresa *${companyName}*. Gostaria de liberar o acesso definitivo ou solicitar um sistema próprio/personalizado com novas funcionalidades para a minha empresa! Podem me ajudar?`
+    `Olá! Meu período de testes de 3 dias no Vulpto expirou para a empresa *${companyName}*. Gostaria de liberar o acesso definitivo ou solicitar um sistema próprio/personalizado com novas funcionalidades para a minha empresa! Podem me ajudar?`
   );
 
   return (
@@ -59,7 +59,7 @@ export default function BlockedPage() {
             DP
           </div>
           <div>
-            <h1 className="font-bold text-base text-[#142D26] tracking-tight">DetailPro SaaS</h1>
+            <h1 className="font-bold text-base text-[#142D26] tracking-tight">Vulpto</h1>
             <p className="text-[11px] text-[#737D75]">Gestão & Tecnologia para Estética Automotiva</p>
           </div>
         </div>
@@ -131,7 +131,7 @@ export default function BlockedPage() {
 
         {/* 2 Opções de Conversão: Plano Mensal ou Sistema Sob Medida */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Opção 1: Liberação do DetailPro */}
+          {/* Opção 1: Liberação do Vulpto */}
           <div className="p-5 rounded-2xl border-2 border-[#16A36A] bg-[#ECFDF5]/50 flex flex-col justify-between relative overflow-hidden space-y-4">
             <div className="absolute top-3 right-3 px-2 py-0.5 rounded-full bg-[#16A36A] text-white text-[10px] font-bold uppercase tracking-wider">
               Liberação Imediata
@@ -143,7 +143,7 @@ export default function BlockedPage() {
                   <Zap className="w-4 h-4" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-sm text-[#065F46]">Assinatura DetailPro PRO</h3>
+                  <h3 className="font-bold text-sm text-[#065F46]">Assinatura Vulpto PRO</h3>
                   <p className="text-xs text-[#737D75]">Manter todos os dados e continuar operando</p>
                 </div>
               </div>
@@ -214,7 +214,7 @@ export default function BlockedPage() {
 
             <a
               href={`https://wa.me/${cleanPhone}?text=${encodeURIComponent(
-                `Olá! Gostei muito da base do DetailPro e tenho interesse em encomendar um SISTEMA PRÓPRIO E PERSONALIZADO para a minha empresa (${companyName}). Gostaria de entender valores e como funciona o desenvolvimento sob medida!`
+                `Olá! Gostei muito da base do Vulpto e tenho interesse em encomendar um SISTEMA PRÓPRIO E PERSONALIZADO para a minha empresa (${companyName}). Gostaria de entender valores e como funciona o desenvolvimento sob medida!`
               )}`}
               target="_blank"
               rel="noopener noreferrer"
@@ -248,7 +248,7 @@ export default function BlockedPage() {
 
       {/* Rodapé */}
       <div className="text-center text-xs text-[#737D75] py-2">
-        DetailPro SaaS • Gestão Profissional de Estética Automotiva & Detailing
+        Vulpto • Gestão Profissional de Estética Automotiva & Detailing
       </div>
     </div>
   );

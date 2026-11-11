@@ -380,7 +380,7 @@ export default function ChecklistDetailPage() {
           </div>
 
           <div className="text-left sm:text-right text-[11px] text-[#737D75]">
-            Documento emitido eletronicamente pelo sistema DetailPro SaaS.
+            Documento emitido eletronicamente pelo sistema Vulpto.
           </div>
         </div>
       </div>

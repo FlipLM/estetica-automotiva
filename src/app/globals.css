@@ -5,7 +5,7 @@
 @tailwind utilities;
 
 :root {
-  /* Paleta Oficial — DetailPro Clean Professional */
+  /* Paleta Oficial — Vulpto Clean Professional */
   --brand-deep: #142D26;
   --brand-primary: #247653;
   --brand-secondary: #318B63;
@@ -47,7 +47,7 @@ body {
 }
 
 /* ==========================================================================
-   SISTEMA DE COMPONENTES — DETAILPRO CLEAN PROFESSIONAL
+   SISTEMA DE COMPONENTES — VULPTO CLEAN PROFESSIONAL
    ========================================================================== */
 
 /* Superfícies & Cards (12px radius, sem clip-path) */
@@ -70,7 +70,7 @@ body {
   box-shadow: 0 0 0 2px rgba(36, 118, 83, 0.12);
 }
 
-/* Botão Principal — Verde DetailPro (#247653, 8px radius) */
+/* Botão Principal — Verde Vulpto (#247653, 8px radius) */
 .dp-btn-primary,
 .btn-engine-start {
   display: inline-flex;

@@ -4,7 +4,9 @@ import {
   signMasterToken,
   isMasterAuthenticated,
   MASTER_COOKIE_NAME,
+  safeEqual,
 } from "@/lib/master-auth";
+import { getClientIp, isRateLimited } from "@/lib/rate-limit";
 
 export const dynamic = "force-dynamic";
 
@@ -15,6 +17,13 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   try {
+    if (isRateLimited(`master:${getClientIp(req)}`, 5, 15 * 60 * 1000)) {
+      return NextResponse.json(
+        { error: "Muitas tentativas. Aguarde alguns minutos." },
+        { status: 429 }
+      );
+    }
+
     const body = await req.json();
     const { email, password } = body;
 
@@ -26,12 +35,18 @@ export async function POST(req: NextRequest) {
     }
 
     const masterCreds = getMasterCredentials();
+    if (!masterCreds) {
+      return NextResponse.json(
+        { error: "Acesso master não configurado no servidor." },
+        { status: 503 }
+      );
+    }
     const inputEmail = String(email).trim().toLowerCase();
     const inputPassword = String(password);
 
     // Validação estrita de credenciais próprias do Gestor Master
-    const isEmailValid = inputEmail === masterCreds.email;
-    const isPasswordValid = inputPassword === masterCreds.password;
+    const isEmailValid = safeEqual(inputEmail, masterCreds.email);
+    const isPasswordValid = safeEqual(inputPassword, masterCreds.password);
 
     if (!isEmailValid || !isPasswordValid) {
       return NextResponse.json(

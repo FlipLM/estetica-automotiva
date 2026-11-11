@@ -210,7 +210,7 @@ export default function ConfiguracoesPage() {
             <Input
               label="E-mail de Contato"
               type="email"
-              placeholder="contato@detailpro.com.br"
+              placeholder="contato@vulpto.com.br"
               value={form.email}
               onChange={(e) => setForm({ ...form, email: e.target.value })}
             />

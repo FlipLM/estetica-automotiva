@@ -42,7 +42,16 @@ export async function GET(req: NextRequest) {
       orderBy: { name: "asc" },
     });
 
-    return NextResponse.json({ employees });
+    const safeEmployees = session.role === "ADMIN"
+      ? employees
+      : employees.map((e) => ({
+          ...e,
+          email: e.id === session.userId ? e.email : "",
+          phone: e.id === session.userId ? e.phone : null,
+          commissionRate: e.id === session.userId ? e.commissionRate : null,
+        }));
+
+    return NextResponse.json({ employees: safeEmployees });
   } catch (error) {
     return handleAuthError(error);
   }

@@ -1,4 +1,4 @@
-# Relatório de QA, Testes e Validação — DetailPro Clean Professional
+# Relatório de QA, Testes e Validação — Vulpto Clean Professional
 
 **Data:** 10 de Novembro de 2026  
 **Branch Avaliada:** `design/novos-designs`  

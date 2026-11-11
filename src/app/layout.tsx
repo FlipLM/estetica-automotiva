@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "DetailPro SaaS — Gestão Profissional para Estética Automotiva",
+  title: "Vulpto — Gestão Profissional para Estética Automotiva",
   description:
     "Sistema completo de gestão operacional, vistoria 360º, ordens de serviço, pátio Kanban e financeiro para estética automotiva.",
 };

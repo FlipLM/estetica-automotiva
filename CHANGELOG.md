@@ -1,4 +1,4 @@
-# Changelog — DetailPro SaaS
+# Changelog — Vulpto
 
 Todas as alterações notáveis deste projeto estão documentadas neste arquivo.
 
@@ -47,3 +47,9 @@ Todas as alterações notáveis deste projeto estão documentadas neste arquivo.
   - Módulo de configurações da empresa com personalização de dados cadastrais.
   - Suíte de testes automatizados `test_phase6.ts` (5/5 aprovados).
   - Build de produção do Next.js validado com sucesso (22 rotas compiladas).
+
+## [Unreleased] - Segurança de autenticação
+- Removido fallback que logava como ADMIN sem cookie; adicionado middleware deny-by-default; sessão revalidada no banco.
+- Onboarding obrigatório para acessos temporários; senha temporária aleatória.
+- Login com Google (OAuth2 + PKCE); rate limit; checagem de Origin; segredos sem padrão; .env removido do git.
+

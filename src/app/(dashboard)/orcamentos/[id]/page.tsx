@@ -308,7 +308,7 @@ export default function BudgetDetailPage() {
 
         {/* Rodapé Institucional */}
         <div className="pt-8 text-center text-[11px] text-[#737D75] border-t border-[#E7EAE7]">
-          Proposta emitida pelo DetailPro SaaS — Gestão Profissional de Estética Automotiva.
+          Proposta emitida pelo Vulpto — Gestão Profissional de Estética Automotiva.
         </div>
       </div>
     </div>

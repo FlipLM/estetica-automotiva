@@ -1,4 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
+
+const updateChecklistSchema = z.object({
+  fuelLevel: z.number().int().min(0).max(100).optional(),
+  valuablesLeft: z.string().max(1000).nullable().optional(),
+  customerConfirmed: z.boolean().optional(),
+  notes: z.string().max(2000).nullable().optional(),
+});
 import { prisma } from "@/lib/prisma";
 import { requireAuth, handleAuthError } from "@/lib/permissions";
 
@@ -101,7 +109,12 @@ export async function PUT(
     const { tenantId } = session;
     const { id } = params;
 
-    const body = await req.json();
+    const rawBody = await req.json();
+    const parsed = updateChecklistSchema.safeParse(rawBody);
+    if (!parsed.success) {
+      return NextResponse.json({ error: parsed.error.errors[0].message }, { status: 400 });
+    }
+    const body = parsed.data;
 
     const existing = await prisma.checklist.findFirst({
       where: { id, serviceOrder: { tenantId } },

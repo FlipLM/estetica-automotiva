@@ -630,7 +630,7 @@ export default function PatioKanbanPage() {
                                     <>
                                       <a
                                         href={`https://wa.me/55${os.customerPhone.replace(/\D/g, "")}?text=${encodeURIComponent(
-                                          `Olá, ${os.customerName}! Seu veículo (${os.model} - ${os.plate}) já está com os serviços concluídos na DetailPro e pronto para retirada! 🚗✨`
+                                          `Olá, ${os.customerName}! Seu veículo (${os.model} - ${os.plate}) já está com os serviços concluídos na Vulpto e pronto para retirada! 🚗✨`
                                         )}`}
                                         target="_blank"
                                         rel="noopener noreferrer"
@@ -900,7 +900,7 @@ export default function PatioKanbanPage() {
                                     <>
                                       <a
                                         href={`https://wa.me/55${os.customerPhone.replace(/\D/g, "")}?text=${encodeURIComponent(
-                                          `Olá, ${os.customerName}! Seu veículo (${os.model} - ${os.plate}) já está com os serviços concluídos na DetailPro e pronto para retirada! 🚗✨`
+                                          `Olá, ${os.customerName}! Seu veículo (${os.model} - ${os.plate}) já está com os serviços concluídos na Vulpto e pronto para retirada! 🚗✨`
                                         )}`}
                                         target="_blank"
                                         rel="noopener noreferrer"

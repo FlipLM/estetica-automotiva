@@ -24,7 +24,7 @@ export function formatVehicleCategory(category?: string): string {
 }
 
 // ==========================================
-// PALETA DE CORES INSTITUCIONAL (DetailPro)
+// PALETA DE CORES INSTITUCIONAL (Vulpto)
 // ==========================================
 const COLORS = {
   primary: [20, 45, 38] as [number, number, number], // #142D26 - Verde Escuro
@@ -81,7 +81,7 @@ function addHeaderAndFooters(
     doc.setFont("helvetica", "normal");
     doc.setTextColor(...COLORS.textMuted);
     doc.text(
-      "DetailPro SaaS • Gestão Profissional para Estética Automotiva & Detailing • Documento Oficial",
+      "Vulpto • Gestão Profissional para Estética Automotiva & Detailing • Documento Oficial",
       14,
       pageHeight - 7
     );
@@ -112,7 +112,7 @@ export function generateBudgetPdf(order: any, options: { download?: boolean } = 
   // -------------------------------------------------------------
   // CABEÇALHO DA EMPRESA & METADADOS DA PROPOSTA
   // -------------------------------------------------------------
-  const companyName = tenant.tradingName || tenant.name || "DetailPro Estética Automotiva";
+  const companyName = tenant.tradingName || tenant.name || "Vulpto Estética Automotiva";
   const companyAddress = tenant.address || "Centro de Estética Automotiva & Detailing";
   const companyDoc = tenant.document ? `CNPJ/CPF: ${tenant.document}` : "";
   const companyContact = tenant.phone || tenant.whatsapp ? `Contato: ${tenant.phone || tenant.whatsapp}` : "";
@@ -406,7 +406,7 @@ export function generateBudgetPdf(order: any, options: { download?: boolean } = 
   doc.setTextColor(...COLORS.textMuted);
   doc.text(custName, sig1X + sigLineWidth / 2, y + 8, { align: "center" });
 
-  // Linha 2: Responsável / DetailPro
+  // Linha 2: Responsável / Vulpto
   doc.line(sig2X, y, sig2X + sigLineWidth, y);
   doc.setFont("helvetica", "bold");
   doc.setTextColor(...COLORS.textDark);
@@ -474,7 +474,7 @@ export async function generateInspectionPdf(
   let y = 14;
 
   // Cabeçalho da Empresa
-  const companyName = tenant.tradingName || tenant.name || "DetailPro Estética Automotiva";
+  const companyName = tenant.tradingName || tenant.name || "Vulpto Estética Automotiva";
   const companyAddress = tenant.address || "Centro de Estética Automotiva & Detailing";
   const companyDoc = tenant.document ? `CNPJ/CPF: ${tenant.document}` : "";
   const companyContact = tenant.phone || tenant.whatsapp ? `Contato: ${tenant.phone || tenant.whatsapp}` : "";
@@ -764,7 +764,7 @@ export async function generateInspectionPdf(
 
   doc.setFont("helvetica", "normal");
   doc.setTextColor(...COLORS.textMuted);
-  const inspectorName = serviceOrder.assignedUser?.name || "DetailPro Vistorias";
+  const inspectorName = serviceOrder.assignedUser?.name || "Vulpto Vistorias";
   doc.text(inspectorName, sig2X + sigLineWidth / 2, y + 8, { align: "center" });
 
   // -----------------------------------------------------------------------
@@ -954,7 +954,7 @@ export function generateServiceOrderPdf(
 
   let y = 14;
 
-  const companyName = tenant.tradingName || tenant.name || "DetailPro Estética Automotiva";
+  const companyName = tenant.tradingName || tenant.name || "Vulpto Estética Automotiva";
   const companyAddress = tenant.address || "Centro de Estética Automotiva & Detailing";
   const companyDoc = tenant.document ? `CNPJ/CPF: ${tenant.document}` : "";
   const companyContact = tenant.phone || tenant.whatsapp ? `Contato: ${tenant.phone || tenant.whatsapp}` : "";

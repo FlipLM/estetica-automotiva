@@ -24,34 +24,6 @@ export async function GET(req: NextRequest) {
       orderBy: { name: "asc" },
     });
 
-    // Se ainda não houver boxes cadastrados, cria os boxes padrão da oficina com capacidades
-    if (boxes.length === 0) {
-      const defaultBoxes = [
-        { name: "Box 01 - Lavagem Técnica", type: "LAVAGEM", color: "#38bdf8", capacity: 2, description: "Área de pré-lavagem, snow foam e descontaminação" },
-        { name: "Box 02 - Polimento e Correção", type: "POLIMENTO", color: "#a3e635", capacity: 1, description: "Iluminação dedicada e estufa para corte e refino" },
-        { name: "Box 03 - Higienização e Detailing", type: "HIGIENIZACAO", color: "#fbbf24", capacity: 1, description: "Higienização interna, couro e ozônio" },
-        { name: "Box 04 - Rampa e Chassi", type: "RAMPA", color: "#c084fc", capacity: 1, description: "Rampa pneumática para limpeza técnica inferior" },
-      ];
-
-      for (const b of defaultBoxes) {
-        await prisma.workBay.create({
-          data: {
-            tenantId,
-            name: b.name,
-            type: b.type,
-            color: b.color,
-            capacity: b.capacity,
-            description: b.description,
-            active: true,
-          },
-        });
-      }
-
-      boxes = await prisma.workBay.findMany({
-        where: { tenantId },
-        orderBy: { name: "asc" },
-      });
-    }
 
     // Busca ordens de serviço ativas no pátio (TODO, IN_PROGRESS, DONE) para calcular lotação em tempo real
     const activeOrders = await prisma.serviceOrder.findMany({

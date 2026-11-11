@@ -15,6 +15,7 @@ export default function RegisterPage() {
     adminName: "",
     email: "",
     password: "",
+    website: "",
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -41,7 +42,7 @@ export default function RegisterPage() {
         throw new Error(data.error || "Erro ao registrar empresa.");
       }
 
-      router.push("/dashboard");
+      window.location.href = "/onboarding";
       router.refresh();
     } catch (err: any) {
       setError(err.message || "Falha na conexão.");

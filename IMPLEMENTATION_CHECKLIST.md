@@ -69,7 +69,7 @@
 - [x] Curva ABC automática de clientes baseada em LTV (Classes A, B e C)
 - [x] Disparo direto para WhatsApp Web / App com textos personalizados
 
-## Módulo 11 — Redesign Completo: DetailPro Clean Professional (`design/novos-designs`)
+## Módulo 11 — Redesign Completo: Vulpto Clean Professional (`design/novos-designs`)
 - [x] Auditoria completa de rotas, APIs e componentes (`docs/REDESIGN_AUDIT.md`)
 - [x] Design Tokens oficiais e paleta clara (`#142D26`, `#247653`, `#318B63`, `#E9F3EC`, `#F7F8F6`, `#FFFFFF`)
 - [x] Biblioteca centralizada de componentes UI (`src/components/ui/*`)

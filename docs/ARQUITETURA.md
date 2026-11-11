@@ -1,4 +1,4 @@
-# Arquitetura Técnica do Sistema — DetailPro SaaS
+# Arquitetura Técnica do Sistema — Vulpto
 
 Este documento é a referência de arquitetura do sistema, servindo como memória técnica permanente.
 

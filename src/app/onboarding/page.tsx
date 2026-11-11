@@ -178,11 +178,7 @@ export default function OnboardingPage() {
   ]);
   const [newBoxCategory, setNewBoxCategory] = useState("");
   const [showAddBoxCat, setShowAddBoxCat] = useState(false);
-  const [boxes, setBoxes] = useState<BoxItem[]>([
-    { name: "Box 01 - Lavagem & Detalhamento", type: "LAVAGEM", capacity: 1, color: "#3B82F6" },
-    { name: "Box 02 - Polimento Técnico", type: "POLIMENTO", capacity: 1, color: "#D97706" },
-    { name: "Box 03 - Vitrificação & Secagem", type: "GERAL", capacity: 1, color: "#16A36A" },
-  ]);
+  const [boxes, setBoxes] = useState<BoxItem[]>([]);
 
   // Passo 3: Equipe
   const [employees, setEmployees] = useState<EmployeeItem[]>([]);
@@ -204,7 +200,7 @@ export default function OnboardingPage() {
   ]);
   const [newServiceCategory, setNewServiceCategory] = useState("");
   const [showAddServiceCat, setShowAddServiceCat] = useState(false);
-  const [services, setServices] = useState<ServiceItem[]>(DEFAULT_SERVICES);
+  const [services, setServices] = useState<ServiceItem[]>([]);
   
   // Novo serviço formulário
   const [showAddServiceModal, setShowAddServiceModal] = useState(false);
@@ -216,7 +212,7 @@ export default function OnboardingPage() {
   const [newServiceMinutes, setNewServiceMinutes] = useState(60);
 
   // Passo 5: Estoque
-  const [products, setProducts] = useState<ProductItem[]>(DEFAULT_PRODUCTS);
+  const [products, setProducts] = useState<ProductItem[]>([]);
   const [showAddProductModal, setShowAddProductModal] = useState(false);
   const [newProdName, setNewProdName] = useState("");
   const [newProdCat, setNewProdCat] = useState("CHEMICAL");
@@ -517,7 +513,7 @@ export default function OnboardingPage() {
             <Car className="w-5 h-5 text-[#E9F3EC]" />
           </div>
           <div>
-            <h1 className="font-bold text-base text-[#142D26] tracking-tight">DetailPro SaaS</h1>
+            <h1 className="font-bold text-base text-[#142D26] tracking-tight">Vulpto</h1>
             <p className="text-xs text-[#737D75]">Assistente de Configuração Inicial da sua Estética</p>
           </div>
         </div>
@@ -1525,7 +1521,7 @@ export default function OnboardingPage() {
 
       {/* Rodapé */}
       <div className="max-w-4xl mx-auto w-full text-center text-xs text-[#737D75] pt-6">
-        DetailPro SaaS • Gestão Profissional para Estética Automotiva & Detailing
+        Vulpto • Gestão Profissional para Estética Automotiva & Detailing
       </div>
     </div>
   );

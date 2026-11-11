@@ -86,3 +86,14 @@
 - `GET /api/crm` — Inteligência de retenção, Curva ABC, dias de chuva e pós-venda.
 - `GET /api/settings` — Dados cadastrais do tenant.
 - `PUT /api/settings` — Atualiza dados da empresa.
+
+---
+
+## Armazenamento em Nuvem da Estética (BYOS Multi-Provedor)
+
+- **Tela Exclusiva do Administrador:** /armazenamento ([page.tsx](src/app/(dashboard)/armazenamento/page.tsx)) — visível apenas para ADMIN. Contém seletor e tutorial passo a passo para **Google Drive**, **Telegram Cloud (Grupo/Canal Privado)**, **Microsoft OneDrive**, **Dropbox** e **Cloudflare R2 / S3**, além de abertura de chamado direto via WhatsApp.
+- **Endpoints:**
+  - GET /api/storage/config (equireAdmin): retorna provedor ativo, status da conexão e credenciais mascaradas do Tenant.
+  - PUT /api/storage/config (equireAdmin): salva provedor e credenciais criptografadas com AES-256-GCM (src/lib/crypto.ts) no Tenant.
+  - POST /api/storage/config (equireAdmin): testa a conexão real com a API do provedor escolhido e ativa storageConnected = true.
+  - GET /uploads/cloud/[provider]/[...fileId] (equireAuth): proxy autenticado que carrega a imagem da nuvem do Tenant para exibição no sistema e geração de PDF.

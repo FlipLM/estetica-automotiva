@@ -1,4 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
+const updateOrderSchema = z.object({
+  assignedUserId: z.string().uuid().nullable().optional(),
+  box: z.string().max(80).nullable().optional(),
+  notes: z.string().max(2000).nullable().optional(),
+  mileage: z.number().int().min(0).max(2000000).nullable().optional(),
+  discount: z.number().min(0).max(1000000).optional(),
+});
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireAuth, handleAuthError } from "@/lib/permissions";
@@ -80,7 +87,18 @@ export async function PUT(
     const { tenantId, userId, role } = session;
     const { id } = params;
 
-    const body = await req.json();
+    const rawBody = await req.json();
+    const parsed = updateOrderSchema.safeParse(rawBody);
+    if (!parsed.success) {
+      return NextResponse.json({ error: parsed.error.errors[0].message }, { status: 400 });
+    }
+    const body = parsed.data;
+    if (body.assignedUserId) {
+      const assignee = await prisma.user.findFirst({ where: { id: body.assignedUserId, tenantId, active: true }, select: { id: true } });
+      if (!assignee) {
+        return NextResponse.json({ error: "Colaborador responsável inválido." }, { status: 400 });
+      }
+    }
 
     const existing = await prisma.serviceOrder.findFirst({
       where: { id, tenantId },

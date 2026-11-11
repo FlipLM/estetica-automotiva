@@ -79,7 +79,7 @@ export default function GestorMasterPage() {
   const [formAdminName, setFormAdminName] = useState("");
   const [formEmail, setFormEmail] = useState("");
   const [formPhone, setFormPhone] = useState("");
-  const [formPassword, setFormPassword] = useState("123456");
+  const [formPassword, setFormPassword] = useState("");
   const [formDays, setFormDays] = useState(3);
   const [createError, setCreateError] = useState<string | null>(null);
 
@@ -179,7 +179,7 @@ export default function GestorMasterPage() {
           tradingName: formCompany,
           adminName: formAdminName,
           email: formEmail,
-          password: formPassword || "123456",
+          password: formPassword || undefined,
           phone: formPhone,
           trialDays: Number(formDays) || 3,
         }),
@@ -200,7 +200,7 @@ export default function GestorMasterPage() {
       setFormAdminName("");
       setFormEmail("");
       setFormPhone("");
-      setFormPassword("123456");
+      setFormPassword("");
       setFormDays(3);
 
       await loadTenants();
@@ -400,7 +400,7 @@ export default function GestorMasterPage() {
           </form>
 
           <p className="text-[11px] text-center text-slate-500 mt-6">
-            DetailPro SaaS Platform • Acesso exclusivo ao Administrador da Plataforma
+            Vulpto Platform • Acesso exclusivo ao Administrador da Plataforma
           </p>
         </div>
       </div>
@@ -766,6 +766,7 @@ export default function GestorMasterPage() {
                     type="text"
                     value={formPassword}
                     onChange={(e) => setFormPassword(e.target.value)}
+                    placeholder="Em branco = gerar senha aleatória"
                     className="w-full h-9 px-3 text-xs font-mono bg-slate-900 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-emerald-500"
                   />
                 </div>
@@ -884,7 +885,7 @@ export default function GestorMasterPage() {
 
       {/* RODAPÉ DO PAINEL MASTER */}
       <div className="max-w-7xl mx-auto w-full text-center text-xs text-slate-600 pt-8">
-        DetailPro SaaS Platform Engine • Console Restrito do Proprietário da Software House
+        Vulpto Platform Engine • Console Restrito do Proprietário da Software House
       </div>
     </div>
   );

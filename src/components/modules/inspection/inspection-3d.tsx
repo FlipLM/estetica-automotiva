@@ -1,4 +1,5 @@
 "use client";
+import { compressInspectionImage } from "@/lib/image-compressor";
 
 import dynamic from "next/dynamic";
 import { Component, ReactNode, useCallback, useEffect, useRef, useState } from "react";
@@ -154,7 +155,8 @@ export function Inspection3D({
       const newUrls: string[] = [];
       for (let i = 0; i < files.length; i++) {
         const formData = new FormData();
-        formData.append("file", files[i]);
+        const compressed = await compressInspectionImage(files[i]);
+        formData.append("file", compressed);
         const res = await fetch("/api/uploads", { method: "POST", body: formData });
         const data = await res.json();
         if (res.ok && data.url) newUrls.push(data.url);
@@ -181,7 +183,8 @@ export function Inspection3D({
       const newUrls: string[] = [];
       for (let i = 0; i < files.length; i++) {
         const formData = new FormData();
-        formData.append("file", files[i]);
+        const compressed = await compressInspectionImage(files[i]);
+        formData.append("file", compressed);
         const res = await fetch("/api/uploads", { method: "POST", body: formData });
         const data = await res.json();
         if (res.ok && data.url) newUrls.push(data.url);
@@ -687,7 +690,7 @@ export function Inspection3D({
 
       {/* Nota de Licença Técnica do Modelo 3D */}
       <p className="text-[10px] text-[#737D75] pt-2 border-t border-[#DFE2DF]/60">
-        Modelo tridimensional veicular sob licença Creative Commons (CC BY 4.0). Rig cinemático e mapeamento de impacto adaptados para DetailPro.
+        Modelo tridimensional veicular sob licença Creative Commons (CC BY 4.0). Rig cinemático e mapeamento de impacto adaptados para Vulpto.
       </p>
     </div>
   );

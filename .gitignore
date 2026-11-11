@@ -36,3 +36,9 @@ next-env.d.ts
 prisma/*.db
 prisma/*.db-journal
 
+
+# Segredos locais
+.env
+.env.*
+!.env.example
+prisma/*.bak-*

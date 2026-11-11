@@ -3,6 +3,16 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireMasterAuth } from "@/lib/master-auth";
 import { hashPassword } from "@/lib/auth";
+import { randomBytes } from "crypto";
+
+function generateTempPassword(): string {
+  // 12 caracteres sem ambiguidade visual (sem 0/O/1/l/I)
+  const alphabet = "abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  const bytes = randomBytes(12);
+  let out = "";
+  for (let i = 0; i < 12; i++) out += alphabet[bytes[i] % alphabet.length];
+  return out;
+}
 
 export const dynamic = "force-dynamic";
 
@@ -11,7 +21,7 @@ const createLeadSchema = z.object({
   tradingName: z.string().nullish(),
   adminName: z.string().min(3, "Nome do proprietário deve ter no mínimo 3 caracteres."),
   email: z.string().email("E-mail corporativo inválido."),
-  password: z.string().min(6).nullish().default("123456"),
+  password: z.string().min(8).nullish(),
   phone: z.string().nullish(),
   trialDays: z.number().int().min(1).max(90).nullish().default(3),
 });
@@ -126,7 +136,8 @@ export async function POST(req: NextRequest) {
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + days);
 
-    const rawPassword = password || "123456";
+    // Senha temporária aleatória (não previsível). Pode ser informada manualmente pelo gestor.
+    const rawPassword = password || generateTempPassword();
     const passwordHash = await hashPassword(rawPassword);
 
     const result = await prisma.$transaction(async (tx) => {
@@ -140,7 +151,7 @@ export async function POST(req: NextRequest) {
           trialExpiresAt: expiresAt,
           isCustomPlan: false,
           active: true,
-          onboardingCompleted: true, // Já cria pronto para o lead testar imediatamente sem fricção
+          onboardingCompleted: false, // O lead DEVE passar pelo onboarding após o primeiro login
         },
       });
 
@@ -155,33 +166,14 @@ export async function POST(req: NextRequest) {
           active: true,
         },
       });
-
-      // Cria estrutura operacional padrão para o lead não pegar pátio vazio
-      await tx.workBay.createMany({
-        data: [
-          { tenantId: tenant.id, name: "Box 01 - Lavagem & Detalhamento", type: "LAVAGEM", capacity: 1, color: "#3B82F6", active: true },
-          { tenantId: tenant.id, name: "Box 02 - Polimento Técnico", type: "POLIMENTO", capacity: 1, color: "#D97706", active: true },
-          { tenantId: tenant.id, name: "Box 03 - Vistoria & Acabamento", type: "GERAL", capacity: 1, color: "#16A36A", active: true },
-        ],
-      });
-
-      await tx.service.createMany({
-        data: [
-          { tenantId: tenant.id, name: "Lavagem Detalhada Completa", category: "LAVAGEM", priceHatch: 90, priceSedan: 110, priceSuvPickup: 140, estimatedMinutes: 90, defaultCommission: 15 },
-          { tenantId: tenant.id, name: "Polimento Comercial & Proteção", category: "POLIMENTO", priceHatch: 450, priceSedan: 550, priceSuvPickup: 700, estimatedMinutes: 240, defaultCommission: 20 },
-          { tenantId: tenant.id, name: "Higienização Interna Completa", category: "HIGIENIZACAO", priceHatch: 350, priceSedan: 420, priceSuvPickup: 500, estimatedMinutes: 240, defaultCommission: 15 },
-          { tenantId: tenant.id, name: "Vitrificação Cerâmica 9H", category: "VITRIFICACAO", priceHatch: 1200, priceSedan: 1450, priceSuvPickup: 1750, estimatedMinutes: 360, defaultCommission: 20 },
-        ],
-      });
-
       return { tenant, user };
     });
 
-    const host = req.headers.get("host") || "detailpro.duckdns.org";
+    const host = req.headers.get("host") || "vulpto.duckdns.org";
     const protocol = host.includes("localhost") ? "http" : "https";
     const loginUrl = `${protocol}://${host}/login`;
 
-    const whatsappMessage = `Olá, *${adminName.trim()}*! 👋\n\nSeu acesso exclusivo de avaliação ao *DetailPro* está pronto:\n\n🏢 *Estética:* ${companyName.trim()}\n🌐 *Link de Acesso:* ${loginUrl}\n👤 *Usuário:* ${email.trim()}\n🔑 *Senha Temporária:* ${rawPassword}\n⏳ *Período de Demonstração:* ${days} dias gratuitos\n\nVocê já pode acessar pelo computador ou pelo celular para testar a recepção com vistoria 360º de avarias, fotos, pátio Kanban ao vivo e impressão de orçamentos oficiais.\n\nQualquer dúvida estou à disposição!`;
+    const whatsappMessage = `Olá, *${adminName.trim()}*! 👋\n\nSeu acesso exclusivo de avaliação ao *Vulpto* está pronto:\n\n🏢 *Estética:* ${companyName.trim()}\n🌐 *Link de Acesso:* ${loginUrl}\n👤 *Usuário:* ${email.trim()}\n🔑 *Senha Temporária:* ${rawPassword}\n⏳ *Período de Demonstração:* ${days} dias gratuitos\n\nVocê já pode acessar pelo computador ou pelo celular para testar a recepção com vistoria 360º de avarias, fotos, pátio Kanban ao vivo e impressão de orçamentos oficiais.\n\nQualquer dúvida estou à disposição!`;
 
     return NextResponse.json({
       success: true,

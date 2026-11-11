@@ -4,7 +4,7 @@ const CHROME_PATH = "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe"
 
 async function runMobileAudit() {
   console.log("====================================================");
-  console.log("   DETAILPRO SAAS — AUDITORIA DE NAVEGAÇÃO MOBILE   ");
+  console.log("   VULPTO SAAS — AUDITORIA DE NAVEGAÇÃO MOBILE   ");
   console.log("   Resolução: 375x812 (iPhone 13 / Viewport Mobile)");
   console.log("====================================================\n");
 

@@ -180,20 +180,36 @@ export async function GET(request: NextRequest) {
       };
     });
 
+    const isAdmin = session.role === "ADMIN";
+    const safeProducts = isAdmin
+      ? finalProducts
+      : finalProducts.map((p) => ({
+          ...p,
+          costPrice: 0,
+          averageUnitCost: 0,
+          totalInventoryValue: 0,
+          movements: p.movements.map((m: any) => ({ ...m, unitCost: null, totalCost: null })),
+          stats: {
+            ...p.stats,
+            totalInSpent: 0,
+            totalOutValue: 0,
+            totalLossValue: 0,
+          },
+        }));
+
     return NextResponse.json({
       summary: {
         totalProducts: enriched.length,
         lowStockCount,
-        totalInventoryValue,
-        totalSpentEntries,
-        totalConsumedValue,
-        totalLossValue,
+        totalInventoryValue: isAdmin ? totalInventoryValue : 0,
+        totalSpentEntries: isAdmin ? totalSpentEntries : 0,
+        totalConsumedValue: isAdmin ? totalConsumedValue : 0,
+        totalLossValue: isAdmin ? totalLossValue : 0,
       },
-      analytics: {
-        topExpensesByProduct,
-        categoryBreakdown,
-      },
-      products: finalProducts,
+      analytics: isAdmin
+        ? { topExpensesByProduct, categoryBreakdown }
+        : { topExpensesByProduct: [], categoryBreakdown: [] },
+      products: safeProducts,
     });
   } catch (error: any) {
     console.error("Erro ao listar produtos:", error);
@@ -209,6 +225,9 @@ export async function POST(request: NextRequest) {
     const session = await getSession();
     if (!session) {
       return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
+    }
+    if (session.role !== "ADMIN") {
+      return NextResponse.json({ error: "Apenas administradores podem cadastrar produtos." }, { status: 403 });
     }
 
     const body = await request.json();

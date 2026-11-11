@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { hashPassword, signToken, AUTH_COOKIE_NAME } from "@/lib/auth";
+import { getClientIp, isRateLimited } from "@/lib/rate-limit";
 
 const registerSchema = z.object({
   companyName: z.string().min(3, "Nome da empresa deve ter no mínimo 3 caracteres."),
@@ -9,12 +10,20 @@ const registerSchema = z.object({
   document: z.string().optional(),
   phone: z.string().optional(),
   adminName: z.string().min(3, "Seu nome deve ter no mínimo 3 caracteres."),
-  email: z.string().email("E-mail inválido."),
-  password: z.string().min(6, "A senha deve ter no mínimo 6 caracteres."),
+  email: z.string().email("E-mail inválido.").transform((v) => v.trim().toLowerCase()),
+  password: z.string().min(8, "A senha deve ter no mínimo 8 caracteres."),
+  website: z.string().max(0, "Detecção anti-bot acionada.").optional(),
 });
 
 export async function POST(req: NextRequest) {
   try {
+    if (isRateLimited(`register:${getClientIp(req)}`, 5, 60 * 60 * 1000)) {
+      return NextResponse.json(
+        { error: "Muitas tentativas de cadastro. Tente novamente mais tarde." },
+        { status: 429 }
+      );
+    }
+
     const body = await req.json();
     const validated = registerSchema.safeParse(body);
 
@@ -27,7 +36,7 @@ export async function POST(req: NextRequest) {
 
     const data = validated.data;
 
-    // Verifica se já existe um usuário com esse email globalmente ou no mesmo tenant
+    // Verifica se já existe um usuário com esse email globalmente
     const existingUser = await prisma.user.findFirst({
       where: { email: data.email },
     });
@@ -41,7 +50,7 @@ export async function POST(req: NextRequest) {
 
     const passwordHash = await hashPassword(data.password);
 
-    // Cria o Tenant, Administrador e estrutura inicial do MVP (Trial de 3 Dias)
+    // Cria apenas o Tenant limpo e o Administrador (sem dados mockados; tudo é configurado no Onboarding)
     const result = await prisma.$transaction(async (tx) => {
       const trialExpiresAt = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000); // 72 horas
 
@@ -55,6 +64,7 @@ export async function POST(req: NextRequest) {
           plan: "TRIAL",
           trialExpiresAt,
           isCustomPlan: false,
+          onboardingCompleted: false,
         },
       });
 
@@ -70,173 +80,6 @@ export async function POST(req: NextRequest) {
         },
       });
 
-      // 1. Boxes / Vagas Operacionais Padrão para o Pátio do Lead
-      await tx.workBay.createMany({
-        data: [
-          {
-            tenantId: tenant.id,
-            name: "Box 1 - Lavagem & Descontaminação",
-            type: "LAVAGEM",
-            capacity: 1,
-            active: true,
-          },
-          {
-            tenantId: tenant.id,
-            name: "Box 2 - Polimento & Correção",
-            type: "POLIMENTO",
-            capacity: 1,
-            active: true,
-          },
-          {
-            tenantId: tenant.id,
-            name: "Box 3 - Secagem, Vistoria & Entrega",
-            type: "GERAL",
-            capacity: 1,
-            active: true,
-          },
-        ],
-      });
-
-      // 2. Serviços Essenciais Pré-Cadastrados para Estética Automotiva
-      const sLavagem = await tx.service.create({
-        data: {
-          tenantId: tenant.id,
-          name: "Lavagem Técnica Detalhada",
-          category: "LAVAGEM",
-          estimatedMinutes: 90,
-          priceHatch: 90.0,
-          priceSedan: 110.0,
-          priceSuvPickup: 140.0,
-          priceMotorcycle: 60.0,
-          priceSpecial: 180.0,
-          defaultCommission: 10.0,
-        },
-      });
-
-      const sPolimento = await tx.service.create({
-        data: {
-          tenantId: tenant.id,
-          name: "Polimento Comercial & Brilho",
-          category: "POLIMENTO",
-          estimatedMinutes: 180,
-          priceHatch: 450.0,
-          priceSedan: 550.0,
-          priceSuvPickup: 650.0,
-          priceMotorcycle: 200.0,
-          priceSpecial: 800.0,
-          defaultCommission: 15.0,
-        },
-      });
-
-      await tx.service.createMany({
-        data: [
-          {
-            tenantId: tenant.id,
-            name: "Higienização Interna Completa",
-            category: "HIGIENIZACAO",
-            estimatedMinutes: 240,
-            priceHatch: 350.0,
-            priceSedan: 420.0,
-            priceSuvPickup: 500.0,
-            priceMotorcycle: 150.0,
-            priceSpecial: 600.0,
-            defaultCommission: 15.0,
-          },
-          {
-            tenantId: tenant.id,
-            name: "Vitrificação Cerâmica 9H (Pintura)",
-            category: "VITRIFICACAO",
-            estimatedMinutes: 360,
-            priceHatch: 1200.0,
-            priceSedan: 1450.0,
-            priceSuvPickup: 1750.0,
-            priceMotorcycle: 600.0,
-            priceSpecial: 2200.0,
-            defaultCommission: 20.0,
-          },
-          {
-            tenantId: tenant.id,
-            name: "Cristalização & Repelência de Parabrisa",
-            category: "CRISTALIZACAO",
-            estimatedMinutes: 45,
-            priceHatch: 120.0,
-            priceSedan: 140.0,
-            priceSuvPickup: 160.0,
-            priceMotorcycle: 80.0,
-            priceSpecial: 190.0,
-            defaultCommission: 10.0,
-          },
-        ],
-      });
-
-      // 3. Cliente e Veículo de Demonstração para Teste Imediato do Lead
-      const demoCustomer = await tx.customer.create({
-        data: {
-          tenantId: tenant.id,
-          name: "Cliente Exemplo (Demonstração)",
-          phone: "(11) 98888-7777",
-          whatsapp: "5511988887777",
-          email: "cliente.exemplo@detailpro.com.br",
-          document: "123.456.789-00",
-        },
-      });
-
-      const demoVehicle = await tx.vehicle.create({
-        data: {
-          tenantId: tenant.id,
-          customerId: demoCustomer.id,
-          plate: "BRA2E19",
-          model: "Corolla Altis Hybrid",
-          brand: "Toyota",
-          category: "SEDAN",
-          color: "Preto Metálico",
-          year: 2024,
-        },
-      });
-
-      // Ordem de Serviço de Exemplo no Pátio
-      const demoOrder = await tx.serviceOrder.create({
-        data: {
-          tenantId: tenant.id,
-          vehicleId: demoVehicle.id,
-          orderNumber: 1001,
-          status: "IN_PROGRESS",
-          box: "Box 1 - Lavagem & Descontaminação",
-          mileage: 18500,
-          subtotal: 660.0,
-          discount: 0,
-          totalAmount: 660.0,
-          paidAmount: 0,
-          assignedUserId: user.id,
-          notes: "Veículo de demonstração para testar Kanban do Pátio, Vistoria e Orçamento.",
-        },
-      });
-
-      await tx.serviceOrderItem.createMany({
-        data: [
-          {
-            serviceOrderId: demoOrder.id,
-            serviceId: sLavagem.id,
-            serviceName: "Lavagem Técnica Detalhada",
-            unitPrice: 110.0,
-            quantity: 1,
-            totalPrice: 110.0,
-            commissionAmount: 11.0,
-            completed: true,
-          },
-          {
-            serviceOrderId: demoOrder.id,
-            serviceId: sPolimento.id,
-            serviceName: "Polimento Comercial & Brilho",
-            unitPrice: 550.0,
-            quantity: 1,
-            totalPrice: 550.0,
-            commissionAmount: 82.5,
-            completed: false,
-          },
-        ],
-      });
-
       return { tenant, user };
     });
 
@@ -249,6 +92,7 @@ export async function POST(req: NextRequest) {
       tenantName: result.tenant.tradingName || result.tenant.name,
       plan: "TRIAL",
       trialExpiresAt: result.tenant.trialExpiresAt?.toISOString() || null,
+      onboardingCompleted: false,
     });
 
     const isHttps =
@@ -257,7 +101,7 @@ export async function POST(req: NextRequest) {
 
     const response = NextResponse.json({
       success: true,
-      token,
+      redirect: "/onboarding",
       message: "Empresa e administrador cadastrados com sucesso!",
       user: {
         id: result.user.id,
@@ -285,9 +129,8 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     console.error("Erro no registro:", error);
     return NextResponse.json(
-      { error: "Erro interno no servidor ao cadastrar empresa." },
+      { error: "Erro interno no servidor ao criar conta." },
       { status: 500 }
     );
   }
 }
-

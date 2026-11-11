@@ -20,6 +20,7 @@ import {
   UserCheck,
   Palette,
   Settings,
+  Cloud,
   ChevronLeft,
   ChevronRight,
   Menu,
@@ -199,6 +200,12 @@ export function Sidebar({ role, tenantName }: SidebarProps) {
                 icon: UserCheck,
               },
               {
+                name: "Armazenamento Nuvem",
+                href: "/armazenamento",
+                icon: Cloud,
+                badge: "Novo",
+              },
+              {
                 name: "Configurações",
                 href: "/configuracoes",
                 icon: Settings,
@@ -244,7 +251,7 @@ export function Sidebar({ role, tenantName }: SidebarProps) {
               <div className="min-w-0">
                 <div className="flex items-center gap-1.5">
                   <span className="font-bold text-[15px] text-[#142D26] tracking-tight truncate">
-                    DetailPro
+                    Vulpto
                   </span>
                   <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-[#E9F3EC] text-[#247653]">
                     PRO
@@ -487,7 +494,7 @@ export function Sidebar({ role, tenantName }: SidebarProps) {
                 </div>
                 <div>
                   <span className="font-bold text-[16px] text-[#142D26] block leading-none">
-                    DetailPro
+                    Vulpto
                   </span>
                   <span className="text-[11px] text-[#737D75] truncate max-w-[170px] block mt-0.5">
                     {tenantName || "Estética Automotiva"}

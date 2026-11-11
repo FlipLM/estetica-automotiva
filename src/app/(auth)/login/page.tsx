@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Car, ArrowRight } from "lucide-react";
@@ -10,8 +10,30 @@ export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [website, setWebsite] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const GOOGLE_ERRORS: Record<string, string> = {
+    google_not_configured: "Login com Google ainda não está configurado.",
+    google_denied: "Login com Google cancelado.",
+    google_email_unverified: "O e-mail da conta Google não está verificado.",
+    google_inactive: "Conta inativa. Entre em contato com o suporte.",
+    google_rate_limited: "Muitas tentativas. Aguarde alguns minutos.",
+  };
+
+  useEffect(() => {
+    const code = new URLSearchParams(window.location.search).get("error");
+    if (code && code.startsWith("google_")) {
+      setError(GOOGLE_ERRORS[code] || "Não foi possível entrar com o Google. Tente novamente.");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  function handleGoogle() {
+    const next = new URLSearchParams(window.location.search).get("next");
+    window.location.href = "/api/auth/google" + (next ? `?next=${encodeURIComponent(next)}` : "");
+  }
 
   async function performLogin(targetEmail: string, targetPass: string) {
     setLoading(true);
@@ -21,7 +43,7 @@ export default function LoginPage() {
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: targetEmail, password: targetPass }),
+        body: JSON.stringify({ email: targetEmail, password: targetPass, website }),
       });
 
       const data = await res.json();
@@ -31,7 +53,12 @@ export default function LoginPage() {
       }
 
       // Redirecionamento nativo instantâneo para carregar a sessão com cookie confirmado
-      const dest = data.user.role === "OPERATOR" ? "/patio" : "/dashboard";
+      let dest = data.redirect || (data.user.role === "OPERATOR" ? "/patio" : "/dashboard");
+      // Respeita ?next= somente para caminhos internos e quando não há onboarding pendente
+      const next = new URLSearchParams(window.location.search).get("next");
+      if (next && next.startsWith("/") && !next.startsWith("//") && dest !== "/onboarding") {
+        dest = next;
+      }
       window.location.href = dest;
     } catch (err: any) {
       setError(err.message || "Falha na conexão com o servidor.");
@@ -53,7 +80,7 @@ export default function LoginPage() {
             <Car className="w-6 h-6 text-[#E9F3EC]" />
           </div>
           <h1 className="text-[24px] font-bold tracking-tight text-[#142D26]">
-            DetailPro SaaS
+            Vulpto
           </h1>
           <p className="text-[14px] text-[#737D75] mt-1">
             Gestão profissional para estéticas automotivas e estúdios de detailing
@@ -76,6 +103,7 @@ export default function LoginPage() {
           )}
 
           <form onSubmit={handleLogin} className="space-y-4">
+            <input type="text" name="website" value={website} onChange={(e) => setWebsite(e.target.value)} tabIndex={-1} autoComplete="off" aria-hidden="true" className="hidden" />
             <Input
               label="Seu E-mail"
               type="email"
@@ -104,6 +132,16 @@ export default function LoginPage() {
               Entrar no Sistema
             </Button>
           </form>
+
+          <div className="flex items-center gap-3 my-4">
+            <div className="h-px flex-1 bg-[#E3E7E2]" />
+            <span className="text-[12px] text-[#737D75]">ou</span>
+            <div className="h-px flex-1 bg-[#E3E7E2]" />
+          </div>
+
+          <Button type="button" variant="secondary" fullWidth onClick={handleGoogle}>
+            Entrar com Google
+          </Button>
         </Card>
 
         <p className="text-center text-[13px] text-[#737D75] mt-6">

@@ -1,5 +1,6 @@
 "use client";
 
+import { compressInspectionImage } from "@/lib/image-compressor";
 import { useState, useRef } from "react";
 import { Camera, AlertCircle, Trash2, X, Disc, ShieldAlert, Sparkles } from "lucide-react";
 
@@ -249,7 +250,7 @@ export function VehicleSilhouette2D({
       const uploadedUrls: string[] = [];
 
       for (let i = 0; i < files.length; i++) {
-        const file = files[i];
+        const file = await compressInspectionImage(files[i]);
         const form = new FormData();
         form.append("file", file);
 

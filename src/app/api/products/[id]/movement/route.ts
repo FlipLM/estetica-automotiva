@@ -74,6 +74,9 @@ export async function POST(
 
     const body = await request.json();
     const validated = movementSchema.parse(body);
+    if (validated.type === "IN" && session.role !== "ADMIN") {
+      return NextResponse.json({ error: "Apenas administradores podem registrar entradas (compras)." }, { status: 403 });
+    }
 
     // Calcular novo saldo
     let newStock = product.currentStock;
@@ -181,6 +184,9 @@ export async function PATCH(
     const session = await getSession();
     if (!session) {
       return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
+    }
+    if (session.role !== "ADMIN") {
+      return NextResponse.json({ error: "Apenas administradores podem editar movimentações." }, { status: 403 });
     }
 
     const product = await prisma.product.findFirst({

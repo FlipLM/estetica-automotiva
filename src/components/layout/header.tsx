@@ -79,7 +79,7 @@ export function Header({ userName, userRole, tenantName, plan, trialExpiresAt }:
   const supportWhatsapp = process.env.NEXT_PUBLIC_SUPPORT_WHATSAPP || "5511988887777";
   const cleanPhone = supportWhatsapp.replace(/\D/g, "");
   const whatsappTrialText = encodeURIComponent(
-    `Olá! Estou testando o DetailPro para a empresa *${tenantName}* e gostaria de informações sobre planos definitivos ou contratação de um sistema sob medida!`
+    `Olá! Estou testando o Vulpto para a empresa *${tenantName}* e gostaria de informações sobre planos definitivos ou contratação de um sistema sob medida!`
   );
 
   useEffect(() => {
@@ -136,7 +136,7 @@ export function Header({ userName, userRole, tenantName, plan, trialExpiresAt }:
             href={userRole === "ADMIN" ? "/dashboard" : "/patio"}
             className="hover:text-[#247653] transition-colors hidden sm:inline font-medium"
           >
-            {tenantName || "DetailPro"}
+            {tenantName || "Vulpto"}
           </Link>
           <ChevronRight className="w-3.5 h-3.5 text-[#9CA49E] hidden sm:inline shrink-0" />
           <span className="font-semibold text-[#252B27] truncate">
@@ -180,7 +180,7 @@ export function Header({ userName, userRole, tenantName, plan, trialExpiresAt }:
             type="button"
             onClick={() => setTrialModalOpen(true)}
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#FFFBEB] hover:bg-[#FEF3C7] border border-[#FDE68A] text-[#B45309] text-xs font-bold transition-all shadow-xs cursor-pointer"
-            title="Seu período de teste no DetailPro. Clique para ver detalhes e opções de liberação."
+            title="Seu período de teste no Vulpto. Clique para ver detalhes e opções de liberação."
           >
             <Clock className="w-3.5 h-3.5 text-[#D97706] animate-pulse" />
             <span>Teste: {trialRemainingText || "3 dias"}</span>

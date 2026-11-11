@@ -38,7 +38,14 @@ export async function GET(
       return NextResponse.json({ error: "Produto não encontrado" }, { status: 404 });
     }
 
-    return NextResponse.json({ product });
+    const safeProduct = session.role === "ADMIN"
+      ? product
+      : {
+          ...product,
+          costPrice: 0,
+          movements: product.movements.map((m: any) => ({ ...m, unitCost: null, totalCost: null })),
+        };
+    return NextResponse.json({ product: safeProduct });
   } catch (error: any) {
     console.error("Erro ao buscar produto:", error);
     return NextResponse.json({ error: "Erro interno do servidor" }, { status: 500 });
@@ -53,6 +60,9 @@ export async function PUT(
     const session = await getSession();
     if (!session) {
       return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
+    }
+    if (session.role !== "ADMIN") {
+      return NextResponse.json({ error: "Apenas administradores podem alterar produtos." }, { status: 403 });
     }
 
     const product = await prisma.product.findFirst({
@@ -99,6 +109,9 @@ export async function DELETE(
     const session = await getSession();
     if (!session) {
       return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
+    }
+    if (session.role !== "ADMIN") {
+      return NextResponse.json({ error: "Apenas administradores podem excluir produtos." }, { status: 403 });
     }
 
     const product = await prisma.product.findFirst({

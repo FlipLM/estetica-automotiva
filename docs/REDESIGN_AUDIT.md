@@ -1,5 +1,5 @@
 # FASE 0 — Auditoria Técnica e Plano de Redesign Integral
-## DetailPro — Clean Professional Design System
+## Vulpto — Clean Professional Design System
 
 **Data da Auditoria:** 10/11/2026  
 **Branch de Execução:** `design/novos-designs`  

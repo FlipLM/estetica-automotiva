@@ -1,4 +1,4 @@
-# DetailPro SaaS — Sistema de Gestão para Estética Automotiva & Detailing
+# Vulpto — Sistema de Gestão para Estética Automotiva & Detailing
 
 Sistema SaaS Multi-tenant completo, comercialmente utilizável e de nível profissional para estéticas automotivas, estúdios de detailing, lava-jatos e centros de polimento técnico e vitrificação.
 

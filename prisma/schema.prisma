@@ -32,6 +32,12 @@ model Tenant {
   isCustomPlan        Boolean  @default(false)   // Se é um cliente pagante com sistema/customizações próprias
   onboardingCompleted Boolean  @default(false)   // Se o usuário concluiu o fluxo de configuração inicial da oficina
 
+  // Armazenamento em Nuvem da Empresa (BYOS - Todos os funcionários salvam no repositório único do Tenant)
+  storageProvider     String   @default("GOOGLE_DRIVE") // GOOGLE_DRIVE | ONEDRIVE | DROPBOX | TELEGRAM | CLOUDFLARE_R2
+  storageCredentials  String?                           // JSON criptografado (AES-256-GCM) com tokens/chaves da conta da estética
+  storageFolderId     String?                           // ID da pasta/canal/bucket onde as vistorias da equipe são salvas
+  storageConnected    Boolean  @default(false)          // Se a integração foi validada pelo Administrador
+
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
@@ -55,6 +61,7 @@ model User {
   name           String
   email          String
   passwordHash   String
+  googleId       String?  @unique // Subject (sub) do Google OAuth, quando vinculado
   role           String   @default("OPERATOR") // ADMIN | OPERATOR
   phone          String?
   commissionRate Float?   // Comissão padrão percentual (ex: 15.0)

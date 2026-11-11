@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { requireAuth, handleAuthError } from "@/lib/permissions";
+import { requireAuth, requireAdmin, handleAuthError } from "@/lib/permissions";
 import { hashPassword } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
@@ -125,7 +125,7 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   try {
-    const session = await requireAuth();
+    const session = await requireAdmin();
     const { tenantId } = session;
 
     const body = await req.json();
@@ -374,7 +374,7 @@ export async function POST(req: NextRequest) {
       return handleAuthError(error);
     }
     return NextResponse.json(
-      { error: error?.message || "Erro ao salvar configuração inicial." },
+      { error: "Erro interno ao salvar configuração inicial." },
       { status: 500 }
     );
   }

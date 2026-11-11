@@ -9,8 +9,6 @@ const MIME_TYPES: Record<string, string> = {
   ".jpeg": "image/jpeg",
   ".png": "image/png",
   ".webp": "image/webp",
-  ".gif": "image/gif",
-  ".svg": "image/svg+xml",
 };
 
 export async function GET(
@@ -22,9 +20,16 @@ export async function GET(
       ? params.filename.join("/")
       : params.filename;
 
-    // Previne directory traversal attack
-    const safePath = path.normalize(rawPath).replace(/^(\.\.[\/\\])+/, "");
-    const filePath = path.join(process.cwd(), "public", "uploads", safePath);
+    // Previne directory traversal: o caminho resolvido precisa permanecer dentro de public/uploads
+    const baseDir = path.resolve(process.cwd(), "public", "uploads");
+    const filePath = path.resolve(baseDir, rawPath);
+    if (!filePath.startsWith(baseDir + path.sep)) {
+      return new NextResponse("Arquivo não encontrado", { status: 404 });
+    }
+    // Somente imagens permitidas são servidas
+    if (!MIME_TYPES[path.extname(filePath).toLowerCase()]) {
+      return new NextResponse("Arquivo não encontrado", { status: 404 });
+    }
 
     const fileStat = await stat(filePath);
     if (!fileStat.isFile()) {
@@ -32,7 +37,7 @@ export async function GET(
     }
 
     const ext = path.extname(filePath).toLowerCase();
-    const contentType = MIME_TYPES[ext] || "application/octet-stream";
+    const contentType = MIME_TYPES[ext];
     const fileBuffer = await readFile(filePath);
 
     return new NextResponse(fileBuffer, {
@@ -40,7 +45,9 @@ export async function GET(
       headers: {
         "Content-Type": contentType,
         "Content-Length": fileStat.size.toString(),
-        "Cache-Control": "public, max-age=31536000, immutable",
+        "Cache-Control": "private, max-age=86400",
+        "X-Content-Type-Options": "nosniff",
+        "Content-Security-Policy": "default-src 'none'",
       },
     });
   } catch (error) {

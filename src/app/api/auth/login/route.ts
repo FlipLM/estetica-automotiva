@@ -2,14 +2,24 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { comparePassword, signToken, AUTH_COOKIE_NAME } from "@/lib/auth";
+import { getClientIp, isRateLimited } from "@/lib/rate-limit";
 
 const loginSchema = z.object({
   email: z.string().email("E-mail inválido."),
   password: z.string().min(6, "A senha deve ter no mínimo 6 caracteres."),
+  website: z.string().max(0, "Detecção anti-bot acionada.").optional(),
 });
 
 export async function POST(req: NextRequest) {
   try {
+    const ip = getClientIp(req);
+    if (isRateLimited(`login:ip:${ip}`, 20, 15 * 60 * 1000)) {
+      return NextResponse.json(
+        { error: "Muitas tentativas. Aguarde alguns minutos e tente novamente." },
+        { status: 429 }
+      );
+    }
+
     const body = await req.json();
     const validated = loginSchema.safeParse(body);
 
@@ -20,17 +30,25 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { email, password } = validated.data;
+    const { email: rawEmail, password } = validated.data;
+    const email = rawEmail.trim().toLowerCase();
+
+    if (isRateLimited(`login:email:${email}`, 8, 15 * 60 * 1000)) {
+      return NextResponse.json(
+        { error: "Muitas tentativas para este e-mail. Aguarde alguns minutos." },
+        { status: 429 }
+      );
+    }
 
     // Busca usuário ativo no banco
     const user = await prisma.user.findFirst({
-      where: { email, active: true },
+      where: { OR: [{ email }, { email: rawEmail }], active: true },
       include: { tenant: true },
     });
 
     if (!user || !user.tenant.active) {
       return NextResponse.json(
-        { error: "Credenciais inválidas ou conta inativa." },
+        { error: "Credenciais inválidas." },
         { status: 401 }
       );
     }
@@ -71,9 +89,16 @@ export async function POST(req: NextRequest) {
       req.url.startsWith("https://") ||
       req.headers.get("x-forwarded-proto") === "https";
 
+    const needsOnboarding = user.role === "ADMIN" && !user.tenant.onboardingCompleted;
+    const redirect = needsOnboarding
+      ? "/onboarding"
+      : user.role === "OPERATOR"
+      ? "/patio"
+      : "/dashboard";
+
     const response = NextResponse.json({
       success: true,
-      token,
+      redirect,
       user: {
         id: user.id,
         name: user.name,

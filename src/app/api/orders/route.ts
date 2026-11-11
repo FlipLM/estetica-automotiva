@@ -125,6 +125,12 @@ export async function POST(req: NextRequest) {
     }
 
     const data = validated.data;
+    if (data.assignedUserId) {
+      const assignee = await prisma.user.findFirst({ where: { id: data.assignedUserId, tenantId, active: true }, select: { id: true } });
+      if (!assignee) {
+        return NextResponse.json({ error: "Colaborador responsável inválido." }, { status: 400 });
+      }
+    }
 
     // Se um box foi selecionado na entrada, valida sua capacidade e bloqueia se estiver cheio
     if (data.box) {

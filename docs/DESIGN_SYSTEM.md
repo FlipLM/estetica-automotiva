@@ -1,4 +1,4 @@
-# DetailPro — Clean Professional Design System
+# Vulpto — Clean Professional Design System
 
 **Versão:** 2.0.0  
 **Branch:** `design/novos-designs`  
@@ -8,7 +8,7 @@
 
 ## 1. Filosofia Visual
 
-A identidade **DetailPro — Clean Professional** foi desenhada especificamente para softwares SaaS de gestão operacional automotiva. Seus pilares são:
+A identidade **Vulpto — Clean Professional** foi desenhada especificamente para softwares SaaS de gestão operacional automotiva. Seus pilares são:
 
 1. **Predominância Clara e Alto Contraste:** Fundo geral `#F7F8F6` e superfícies `#FFFFFF`, garantindo leitura confortável tanto em escritórios administrativos quanto em tablets utilizados sob iluminação intensa de pátio/cabine de polimento.
 2. **Identidade Verde Automotiva Sofisticada:** Uso intencional do verde institucional (`#142D26` profundo e `#247653` principal) em elementos de navegação ativa, ações primárias e destaques de marca.
