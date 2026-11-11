@@ -20,7 +20,7 @@ ENV DATABASE_URL="postgresql://postgres:postgres@localhost:5432/vulpto?schema=pu
 
 RUN npx prisma generate
 RUN npm run build
-RUN npx esbuild prisma/seed.ts --platform=node --outfile=prisma/seed.js --packages=external
+RUN npx esbuild prisma/seed.ts --bundle --platform=node --outfile=prisma/seed.js --external:@prisma/client
 
 # 3. Imagem Final de Produção Standalone
 FROM base AS runner
