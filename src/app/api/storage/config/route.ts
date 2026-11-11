@@ -10,6 +10,7 @@ import {
   maskSecret,
   testStorageProviderConnection,
 } from "@/lib/cloud-storage";
+import { getTenantLocalStorageUsage } from "@/lib/storage-quota";
 
 export const dynamic = "force-dynamic";
 
@@ -79,6 +80,7 @@ export async function GET() {
     }
 
     const creds = parseStorageCredentials(tenant.storageCredentials);
+    const localUsage = await getTenantLocalStorageUsage(tenant.id);
 
     return NextResponse.json({
       config: {
@@ -90,6 +92,11 @@ export async function GET() {
         storageProvider: (tenant.storageProvider || "GOOGLE_DRIVE") as StorageProviderType,
         storageFolderId: tenant.storageFolderId || "",
         storageConnected: tenant.storageConnected,
+        localStorageUsage: {
+          percentUsed: localUsage.percentUsed,
+          isLimitReached: localUsage.isLimitReached,
+          storageConnected: tenant.storageConnected,
+        },
         credentials: {
           clientId: creds.clientId || "",
           clientSecret: maskSecret(creds.clientSecret),

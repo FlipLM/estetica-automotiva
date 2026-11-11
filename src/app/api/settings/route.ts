@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { z } from "zod";
+import { getTenantLocalStorageUsage } from "@/lib/storage-quota";
 
 export const dynamic = "force-dynamic";
 
@@ -42,7 +43,18 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Empresa não encontrada" }, { status: 404 });
     }
 
-    return NextResponse.json({ tenant });
+    const localUsage = await getTenantLocalStorageUsage(tenant.id);
+
+    return NextResponse.json({
+      tenant: {
+        ...tenant,
+        localStorageUsage: {
+          percentUsed: localUsage.percentUsed,
+          isLimitReached: localUsage.isLimitReached,
+          storageConnected: tenant.storageConnected,
+        },
+      },
+    });
   } catch (error: any) {
     console.error("Erro ao obter configurações da empresa:", error);
     return NextResponse.json({ error: "Erro interno do servidor" }, { status: 500 });

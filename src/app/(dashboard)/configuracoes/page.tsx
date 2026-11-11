@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import Link from "next/link";
 import {
   Building2,
   Save,
@@ -8,6 +9,11 @@ import {
   Car,
   Wrench,
   ClipboardList,
+  Upload,
+  Trash2,
+  Loader2,
+  HardDrive,
+  ExternalLink,
 } from "lucide-react";
 import {
   Button,
@@ -28,6 +34,12 @@ interface TenantData {
   email?: string;
   address?: string;
   logoUrl?: string;
+  storageConnected?: boolean;
+  localStorageUsage?: {
+    percentUsed: number;
+    isLimitReached: boolean;
+    storageConnected?: boolean;
+  } | null;
   _count?: {
     users: number;
     customers: number;
@@ -42,6 +54,16 @@ export default function ConfiguracoesPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [savedSuccess, setSavedSuccess] = useState(false);
+
+  // Upload da Logo & Cota
+  const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [logoUploadError, setLogoUploadError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [localUsage, setLocalUsage] = useState<{
+    percentUsed: number;
+    isLimitReached: boolean;
+    storageConnected?: boolean;
+  } | null>(null);
 
   const [form, setForm] = useState({
     name: "",
@@ -61,6 +83,9 @@ export default function ConfiguracoesPage() {
       if (res.ok) {
         const data = await res.json();
         setTenant(data.tenant);
+        if (data.tenant?.localStorageUsage) {
+          setLocalUsage(data.tenant.localStorageUsage);
+        }
         setForm({
           name: data.tenant.name || "",
           tradingName: data.tenant.tradingName || "",
@@ -76,6 +101,60 @@ export default function ConfiguracoesPage() {
       console.error("Erro ao carregar configurações:", err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadingLogo(true);
+    setLogoUploadError(null);
+
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const res = await fetch("/api/uploads", {
+        method: "POST",
+        body: formData,
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        if (res.status === 403 && data.redirectTo) {
+          setLogoUploadError(
+            data.error || "Limite de armazenamento temporário atingido (100% utilizado)."
+          );
+          if (data.percentUsed !== undefined) {
+            setLocalUsage({
+              percentUsed: data.percentUsed,
+              isLimitReached: true,
+              storageConnected: false,
+            });
+          }
+        } else {
+          setLogoUploadError(data.error || "Erro ao enviar imagem da logo.");
+        }
+        return;
+      }
+
+      setForm((prev) => ({ ...prev, logoUrl: data.url }));
+      if (data.percentUsed !== undefined) {
+        setLocalUsage({
+          percentUsed: data.percentUsed,
+          isLimitReached: !!data.isLimitReached,
+          storageConnected: false,
+        });
+      }
+    } catch (err) {
+      console.error("Erro no upload da logo:", err);
+      setLogoUploadError("Falha na comunicação com o servidor.");
+    } finally {
+      setUploadingLogo(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
     }
   };
 
@@ -223,16 +302,115 @@ export default function ConfiguracoesPage() {
             />
           </div>
 
-          <div>
-            <Input
-              label="URL da Logo da Empresa (Menu Lateral, Vistorias e Laudos PDF)"
-              placeholder="https://exemplo.com/logo.png"
-              value={form.logoUrl}
-              onChange={(e) => setForm({ ...form, logoUrl: e.target.value })}
-            />
-            <p className="text-[11px] text-[#737D75] mt-1.5">
-              <strong>Dimensão recomendada:</strong> 512x512 px (proporção quadrada 1:1, mín. 256x256 px). Formatos: PNG, JPG ou WebP.
-            </p>
+          {/* Upload de Logo da Empresa */}
+          <div className="space-y-3 pt-2">
+            <label className="block text-sm font-semibold text-[#142D26]">
+              Logo da Empresa (Menu Lateral, Vistorias e Laudos PDF)
+            </label>
+
+            {/* Aviso de Armazenamento Local Temporário e link para nuvem */}
+            {localUsage && !localUsage.storageConnected && (
+              <div
+                className={`p-3.5 rounded-xl border flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 text-xs ${
+                  localUsage.isLimitReached
+                    ? "bg-rose-50 border-rose-200 text-rose-900"
+                    : localUsage.percentUsed >= 80
+                    ? "bg-amber-50 border-amber-200 text-amber-900"
+                    : "bg-[#F4FBF7] border-[#D1E7DD] text-[#142D26]"
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  <HardDrive className="w-4 h-4 shrink-0 text-[#247653]" />
+                  <span>
+                    <strong>Armazenamento Local Temporário:</strong> {localUsage.percentUsed}% utilizado
+                  </span>
+                </div>
+                <Link
+                  href="/armazenamento"
+                  className="inline-flex items-center gap-1 font-bold text-[#247653] hover:underline shrink-0"
+                >
+                  Conectar Armazenamento em Nuvem Próprio <ExternalLink className="w-3 h-3" />
+                </Link>
+              </div>
+            )}
+
+            {logoUploadError && (
+              <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-800 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <span>{logoUploadError}</span>
+                <Link
+                  href="/armazenamento"
+                  className="px-3 py-1.5 rounded-lg bg-rose-700 text-white font-bold text-xs hover:bg-rose-800 transition shrink-0 inline-flex items-center gap-1"
+                >
+                  Conectar Nuvem Própria <ExternalLink className="w-3 h-3" />
+                </Link>
+              </div>
+            )}
+
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 p-4 rounded-xl border border-[#E7EAE7] bg-[#F9FAF9]">
+              {/* Preview da Logo */}
+              <div className="w-20 h-20 rounded-xl border border-[#E7EAE7] bg-white flex items-center justify-center overflow-hidden shrink-0 shadow-xs relative">
+                {form.logoUrl ? (
+                  <img
+                    src={form.logoUrl}
+                    alt="Logo da Empresa"
+                    className="w-full h-full object-contain p-1"
+                  />
+                ) : (
+                  <div className="flex flex-col items-center justify-center text-[#A4ADA6] p-2 text-center">
+                    <Building2 className="w-7 h-7" />
+                    <span className="text-[10px] mt-0.5">Sem logo</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Controles de Upload */}
+              <div className="space-y-2 flex-1">
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  accept="image/png,image/jpeg,image/webp"
+                  onChange={handleLogoUpload}
+                  className="hidden"
+                />
+
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={uploadingLogo}
+                    className="px-3.5 py-2 rounded-xl bg-[#247653] hover:bg-[#1E6346] text-white text-xs font-bold flex items-center gap-1.5 transition cursor-pointer disabled:opacity-50"
+                  >
+                    {uploadingLogo ? (
+                      <>
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        <span>Enviando foto...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Upload className="w-3.5 h-3.5" />
+                        <span>Selecionar Imagem</span>
+                      </>
+                    )}
+                  </button>
+
+                  {form.logoUrl && (
+                    <button
+                      type="button"
+                      onClick={() => setForm((prev) => ({ ...prev, logoUrl: "" }))}
+                      disabled={uploadingLogo}
+                      className="px-3.5 py-2 rounded-xl border border-[#D0D5DD] hover:bg-[#EAEAEA] text-[#344054] text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer"
+                    >
+                      <Trash2 className="w-3.5 h-3.5 text-rose-500" />
+                      <span>Remover</span>
+                    </button>
+                  )}
+                </div>
+
+                <p className="text-[11px] text-[#737D75]">
+                  <strong>Dimensão recomendada:</strong> 512×512 px (proporção quadrada 1:1, mín. 256×256 px). Formatos: PNG, JPG ou WebP.
+                </p>
+              </div>
+            </div>
           </div>
 
           <div className="flex justify-end pt-4 border-t border-[#E7EAE7]">

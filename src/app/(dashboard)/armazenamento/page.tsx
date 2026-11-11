@@ -214,6 +214,10 @@ export default function CloudStorageAdminPage() {
   const [adminEmail, setAdminEmail] = useState("");
   const [employeesCount, setEmployeesCount] = useState(1);
   const [storageConnected, setStorageConnected] = useState(false);
+  const [localUsage, setLocalUsage] = useState<{
+    percentUsed: number;
+    isLimitReached: boolean;
+  } | null>(null);
 
   const [selectedProvider, setSelectedProvider] =
     useState<StorageProviderType>("GOOGLE_DRIVE");
@@ -262,6 +266,9 @@ export default function CloudStorageAdminPage() {
         setSelectedProvider(cfg.storageProvider || "GOOGLE_DRIVE");
         setStorageFolderId(cfg.storageFolderId || "");
         setStorageConnected(!!cfg.storageConnected);
+        if (cfg.localStorageUsage) {
+          setLocalUsage(cfg.localStorageUsage);
+        }
         if (cfg.credentials) {
           setCreds((prev) => ({ ...prev, ...cfg.credentials }));
         }
@@ -428,6 +435,79 @@ export default function CloudStorageAdminPage() {
           Solicitar Ajuda na Configuração
         </a>
       </div>
+
+      {/* Banner de Cota de Armazenamento Local Temporário */}
+      {!storageConnected && localUsage && (
+        <div
+          className={`p-4 rounded-2xl border shadow-xs transition-all ${
+            localUsage.isLimitReached
+              ? "bg-rose-50 border-rose-200"
+              : localUsage.percentUsed >= 80
+              ? "bg-amber-50 border-amber-200"
+              : "bg-[#F4FBF7] border-[#D1E7DD]"
+          }`}
+        >
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div className="space-y-1 max-w-2xl">
+              <div className="flex items-center gap-2">
+                <HardDrive
+                  className={`w-5 h-5 shrink-0 ${
+                    localUsage.isLimitReached
+                      ? "text-rose-600"
+                      : localUsage.percentUsed >= 80
+                      ? "text-amber-600"
+                      : "text-[#247653]"
+                  }`}
+                />
+                <h3 className="text-sm font-bold text-[#142D26]">
+                  Armazenamento Local Temporário: {localUsage.percentUsed}% utilizado
+                </h3>
+                {localUsage.isLimitReached && (
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-200 text-rose-800">
+                    Limite Esgotado
+                  </span>
+                )}
+              </div>
+              <p className="text-xs text-[#526056] leading-relaxed">
+                {localUsage.isLimitReached
+                  ? "O limite do armazenamento temporário no servidor foi atingido (100% utilizado). Novos uploads de fotos de vistoria e logos estão bloqueados até a conexão de um serviço de nuvem próprio abaixo."
+                  : `Suas fotos e imagens estão sendo guardadas temporariamente no servidor local (${localUsage.percentUsed}% do limite utilizado). Para ter armazenamento definitivo e ilimitado para toda a equipe, conecte uma das opções de nuvem abaixo.`}
+              </p>
+            </div>
+
+            <div className="w-full md:w-56 shrink-0 bg-white p-3 rounded-xl border border-[#E7EAE7]">
+              <div className="flex items-center justify-between text-xs font-semibold text-[#142D26] mb-1.5">
+                <span>Limite Utilizado</span>
+                <span
+                  className={
+                    localUsage.isLimitReached
+                      ? "text-rose-600 font-bold"
+                      : localUsage.percentUsed >= 80
+                      ? "text-amber-600 font-bold"
+                      : "text-[#247653] font-bold"
+                  }
+                >
+                  {localUsage.percentUsed}%
+                </span>
+              </div>
+              <div className="w-full h-2.5 rounded-full bg-[#E7EAE7] overflow-hidden">
+                <div
+                  className={`h-full transition-all duration-500 rounded-full ${
+                    localUsage.isLimitReached
+                      ? "bg-rose-600"
+                      : localUsage.percentUsed >= 80
+                      ? "bg-amber-500"
+                      : "bg-[#247653]"
+                  }`}
+                  style={{
+                    width: `${Math.min(100, Math.max(localUsage.percentUsed, 5))}%`,
+                  }}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Explicação de Como Funciona em Equipe + Economia de MB */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

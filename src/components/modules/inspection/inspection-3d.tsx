@@ -159,7 +159,11 @@ export function Inspection3D({
         formData.append("file", compressed);
         const res = await fetch("/api/uploads", { method: "POST", body: formData });
         const data = await res.json();
-        if (res.ok && data.url) newUrls.push(data.url);
+        if (!res.ok) {
+          alert(data.error || "Erro ao enviar imagem.");
+          break;
+        }
+        if (data.url) newUrls.push(data.url);
       }
       setPendingDamage((prev) =>
         prev ? { ...prev, photos: [...prev.photos, ...newUrls] } : null
@@ -187,7 +191,11 @@ export function Inspection3D({
         formData.append("file", compressed);
         const res = await fetch("/api/uploads", { method: "POST", body: formData });
         const data = await res.json();
-        if (res.ok && data.url) newUrls.push(data.url);
+        if (!res.ok) {
+          alert(data.error || "Erro ao enviar imagem.");
+          break;
+        }
+        if (data.url) newUrls.push(data.url);
       }
       const updated = [...damages];
       const target = updated[selectedDamageIndex];

@@ -4,6 +4,7 @@ import path from "path";
 import crypto from "crypto";
 import { requireAuth, handleAuthError } from "@/lib/permissions";
 import { uploadTenantImage } from "@/lib/cloud-storage";
+import { getTenantLocalStorageUsage, LOCAL_STORAGE_LIMIT_BYTES } from "@/lib/storage-quota";
 
 export const dynamic = "force-dynamic";
 
@@ -82,13 +83,29 @@ export async function POST(req: NextRequest) {
     }
 
     // 2) Fallback temporário no disco caso a nuvem da estética ainda não tenha sido conectada
-    const uploadDir = path.join(process.cwd(), "public", "uploads");
-    await mkdir(uploadDir, { recursive: true });
-    const filepath = path.join(uploadDir, filename);
+    // Verifica o limite de cota temporária local por oficina
+    const currentUsage = await getTenantLocalStorageUsage(session.tenantId);
+    if (currentUsage.isLimitReached || currentUsage.usedBytes + buffer.length > LOCAL_STORAGE_LIMIT_BYTES) {
+      return NextResponse.json(
+        {
+          error: "Limite de armazenamento temporário atingido (100% utilizado). Conecte seu próprio armazenamento em nuvem em Configurações > Armazenamento para continuar enviando fotos ilimitadas.",
+          percentUsed: 100,
+          isLimitReached: true,
+          redirectTo: "/armazenamento",
+        },
+        { status: 403 }
+      );
+    }
+
+    const tenantUploadDir = path.join(process.cwd(), "public", "uploads", session.tenantId);
+    await mkdir(tenantUploadDir, { recursive: true });
+    const filepath = path.join(tenantUploadDir, filename);
 
     await writeFile(filepath, buffer);
 
-    const publicUrl = `/uploads/${filename}`;
+    const publicUrl = `/uploads/${session.tenantId}/${filename}`;
+    const newUsedBytes = currentUsage.usedBytes + buffer.length;
+    const newPercentUsed = Math.min(100, Math.round((newUsedBytes / LOCAL_STORAGE_LIMIT_BYTES) * 100));
 
     return NextResponse.json({
       success: true,
@@ -96,6 +113,9 @@ export async function POST(req: NextRequest) {
       filename,
       size: file.size,
       storageProvider: "LOCAL_FALLBACK",
+      percentUsed: newPercentUsed,
+      isLimitReached: newUsedBytes >= LOCAL_STORAGE_LIMIT_BYTES,
+      storageConnected: false,
     });
   } catch (error) {
     return handleAuthError(error);
