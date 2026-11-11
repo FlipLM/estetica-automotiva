@@ -83,9 +83,7 @@ export default function LoginPage() {
           <h1 className="text-[24px] font-bold tracking-tight text-[#142D26]">
             Vulpto
           </h1>
-          <p className="text-[14px] text-[#737D75] mt-1">
-            Gestão profissional para estéticas automotivas e estúdios de detailing
-          </p>
+          
         </div>
 
         {/* Card Principal */}

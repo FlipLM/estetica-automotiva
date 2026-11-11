@@ -130,8 +130,8 @@ export function VehicleSilhouette360({
         />
       ) : (
         <VehicleSilhouette2D
-          damages={damages}
-          onChange={onChange}
+          damages={damages as any}
+          onChange={onChange as any}
           readOnly={readOnly}
         />
       )}

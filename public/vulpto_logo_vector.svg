@@ -43,3 +43,4 @@
   <!-- Ponto focal central de luz especular (brilho de diamante) -->
   <line x1="50" y1="59" x2="50" y2="78" stroke="#FFFFFF" stroke-width="1" stroke-linecap="round" opacity="0.8" />
 </svg>
+

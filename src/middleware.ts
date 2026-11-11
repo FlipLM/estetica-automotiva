@@ -65,7 +65,7 @@ export async function middleware(req: NextRequest) {
   ) {
     const httpsUrl = req.nextUrl.clone();
     httpsUrl.protocol = "https:";
-    return NextResponse.redirect(httpsUrl, 308);
+    return NextResponse.redirect(httpsUrl, 301);
   }
 
   const isApi = pathname.startsWith("/api/");
