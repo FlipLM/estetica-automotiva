@@ -13,7 +13,7 @@ export async function GET(req: NextRequest) {
   const clientId = process.env.GOOGLE_CLIENT_ID;
   const secret = process.env.JWT_SECRET;
   if (!clientId || !process.env.GOOGLE_CLIENT_SECRET || !secret) {
-    return NextResponse.redirect(new URL("/login?error=google_not_configured", req.url));
+    return NextResponse.redirect(new URL("/login?error=google_not_configured", getAppOrigin(req)));
   }
 
   const state = b64url(randomBytes(24));
