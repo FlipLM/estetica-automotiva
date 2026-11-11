@@ -1,6 +1,10 @@
 import crypto from "crypto";
 import { prisma } from "./prisma";
 import { encryptSensitive, decryptSensitive } from "./crypto";
+import {
+  fetchTelegramFileQueued,
+  fetchWithTelegramBackoff,
+} from "./telegram-storage-queue";
 
 export type StorageProviderType =
   | "GOOGLE_DRIVE"
@@ -234,10 +238,13 @@ async function uploadToTelegram(
   const blob = new Blob([new Uint8Array(buffer)], { type: mimeType });
   form.append("document", blob, filename);
 
-  const res = await fetch(`https://api.telegram.org/bot${botToken}/sendDocument`, {
-    method: "POST",
-    body: form,
-  });
+  const res = await fetchWithTelegramBackoff(
+    `https://api.telegram.org/bot${botToken}/sendDocument`,
+    {
+      method: "POST",
+      body: form,
+    }
+  );
 
   if (!res.ok) {
     throw new Error(`Falha ao arquivar no Telegram da oficina (HTTP ${res.status}).`);
@@ -480,19 +487,10 @@ export async function fetchTenantCloudFile(params: {
   if (params.provider === "TELEGRAM") {
     const botToken = creds.telegramBotToken?.trim();
     if (!botToken) throw new Error("Token do Telegram ausente.");
-    const metaRes = await fetch(
-      `https://api.telegram.org/bot${botToken}/getFile?file_id=${encodeURIComponent(params.fileId)}`
-    );
-    const meta = await metaRes.json();
-    const filePath = meta?.result?.file_path;
-    if (!filePath) throw new Error("Arquivo não localizado no Telegram.");
-    const fileRes = await fetch(`https://api.telegram.org/file/bot${botToken}/${filePath}`);
-    if (!fileRes.ok) throw new Error("Falha ao baixar arquivo do Telegram.");
-    const arr = await fileRes.arrayBuffer();
-    return {
-      buffer: Buffer.from(arr),
-      contentType: fileRes.headers.get("content-type") || "image/webp",
-    };
+    return fetchTelegramFileQueued({
+      botToken,
+      fileId: params.fileId,
+    });
   }
 
   throw new Error("Download direto não suportado para este provedor.");
