@@ -8,14 +8,14 @@ echo "=========================================="
 # 1. Garante diretórios de runtime
 mkdir -p /app/public/uploads
 
-# 2. Executa migrações pendentes no PostgreSQL
+# 2. Executa migrações pendentes no PostgreSQL com fallback resiliente
 echo "=> Aplicando migrações do PostgreSQL..."
 if [ -f "./node_modules/prisma/build/index.js" ]; then
-  node ./node_modules/prisma/build/index.js migrate deploy
+  node ./node_modules/prisma/build/index.js migrate deploy || node ./node_modules/prisma/build/index.js db push --skip-generate
 elif command -v prisma >/dev/null 2>&1; then
-  prisma migrate deploy
+  prisma migrate deploy || prisma db push --skip-generate
 else
-  npx prisma migrate deploy
+  npx prisma migrate deploy || npx prisma db push --skip-generate
 fi
 
 # 3. Execução de seed controlada (ativa apenas com RUN_SEED=true ou FORCE_SEED=true)
