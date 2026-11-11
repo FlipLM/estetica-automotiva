@@ -6,6 +6,8 @@
 |---|---|:---:|
 | `/login` | Autenticação de usuários | Todos (Público) |
 | `/register` | Cadastro de nova estética (onboarding de tenant) | Todos (Público) |
+| `/esqueci-senha` | Solicitação de link para recuperação de senha | Todos (Público) |
+| `/redefinir-senha` | Definição de nova senha com token seguro de 1h | Todos (Público) |
 | `/dashboard` | Painel executivo com métricas financeiras e operacionais | `ADMIN` |
 | `/patio` | Pátio Operacional com alternador de Visão (Status Kanban vs Estações & Boxes com Drag & Drop de transferência) | `ADMIN`, `OPERATOR` |
 | `/boxes` | Gestão de Boxes, Baias e Capacidades de Vagas simultâneas da Oficina | `ADMIN`, `OPERATOR` |
@@ -32,6 +34,9 @@
 - `POST /api/auth/login` — Autentica usuário e emite Cookie HttpOnly com JWT.
 - `GET /api/auth/me` — Retorna dados da sessão do usuário conectado.
 - `POST /api/auth/logout` — Destrói a sessão e remove os cookies.
+- `POST /api/auth/forgot-password` — Solicita recuperação de senha e gera link único de 1h.
+- `POST /api/auth/reset-password` — Valida token SHA-256 e atualiza senha do usuário.
+- `GET /api/health` — Endpoint de integridade para orquestradores (Coolify/Docker) com verificação de banco.
 
 ### Clientes & Veículos
 - `GET /api/customers` — Lista clientes com contagem de veículos e serviços.

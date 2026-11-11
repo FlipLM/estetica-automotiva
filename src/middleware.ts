@@ -10,12 +10,15 @@ import { jwtVerify } from "jose";
  */
 const AUTH_COOKIE_NAME = "detailing_saas_token";
 
-const PUBLIC_PAGES = ["/login", "/register", "/gestor-master", "/vulpto_logo.png", "/brand", "/favicon.ico", "/apple-touch-icon.png"];
+const PUBLIC_PAGES = ["/login", "/register", "/esqueci-senha", "/redefinir-senha", "/gestor-master", "/vulpto_logo.png", "/brand", "/favicon.ico", "/apple-touch-icon.png"];
 const PUBLIC_API_PREFIXES = [
   "/api/auth/login",
   "/api/auth/register",
   "/api/auth/logout",
   "/api/auth/google",
+  "/api/auth/forgot-password",
+  "/api/auth/reset-password",
+  "/api/health",
   "/api/master-saas", // protegido internamente por requireMasterAuth / login master
 ];
 
@@ -112,3 +115,4 @@ export const config = {
   // Exclui apenas assets estáticos do Next e modelos 3D. Uploads (fotos de vistoria) exigem login.
   matcher: ["/((?!_next/static|_next/image|favicon.ico|apple-touch-icon.png|vulpto_logo.png|brand/|models/).*)"],
 };
+

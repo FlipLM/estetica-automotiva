@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Car, ArrowRight } from "lucide-react";
+import { ArrowRight, KeyRound } from "lucide-react";
 import { Button, Input, Alert, Card } from "@/components/ui";
 
 export default function LoginPage() {
@@ -83,7 +83,6 @@ export default function LoginPage() {
           <h1 className="text-[24px] font-bold tracking-tight text-[#142D26]">
             Vulpto
           </h1>
-          
         </div>
 
         {/* Card Principal */}
@@ -119,6 +118,14 @@ export default function LoginPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
+              rightLabel={
+                <Link
+                  href="/esqueci-senha"
+                  className="text-[12px] font-medium text-[#247653] hover:text-[#142D26] hover:underline"
+                >
+                  Esqueceu sua senha?
+                </Link>
+              }
             />
 
             <Button
@@ -138,9 +145,17 @@ export default function LoginPage() {
             <div className="h-px flex-1 bg-[#E3E7E2]" />
           </div>
 
-          <Button type="button" variant="secondary" fullWidth onClick={handleGoogle}>
-            Entrar com Google
-          </Button>
+          <div className="space-y-2">
+            <Button type="button" variant="secondary" fullWidth onClick={handleGoogle}>
+              Entrar com Google
+            </Button>
+
+            <Link href="/esqueci-senha" className="block w-full text-center">
+              <Button type="button" variant="ghost" fullWidth leftIcon={<KeyRound className="w-4 h-4 text-[#737D75]" />}>
+                Recuperar Acesso à Conta
+              </Button>
+            </Link>
+          </div>
         </Card>
 
         <p className="text-center text-[13px] text-[#737D75] mt-6">

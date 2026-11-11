@@ -70,6 +70,9 @@ const publicRoutes = new Set([
   "auth/logout/route.ts",
   "auth/google/route.ts",
   "auth/google/callback/route.ts",
+  "auth/forgot-password/route.ts",
+  "auth/reset-password/route.ts",
+  "health/route.ts",
   "master-saas/auth/route.ts",
 ]);
 

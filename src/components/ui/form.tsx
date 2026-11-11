@@ -80,6 +80,7 @@ export function FormSection({
 
 export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label?: string;
+  rightLabel?: React.ReactNode;
   description?: string;
   hint?: string;
   error?: string | null;
@@ -91,6 +92,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
   (
     {
       label,
+      rightLabel,
       description,
       hint,
       error,
@@ -134,10 +136,11 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
       </div>
     );
 
-    if (label || effectiveDescription || error) {
+    if (label || rightLabel || effectiveDescription || error) {
       return (
         <FormField
           label={label}
+          rightLabel={rightLabel}
           description={effectiveDescription}
           error={error}
           required={required}

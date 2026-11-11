@@ -4,11 +4,10 @@ WORKDIR /app
 
 # 1. Dependências
 FROM base AS deps
-ENV NODE_ENV=development
 COPY package.json package-lock.json ./
-RUN npm ci --include=dev
+RUN npm ci
 
-# 2. Build do Next.js
+# 2. Build do Next.js Standalone
 FROM base AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
@@ -16,12 +15,13 @@ COPY . .
 
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
-ENV DATABASE_URL="file:/app/data/prod.db"
+# URL padrão para validação do Prisma durante compilação
+ENV DATABASE_URL="postgresql://postgres:postgres@localhost:5432/vulpto?schema=public"
 
 RUN npx prisma generate
 RUN npm run build
 
-# 3. Imagem Final de Produção
+# 3. Imagem Final de Produção Standalone
 FROM base AS runner
 WORKDIR /app
 
@@ -29,23 +29,28 @@ ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
-ENV DATABASE_URL="file:/app/data/prod.db"
 
-# Diretórios para dados e uploads
-RUN mkdir -p /app/data /app/public/uploads
+# Usuário de sistema não-root para conformidade de segurança em containers
+RUN addgroup --system --gid 1001 nodejs && \
+    adduser --system --uid 1001 nextjs
 
+# Diretório para uploads com permissões adequadas
+RUN mkdir -p /app/public/uploads && chown -R nextjs:nodejs /app/public/uploads
+
+# Copia artefatos mínimos do standalone
 COPY --from=builder /app/public ./public
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/package.json ./package.json
-COPY --from=builder /app/.next ./.next
+COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 COPY --from=builder /app/prisma ./prisma
+COPY --from=builder /app/node_modules/prisma ./node_modules/prisma
+COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
+COPY --from=builder /app/node_modules/tsx ./node_modules/tsx
 COPY --from=builder /app/entrypoint.sh ./entrypoint.sh
 
 RUN chmod +x ./entrypoint.sh
 
-VOLUME ["/app/data", "/app/public/uploads"]
+USER nextjs
 
 EXPOSE 3000
 
 ENTRYPOINT ["./entrypoint.sh"]
-
