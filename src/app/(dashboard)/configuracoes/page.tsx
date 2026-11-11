@@ -223,12 +223,17 @@ export default function ConfiguracoesPage() {
             />
           </div>
 
-          <Input
-            label="URL da Logo da Empresa (Cabeçalho de PDF e Vistorias)"
-            placeholder="https://exemplo.com/logo.png"
-            value={form.logoUrl}
-            onChange={(e) => setForm({ ...form, logoUrl: e.target.value })}
-          />
+          <div>
+            <Input
+              label="URL da Logo da Empresa (Menu Lateral, Vistorias e Laudos PDF)"
+              placeholder="https://exemplo.com/logo.png"
+              value={form.logoUrl}
+              onChange={(e) => setForm({ ...form, logoUrl: e.target.value })}
+            />
+            <p className="text-[11px] text-[#737D75] mt-1.5">
+              <strong>Dimensão recomendada:</strong> 512x512 px (proporção quadrada 1:1, mín. 256x256 px). Formatos: PNG, JPG ou WebP.
+            </p>
+          </div>
 
           <div className="flex justify-end pt-4 border-t border-[#E7EAE7]">
             <Button

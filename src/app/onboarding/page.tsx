@@ -678,9 +678,14 @@ export default function OnboardingPage() {
 
                 {/* Upload de Logo */}
                 <div className="sm:col-span-2 p-4 rounded-2xl bg-[#F7F8F6] border border-[#E7EAE7]">
-                  <label className="block text-xs font-bold text-[#343C36] mb-2">
-                    Logomarca da sua Estética (PNG ou JPG)
-                  </label>
+                  <div className="flex flex-wrap items-center justify-between gap-1 mb-2">
+                    <label className="block text-xs font-bold text-[#343C36]">
+                      Logomarca da sua Empresa / Estética
+                    </label>
+                    <span className="text-[11px] font-semibold text-[#247653] bg-[#E9F3EC] px-2.5 py-0.5 rounded-full border border-[#247653]/20">
+                      Dimensão recomendada: 512x512 px (1:1)
+                    </span>
+                  </div>
                   <div className="flex items-center gap-4">
                     {logoUrl ? (
                       <div className="relative w-20 h-20 rounded-xl border border-[#E7EAE7] bg-white overflow-hidden p-1 flex items-center justify-center shrink-0">
@@ -738,9 +743,14 @@ export default function OnboardingPage() {
                         )}
                       </div>
 
-                      <p className="text-[11px] text-[#737D75]">
-                        Sua marca sairá com destaque nos laudos PDF gerados para os seus clientes.
-                      </p>
+                      <div className="space-y-1">
+                        <p className="text-[11px] text-[#252B27] font-medium">
+                          <strong>Dimensão ideal:</strong> Proporção quadrada 1:1 (recomendado: <strong>512x512 px</strong>, mínimo: 256x256 px). Formatos: PNG, JPG ou WebP (máx. 2MB).
+                        </p>
+                        <p className="text-[11px] text-[#737D75]">
+                          Sua marca será exibida no menu lateral do painel e com destaque no cabeçalho das ordens de serviço e laudos PDF.
+                        </p>
+                      </div>
                     </div>
                   </div>
                 </div>

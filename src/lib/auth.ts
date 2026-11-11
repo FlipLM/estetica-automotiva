@@ -19,6 +19,7 @@ export interface SessionPayload {
   name: string;
   role: "ADMIN" | "OPERATOR";
   tenantName?: string;
+  tenantLogo?: string | null;
   plan?: string;
   trialExpiresAt?: string | null;
   isTrialExpired?: boolean;
@@ -76,6 +77,7 @@ export async function getSession(): Promise<SessionPayload | null> {
           select: {
             name: true,
             tradingName: true,
+            logoUrl: true,
             plan: true,
             trialExpiresAt: true,
             active: true,
@@ -102,6 +104,7 @@ export async function getSession(): Promise<SessionPayload | null> {
       name: user.name,
       role: user.role as "ADMIN" | "OPERATOR",
       tenantName: tenant.tradingName || tenant.name,
+      tenantLogo: tenant.logoUrl || null,
       plan: tenant.plan,
       trialExpiresAt: tenant.trialExpiresAt?.toISOString() || null,
       isTrialExpired,

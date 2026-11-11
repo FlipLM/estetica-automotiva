@@ -27,7 +27,7 @@ export default async function DashboardLayout({
   return (
     <div className="min-h-screen flex bg-[#F7F8F6] text-[#252B27] antialiased overflow-x-hidden w-full max-w-full print:bg-white print:overflow-visible print:min-h-0 print:block">
       {/* Barra Lateral Desktop & Navegação Mobile */}
-      <Sidebar role={session.role} tenantName={session.tenantName} />
+      <Sidebar role={session.role} tenantName={session.tenantName} tenantLogo={session.tenantLogo} />
 
       {/* Área Principal de Conteúdo */}
       <div className="flex-1 flex flex-col min-w-0 max-w-full overflow-x-hidden print:overflow-visible print:block print:w-full print:max-w-none">

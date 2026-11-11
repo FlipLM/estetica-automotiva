@@ -34,6 +34,7 @@ import { cn } from "@/lib/utils";
 interface SidebarProps {
   role: "ADMIN" | "OPERATOR";
   tenantName?: string;
+  tenantLogo?: string | null;
 }
 
 interface NavItem {
@@ -48,7 +49,7 @@ interface NavGroup {
   items: NavItem[];
 }
 
-export function Sidebar({ role, tenantName }: SidebarProps) {
+export function Sidebar({ role, tenantName, tenantLogo }: SidebarProps) {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -244,8 +245,22 @@ export function Sidebar({ role, tenantName }: SidebarProps) {
             href={role === "ADMIN" ? "/dashboard" : "/patio"}
             className="flex items-center gap-2.5 min-w-0"
           >
-            <div className="w-9 h-9 rounded-[10px] bg-[#142D26] flex items-center justify-center text-white shrink-0 shadow-xs">
-              <Car className="w-5 h-5 text-[#E9F3EC]" />
+            <div className="w-9 h-9 rounded-[10px] bg-[#0B0F0D] border border-[#247653]/30 flex items-center justify-center overflow-hidden shrink-0 shadow-xs p-1">
+              {tenantLogo ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={tenantLogo}
+                  alt={tenantName || "Logo"}
+                  className="w-full h-full object-contain rounded-[6px]"
+                />
+              ) : (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src="/vulpto_logo.png"
+                  alt="Vulpto"
+                  className="w-full h-full object-contain"
+                />
+              )}
             </div>
             {!collapsed && (
               <div className="min-w-0">
@@ -489,8 +504,22 @@ export function Sidebar({ role, tenantName }: SidebarProps) {
           <div className="w-[300px] max-w-[85vw] bg-white h-full shadow-modal flex flex-col animate-in slide-in-from-left duration-200">
             <div className="h-16 px-4 border-b border-[#E7EAE7] flex items-center justify-between shrink-0">
               <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-xl bg-[#142D26] flex items-center justify-center text-white shadow-xs">
-                  <Car className="w-5 h-5 text-[#A7F3D0]" />
+                <div className="w-9 h-9 rounded-xl bg-[#0B0F0D] border border-[#247653]/30 flex items-center justify-center overflow-hidden shrink-0 shadow-xs p-1">
+                  {tenantLogo ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={tenantLogo}
+                      alt={tenantName || "Logo"}
+                      className="w-full h-full object-contain rounded-lg"
+                    />
+                  ) : (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src="/vulpto_logo.png"
+                      alt="Vulpto"
+                      className="w-full h-full object-contain"
+                    />
+                  )}
                 </div>
                 <div>
                   <span className="font-bold text-[16px] text-[#142D26] block leading-none">
