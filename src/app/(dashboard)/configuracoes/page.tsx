@@ -23,6 +23,7 @@ import {
   LoadingState,
   Input,
 } from "@/components/ui";
+import { compressLogoImage } from "@/lib/image-compressor";
 
 interface TenantData {
   id: string;
@@ -54,6 +55,7 @@ export default function ConfiguracoesPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [savedSuccess, setSavedSuccess] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   // Upload da Logo & Cota
   const [uploadingLogo, setUploadingLogo] = useState(false);
@@ -112,8 +114,12 @@ export default function ConfiguracoesPage() {
     setLogoUploadError(null);
 
     try {
+      // Comprime a logomarca no navegador (512x512 WebP, ~20KB a 40KB)
+      // Evita sobrecarregar a cota de armazenamento com arquivos pesados de câmeras
+      const compressedFile = await compressLogoImage(file);
+
       const formData = new FormData();
-      formData.append("file", file);
+      formData.append("file", compressedFile);
 
       const res = await fetch("/api/uploads", {
         method: "POST",
@@ -166,6 +172,8 @@ export default function ConfiguracoesPage() {
     e.preventDefault();
     setSaving(true);
     setSavedSuccess(false);
+    setSaveError(null);
+
     try {
       const res = await fetch("/api/settings", {
         method: "PUT",
@@ -173,17 +181,18 @@ export default function ConfiguracoesPage() {
         body: JSON.stringify(form),
       });
 
+      const data = await res.json();
+
       if (res.ok) {
         setSavedSuccess(true);
         setTimeout(() => setSavedSuccess(false), 4000);
         await fetchTenant();
       } else {
-        const data = await res.json();
-        alert(data.error || "Erro ao atualizar configurações");
+        setSaveError(data.error || "Erro ao atualizar configurações da empresa.");
       }
     } catch (err) {
       console.error(err);
-      alert("Falha de conexão com o servidor");
+      setSaveError("Falha de conexão com o servidor.");
     } finally {
       setSaving(false);
     }
@@ -205,6 +214,14 @@ export default function ConfiguracoesPage() {
           variant="success"
           title="Informações salvas com sucesso!"
           description="Os dados da sua estética foram atualizados em todo o sistema."
+        />
+      )}
+
+      {saveError && (
+        <Alert
+          variant="error"
+          title="Não foi possível salvar as alterações"
+          description={saveError}
         />
       )}
 

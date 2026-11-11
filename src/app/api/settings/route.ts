@@ -2,19 +2,42 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { z } from "zod";
-import { getTenantLocalStorageUsage } from "@/lib/storage-quota";
+import { getTenantLocalStorageUsage, safeDeleteLocalTenantFile } from "@/lib/storage-quota";
 
 export const dynamic = "force-dynamic";
 
+const optionalText = z
+  .string()
+  .nullish()
+  .transform((val) => {
+    if (!val || val.trim() === "") return null;
+    return val.trim();
+  });
+
+const optionalEmail = z
+  .string()
+  .nullish()
+  .transform((val) => {
+    if (!val || val.trim() === "") return null;
+    return val.trim();
+  })
+  .refine(
+    (val) => !val || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val),
+    "E-mail de contato informado é inválido"
+  );
+
 const updateTenantSchema = z.object({
-  name: z.string().min(2, "Nome da empresa é obrigatório"),
-  tradingName: z.string().nullable().optional(),
-  document: z.string().nullable().optional(),
-  phone: z.string().nullable().optional(),
-  whatsapp: z.string().nullable().optional(),
-  email: z.string().email().nullable().optional(),
-  address: z.string().nullable().optional(),
-  logoUrl: z.string().nullable().optional(),
+  name: z
+    .string()
+    .trim()
+    .min(2, "Razão Social / Nome da empresa deve ter pelo menos 2 caracteres"),
+  tradingName: optionalText,
+  document: optionalText,
+  phone: optionalText,
+  whatsapp: optionalText,
+  email: optionalEmail,
+  address: optionalText,
+  logoUrl: optionalText,
 });
 
 export async function GET(request: NextRequest) {
@@ -75,21 +98,40 @@ export async function PUT(request: NextRequest) {
     const body = await request.json();
     const validated = updateTenantSchema.parse(body);
 
+    // Se o logo mudou ou foi removido, limpa o arquivo antigo local para liberar cota
+    const existing = await prisma.tenant.findUnique({
+      where: { id: session.tenantId },
+      select: { logoUrl: true },
+    });
+
+    if (existing?.logoUrl && existing.logoUrl !== validated.logoUrl) {
+      await safeDeleteLocalTenantFile(session.tenantId, existing.logoUrl);
+    }
+
     const updated = await prisma.tenant.update({
       where: { id: session.tenantId },
       data: validated,
     });
 
+    const localUsage = await getTenantLocalStorageUsage(session.tenantId);
+
     return NextResponse.json({
       message: "Configurações da empresa atualizadas com sucesso",
-      tenant: updated,
+      tenant: {
+        ...updated,
+        localStorageUsage: {
+          percentUsed: localUsage.percentUsed,
+          isLimitReached: localUsage.isLimitReached,
+          storageConnected: updated.storageConnected,
+        },
+      },
     });
   } catch (error: any) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: "Dados inválidos", details: error.errors }, { status: 400 });
+      const msg = error.errors[0]?.message || "Dados inválidos no formulário.";
+      return NextResponse.json({ error: msg, details: error.errors }, { status: 400 });
     }
     console.error("Erro ao atualizar configurações:", error);
     return NextResponse.json({ error: "Erro interno do servidor" }, { status: 500 });
   }
 }
-

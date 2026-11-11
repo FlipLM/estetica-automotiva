@@ -1,4 +1,4 @@
-import { readdir, stat, mkdir } from "fs/promises";
+import { readdir, stat, mkdir, unlink } from "fs/promises";
 import path from "path";
 
 /**
@@ -13,6 +13,29 @@ export interface LocalStorageUsage {
   percentUsed: number;
   isLimitReached: boolean;
   fileCount: number;
+}
+
+/**
+ * Remove com segurança um arquivo local de uma oficina, liberando espaço da cota.
+ */
+export async function safeDeleteLocalTenantFile(
+  tenantId: string,
+  fileUrl?: string | null
+): Promise<void> {
+  if (!tenantId || !fileUrl || !fileUrl.startsWith(`/uploads/${tenantId}/`)) {
+    return;
+  }
+
+  try {
+    const filename = path.basename(fileUrl);
+    if (filename.includes("..") || filename.includes("/") || filename.includes("\\")) {
+      return;
+    }
+    const filePath = path.join(process.cwd(), "public", "uploads", tenantId, filename);
+    await unlink(filePath);
+  } catch {
+    // Arquivo pode já não existir ou ter sido removido
+  }
 }
 
 export async function getTenantLocalStorageUsage(tenantId: string): Promise<LocalStorageUsage> {
@@ -60,3 +83,4 @@ export async function getTenantLocalStorageUsage(tenantId: string): Promise<Loca
     fileCount,
   };
 }
+

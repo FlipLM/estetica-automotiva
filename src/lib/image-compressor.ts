@@ -1,24 +1,63 @@
 /**
- * Utilitário Client-Side de Compressão Inteligente de Imagens para Vistorias
- * Redimensiona para no máximo 1600px e converte para WebP (qualidade 0.82),
- * reduzindo fotos de 4MB~8MB da câmera do celular para ~150KB~220KB (~0,20 MB)
- * sem perder nitidez de riscos, amassados e detalhes de pintura.
+ * Utilitário Client-Side de Compressão Inteligente de Imagens
+ * Reduz fotos pesadas de celulares (4MB~10MB) para WebP leve (~80KB~180KB),
+ * e logos para no máximo 512px (~20KB~40KB), economizando o armazenamento
+ * temporário e acelerando o carregamento dos laudos e vistoria.
+ */
+
+/**
+ * Comprime fotografias da vistoria automotiva (riscos, amassados, pintura).
+ * Redimensiona para no máximo 1280px e converte para WebP (0.78),
+ * reduzindo fotos de 4MB~8MB para ~90KB~140KB sem perder nitidez.
  */
 export async function compressInspectionImage(
   file: File,
-  maxWidth = 1600,
-  maxHeight = 1600,
-  quality = 0.82
+  maxWidth = 1280,
+  maxHeight = 1280,
+  quality = 0.78
 ): Promise<File> {
   if (typeof window === "undefined" || !file.type.startsWith("image/")) {
     return file;
   }
 
-  // Se já for uma imagem pequena (< 220 KB), envia direto
-  if (file.size <= 220 * 1024 && file.type === "image/webp") {
+  // Se já for WebP muito leve (< 120 KB), envia direto
+  if (file.size <= 120 * 1024 && file.type === "image/webp") {
     return file;
   }
 
+  return processCanvasCompression(file, maxWidth, maxHeight, quality, "vistoria");
+}
+
+/**
+ * Comprime a logomarca da empresa para o menu lateral e laudos em PDF.
+ * Redimensiona para no máximo 512x512px e converte para WebP mantendo
+ * suporte a transparência (canal alfa), reduzindo imagens de até 8MB
+ * para ínfimos ~20KB a 40KB (< 0.1% do limite).
+ */
+export async function compressLogoImage(
+  file: File,
+  maxDimension = 512,
+  quality = 0.85
+): Promise<File> {
+  if (typeof window === "undefined" || !file.type.startsWith("image/")) {
+    return file;
+  }
+
+  // Se já for WebP super leve (< 40 KB), envia direto
+  if (file.size <= 40 * 1024 && file.type === "image/webp") {
+    return file;
+  }
+
+  return processCanvasCompression(file, maxDimension, maxDimension, quality, "logo");
+}
+
+function processCanvasCompression(
+  file: File,
+  maxWidth: number,
+  maxHeight: number,
+  quality: number,
+  prefix: string
+): Promise<File> {
   return new Promise((resolve) => {
     const img = new Image();
     const objectUrl = URL.createObjectURL(file);
@@ -51,8 +90,8 @@ export async function compressInspectionImage(
             resolve(file);
             return;
           }
-          const baseName = file.name.replace(/\.[^/.]+$/, "");
-          const compressedFile = new File([blob], `${baseName}.webp`, {
+          const baseName = file.name.replace(/\.[^/.]+$/, "").replace(/[^a-zA-Z0-9_-]/g, "_");
+          const compressedFile = new File([blob], `${prefix}_${baseName}.webp`, {
             type: "image/webp",
             lastModified: Date.now(),
           });
@@ -71,4 +110,3 @@ export async function compressInspectionImage(
     img.src = objectUrl;
   });
 }
-

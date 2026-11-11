@@ -21,6 +21,7 @@ import {
   Tag,
   SkipForward,
 } from "lucide-react";
+import { compressLogoImage } from "@/lib/image-compressor";
 
 interface BoxItem {
   name: string;
@@ -287,8 +288,9 @@ export default function OnboardingPage() {
     setError(null);
 
     try {
+      const compressed = await compressLogoImage(file);
       const formData = new FormData();
-      formData.append("file", file);
+      formData.append("file", compressed);
 
       const res = await fetch("/api/uploads", {
         method: "POST",
