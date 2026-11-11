@@ -20,6 +20,7 @@ ENV DATABASE_URL="postgresql://postgres:postgres@localhost:5432/vulpto?schema=pu
 
 RUN npx prisma generate
 RUN npm run build
+RUN npx esbuild prisma/seed.ts --platform=node --outfile=prisma/seed.js --packages=external
 
 # 3. Imagem Final de Produção Standalone
 FROM base AS runner
@@ -44,7 +45,6 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/node_modules/prisma ./node_modules/prisma
 COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
-COPY --from=builder /app/node_modules/tsx ./node_modules/tsx
 COPY --from=builder /app/entrypoint.sh ./entrypoint.sh
 
 RUN chmod +x ./entrypoint.sh
