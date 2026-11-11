@@ -55,11 +55,12 @@ export default function RegisterPage() {
     <div className="min-h-screen flex items-center justify-center p-4 bg-[#F7F8F6] text-[#252B27]">
       <div className="w-full max-w-lg">
         <div className="text-center mb-6">
-          <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-[#247653] text-white shadow-sm mb-3">
-            <Car className="w-6 h-6 text-white" />
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-[#0F1E1A] mb-3 shadow-md overflow-hidden p-1.5 border border-[#247653]/30">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/vulpto_logo.png" alt="Vulpto Logo" className="w-full h-full object-contain drop-shadow" />
           </div>
           <h1 className="text-[22px] font-bold tracking-tight text-[#252B27]">
-            Cadastre sua Estética Automotiva
+            Cadastre sua Empresa
           </h1>
           <p className="text-xs text-[#737D75] mt-1">
             Crie a conta da sua empresa e comece a operar hoje mesmo

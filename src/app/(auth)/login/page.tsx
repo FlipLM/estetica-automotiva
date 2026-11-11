@@ -76,8 +76,9 @@ export default function LoginPage() {
       <div className="w-full max-w-[420px]">
         {/* Cabeçalho da Marca */}
         <div className="text-center mb-7">
-          <div className="inline-flex items-center justify-center w-12 h-12 rounded-[12px] bg-[#142D26] mb-3.5 shadow-sm">
-            <Car className="w-6 h-6 text-[#E9F3EC]" />
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-[#0F1E1A] mb-3.5 shadow-md overflow-hidden p-1.5 border border-[#247653]/30">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/vulpto_logo.png" alt="Vulpto Logo" className="w-full h-full object-contain drop-shadow" />
           </div>
           <h1 className="text-[24px] font-bold tracking-tight text-[#142D26]">
             Vulpto
@@ -150,7 +151,7 @@ export default function LoginPage() {
             href="/register"
             className="text-[#247653] hover:text-[#142D26] font-semibold underline underline-offset-4"
           >
-            Cadastrar minha estética
+            Cadastrar minha empresa
           </Link>
         </p>
       </div>
