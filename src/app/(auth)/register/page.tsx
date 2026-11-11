@@ -55,9 +55,9 @@ export default function RegisterPage() {
     <div className="min-h-screen flex items-center justify-center p-4 bg-[#F7F8F6] text-[#252B27]">
       <div className="w-full max-w-lg">
         <div className="text-center mb-6">
-          <div className="inline-flex items-center justify-center w-full max-w-[280px] h-[78px] rounded-2xl bg-[#090D0B] mb-3 shadow-lg overflow-hidden border border-[#247653]/30 p-1">
+          <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-[#0B0F0D] mb-3 shadow-lg overflow-hidden border border-[#247653]/30 p-1">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/vulpto_full_logo.png" alt="Vulpto Automotive Detailing" className="w-full h-full object-cover rounded-xl" />
+            <img src="/vulpto_logo.png" alt="Vulpto Logo" className="w-full h-full object-contain rounded-xl" />
           </div>
           <h1 className="text-[20px] font-bold tracking-tight text-[#252B27]">
             Cadastre sua Empresa
