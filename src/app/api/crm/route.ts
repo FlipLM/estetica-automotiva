@@ -2,12 +2,116 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin, handleAuthError } from "@/lib/permissions";
 import { extractValidWhatsAppDigits } from "@/lib/phone";
+import { parseRangeEnd, parseRangeStart } from "@/lib/date-utils";
 
 export const dynamic = "force-dynamic";
 
 const MS_PER_DAY = 1000 * 60 * 60 * 24;
 const COATING_KEYWORD_REGEX =
   /vitrifica|ppf|ceramic|cerâmic|selante|coating|cristaliza/i;
+
+export type CrmPeriod =
+  | "7d"
+  | "30d"
+  | "60d"
+  | "90d"
+  | "month"
+  | "all"
+  | "custom";
+
+const VALID_PERIODS = new Set<CrmPeriod>([
+  "7d",
+  "30d",
+  "60d",
+  "90d",
+  "month",
+  "all",
+  "custom",
+]);
+
+function resolveRoiRange(params: {
+  periodParam: string | null;
+  startDateParam: string | null;
+  endDateParam: string | null;
+  now: Date;
+}): {
+  period: CrmPeriod;
+  roiStart: Date | null;
+  roiEnd: Date;
+  periodLabel: string;
+} {
+  const { periodParam, startDateParam, endDateParam, now } = params;
+  const rawPeriod = (periodParam || "30d").toLowerCase() as CrmPeriod;
+  const period: CrmPeriod = VALID_PERIODS.has(rawPeriod) ? rawPeriod : "30d";
+
+  if (period === "custom" || startDateParam || endDateParam) {
+    const start = startDateParam ? parseRangeStart(startDateParam) : null;
+    const end = endDateParam ? parseRangeEnd(endDateParam) : new Date(now);
+    if (start && start.getTime() > end.getTime()) {
+      throw new Error("A data inicial do intervalo deve ser anterior à data final.");
+    }
+    const fmt = (d: Date) =>
+      `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}`;
+    const label =
+      start && endDateParam
+        ? `${fmt(start)}–${fmt(end)}`
+        : start
+        ? `Desde ${fmt(start)}`
+        : `Até ${fmt(end)}`;
+    return {
+      period: "custom",
+      roiStart: start,
+      roiEnd: end,
+      periodLabel: label,
+    };
+  }
+
+  switch (period) {
+    case "7d":
+      return {
+        period,
+        roiStart: new Date(now.getTime() - 7 * MS_PER_DAY),
+        roiEnd: now,
+        periodLabel: "7d",
+      };
+    case "60d":
+      return {
+        period,
+        roiStart: new Date(now.getTime() - 60 * MS_PER_DAY),
+        roiEnd: now,
+        periodLabel: "60d",
+      };
+    case "90d":
+      return {
+        period,
+        roiStart: new Date(now.getTime() - 90 * MS_PER_DAY),
+        roiEnd: now,
+        periodLabel: "90d",
+      };
+    case "month":
+      return {
+        period,
+        roiStart: new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0),
+        roiEnd: now,
+        periodLabel: "Mês atual",
+      };
+    case "all":
+      return {
+        period,
+        roiStart: null,
+        roiEnd: now,
+        periodLabel: "Total",
+      };
+    case "30d":
+    default:
+      return {
+        period: "30d",
+        roiStart: new Date(now.getTime() - 30 * MS_PER_DAY),
+        roiEnd: now,
+        periodLabel: "30d",
+      };
+  }
+}
 
 export type CrmFilter =
   | "TODAY"
@@ -106,7 +210,50 @@ export async function GET(req: NextRequest) {
 
     const now = new Date();
     const days45Ago = new Date(now.getTime() - 45 * MS_PER_DAY);
-    const days30Ago = new Date(now.getTime() - 30 * MS_PER_DAY);
+
+    const rawChurnDays = parseInt(searchParams.get("churnDays") || "45", 10);
+    const churnDays =
+      Number.isFinite(rawChurnDays) && rawChurnDays >= 7 && rawChurnDays <= 365
+        ? rawChurnDays
+        : 45;
+
+    let roiRange: ReturnType<typeof resolveRoiRange>;
+    let visitStart: Date | null = null;
+    let visitEnd: Date | null = null;
+
+    try {
+      roiRange = resolveRoiRange({
+        periodParam: searchParams.get("period"),
+        startDateParam: searchParams.get("startDate"),
+        endDateParam: searchParams.get("endDate"),
+        now,
+      });
+
+      const rawVisitStart = searchParams.get("visitStartDate");
+      const rawVisitEnd = searchParams.get("visitEndDate");
+      if (rawVisitStart) visitStart = parseRangeStart(rawVisitStart);
+      if (rawVisitEnd) visitEnd = parseRangeEnd(rawVisitEnd);
+      if (visitStart && visitEnd && visitStart.getTime() > visitEnd.getTime()) {
+        throw new Error(
+          "A data inicial da última visita deve ser anterior à data final."
+        );
+      }
+    } catch (dateErr: unknown) {
+      return NextResponse.json(
+        {
+          error:
+            dateErr instanceof Error ? dateErr.message : "Intervalo de datas inválido.",
+        },
+        { status: 400 }
+      );
+    }
+
+    const { roiStart, roiEnd, period: activePeriod, periodLabel } = roiRange;
+
+    // Para atribuir ROI dentro do intervalo escolhido, precisamos também de contatos enviados até 14d antes do início
+    const roiContactLowerBound = roiStart
+      ? new Date(Math.min(days45Ago.getTime(), roiStart.getTime() - 14 * MS_PER_DAY))
+      : null;
 
     const [tenant, customers, contactLogs] = await Promise.all([
       prisma.tenant.findUnique({
@@ -184,10 +331,14 @@ export async function GET(req: NextRequest) {
       prisma.crmContactLog.findMany({
         where: {
           tenantId,
-          OR: [
-            { createdAt: { gte: days45Ago } },
-            { snoozeUntil: { gt: now } },
-          ],
+          ...(roiContactLowerBound
+            ? {
+                OR: [
+                  { createdAt: { gte: roiContactLowerBound } },
+                  { snoozeUntil: { gt: now } },
+                ],
+              }
+            : {}),
         },
         orderBy: { createdAt: "desc" },
       }),
@@ -281,10 +432,12 @@ export async function GET(req: NextRequest) {
         )
         .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
 
-      // Registra OS pagas dos últimos 30 dias para apuração de ROI
+      // Registra OS pagas dentro do intervalo selecionado para apuração de ROI
       for (const po of paidOrders) {
         const refDate = po.paidAt ?? getOrderVisitDate(po);
-        if (refDate.getTime() >= days30Ago.getTime()) {
+        const afterStart = !roiStart || refDate.getTime() >= roiStart.getTime();
+        const beforeEnd = refDate.getTime() <= roiEnd.getTime();
+        if (afterStart && beforeEnd) {
           paidOrderForRoiMap.set(po.id, {
             customerId: c.id,
             totalAmount: po.totalAmount,
@@ -373,7 +526,7 @@ export async function GET(req: NextRequest) {
       const isChurnRisk = Boolean(
         ordersCount > 0 &&
           daysSinceLastVisit !== null &&
-          daysSinceLastVisit >= 45
+          daysSinceLastVisit >= churnDays
       );
       const isPostSale = Boolean(
         ordersCount > 0 &&
@@ -647,13 +800,24 @@ export async function GET(req: NextRequest) {
       };
     });
 
-    // Passo 4: Calcular ROI dos últimos 30 dias (OS pagas até 14 dias após contato SENT)
-    const sentLogsLast45d = contactLogs.filter((l) => l.outcome === "SENT");
+    // Passo 4: Calcular ROI e contatos dentro do intervalo de data selecionado
+    const sentLogsInRoiWindow = contactLogs.filter((l) => {
+      if (l.outcome !== "SENT") return false;
+      const t = l.createdAt.getTime();
+      const afterStart = !roiStart || t >= roiStart.getTime();
+      const beforeEnd = t <= roiEnd.getTime();
+      return afterStart && beforeEnd;
+    });
+
+    const sentLogsForAttribution = contactLogs.filter(
+      (l) => l.outcome === "SENT" && l.createdAt.getTime() <= roiEnd.getTime()
+    );
+
     let roi30dRevenue = 0;
     let roi30dOrdersCount = 0;
 
     paidOrderForRoiMap.forEach((orderInfo) => {
-      const hasAttributableContact = sentLogsLast45d.some((log) => {
+      const hasAttributableContact = sentLogsForAttribution.some((log) => {
         if (log.customerId !== orderInfo.customerId) return false;
         const diffMs = orderInfo.paidAt.getTime() - log.createdAt.getTime();
         return diffMs >= 0 && diffMs <= 14 * MS_PER_DAY;
@@ -664,6 +828,18 @@ export async function GET(req: NextRequest) {
         roi30dOrdersCount += 1;
       }
     });
+
+    // Filtro opcional por intervalo da última visita (De / Até) mantendo consistência 100% entre cards e tabela
+    const scopedCustomers =
+      visitStart || visitEnd
+        ? enriched.filter((c) => {
+            if (!c.lastVisitAt) return false;
+            const visitMs = new Date(c.lastVisitAt).getTime();
+            if (visitStart && visitMs < visitStart.getTime()) return false;
+            if (visitEnd && visitMs > visitEnd.getTime()) return false;
+            return true;
+          })
+        : enriched;
 
     // Passo 5: Selecionar listas por segmento respeitando `hideContacted`
     const matchesSegment = (
@@ -721,7 +897,7 @@ export async function GET(req: NextRequest) {
     };
 
     const countSegment = (seg: CrmFilter) =>
-      enriched.filter((item) => {
+      scopedCustomers.filter((item) => {
         const { matches, suppressed } = matchesSegment(item, seg);
         if (!matches) return false;
         if (hideContacted && suppressed) return false;
@@ -729,7 +905,7 @@ export async function GET(req: NextRequest) {
       }).length;
 
     const summary = {
-      totalCustomers: enriched.length,
+      totalCustomers: scopedCustomers.length,
       totalRevenue: totalTenantRevenue,
       todayCount: countSegment("TODAY"),
       budgetRecoveryCount: countSegment("BUDGET_RECOVERY"),
@@ -738,17 +914,18 @@ export async function GET(req: NextRequest) {
       postSaleCount: countSegment("POST_SALE"),
       rainyDayCount: countSegment("RAINY_DAY"),
       birthdayCount: countSegment("BIRTHDAY"),
-      vipCount: enriched.filter((c) => c.abcClass === "A").length,
-      allCount: enriched.length,
-      contactedLast30Days: sentLogsLast45d.filter(
-        (l) => l.createdAt.getTime() >= days30Ago.getTime()
-      ).length,
+      vipCount: scopedCustomers.filter((c) => c.abcClass === "A").length,
+      allCount: scopedCustomers.length,
+      contactedLast30Days: sentLogsInRoiWindow.length,
       roi30dRevenue: roundMoney(roi30dRevenue),
       roi30dOrdersCount,
+      period: activePeriod,
+      periodLabel,
+      churnDays,
     };
 
     // Passo 6: Filtrar lista da aba selecionada + busca textual `q` + ordenação + paginação
-    let filtered = enriched
+    let filtered = scopedCustomers
       .map((item) => {
         const { matches, suppressed } = matchesSegment(item, filter);
         return { item, matches, suppressed };

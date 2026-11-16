@@ -96,7 +96,7 @@ export function CrmSummaryCards({
         }`}
       >
         <div className="flex items-center justify-between text-xs font-semibold text-[#991B1B]">
-          <span>Sumidos (+45 dias)</span>
+          <span>Sumidos (+{summary.churnDays ?? 45} dias)</span>
           <UserX className="w-4 h-4 text-[#DC4C4C]" />
         </div>
         <p className="text-2xl font-bold text-[#252B27] mt-1.5">
@@ -109,7 +109,7 @@ export function CrmSummaryCards({
 
       <div className="p-4 rounded-xl border border-[#C6E5D3] bg-[#F4FBF7]">
         <div className="flex items-center justify-between text-xs font-semibold text-[#142D26]">
-          <span>Retorno Gerado (30d)</span>
+          <span>Retorno Gerado ({summary.periodLabel || "30d"})</span>
           <TrendingUp className="w-4 h-4 text-[#247653]" />
         </div>
         <p className="text-2xl font-bold text-[#247653] mt-1.5">

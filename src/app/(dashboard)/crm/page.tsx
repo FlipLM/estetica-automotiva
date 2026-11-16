@@ -13,7 +13,10 @@ import {
   Crown,
   Users,
   RefreshCw,
+  Calendar,
+  X,
 } from "lucide-react";
+import { formatDateInputValue } from "@/lib/date-utils";
 import {
   PageHeader,
   Alert,
@@ -30,6 +33,7 @@ import { CrmWhatsAppModal } from "@/components/modules/crm/crm-whatsapp-modal";
 import {
   type CrmCustomer,
   type CrmPagination,
+  type CrmPeriod,
   type CrmSegment,
   type CrmSummary,
   type CrmTenantInfo,
@@ -124,6 +128,16 @@ export default function CrmRetentionPage() {
   const [hideContacted, setHideContacted] = useState(true);
   const [page, setPage] = useState(1);
 
+  // Filtros de intervalo de datas (Retorno Gerado / Sumidos / Última Visita)
+  const [period, setPeriod] = useState<CrmPeriod>("30d");
+  const [startDate, setStartDate] = useState(() =>
+    formatDateInputValue(new Date(Date.now() - 30 * 24 * 60 * 60 * 1000))
+  );
+  const [endDate, setEndDate] = useState(() => formatDateInputValue(new Date()));
+  const [churnDays, setChurnDays] = useState<number>(45);
+  const [visitStartDate, setVisitStartDate] = useState("");
+  const [visitEndDate, setVisitEndDate] = useState("");
+
   const [loading, setLoading] = useState(true);
   const [forbidden, setForbidden] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -164,9 +178,21 @@ export default function CrmRetentionPage() {
         page: String(page),
         limit: "25",
         hideContacted: String(hideContacted),
+        period,
+        churnDays: String(churnDays),
       });
       if (debouncedQuery) {
         params.set("q", debouncedQuery);
+      }
+      if (period === "custom") {
+        if (startDate) params.set("startDate", startDate);
+        if (endDate) params.set("endDate", endDate);
+      }
+      if (visitStartDate) {
+        params.set("visitStartDate", visitStartDate);
+      }
+      if (visitEndDate) {
+        params.set("visitEndDate", visitEndDate);
       }
 
       const res = await fetch(`/api/crm?${params.toString()}`);
@@ -196,7 +222,18 @@ export default function CrmRetentionPage() {
     } finally {
       setLoading(false);
     }
-  }, [activeTab, debouncedQuery, hideContacted, page]);
+  }, [
+    activeTab,
+    debouncedQuery,
+    hideContacted,
+    page,
+    period,
+    startDate,
+    endDate,
+    churnDays,
+    visitStartDate,
+    visitEndDate,
+  ]);
 
   useEffect(() => {
     loadCrmData();
@@ -299,7 +336,11 @@ export default function CrmRetentionPage() {
                 }`}
               >
                 {tab.icon}
-                <span>{tab.label}</span>
+                <span>
+                  {tab.id === "CHURN_RISK"
+                    ? `Sumidos (+${churnDays}d)`
+                    : tab.label}
+                </span>
                 <span
                   className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
                     isActive
@@ -337,6 +378,119 @@ export default function CrmRetentionPage() {
             />
             <span>Ocultar clientes já chamados recentemente ou adiados</span>
           </label>
+        </div>
+
+        {/* Filtro de Intervalo de Datas (Retorno Gerado, Sumidos e Última Visita) */}
+        <div className="flex flex-wrap items-center gap-3 pt-2 border-t border-[#F1F3F1] text-xs">
+          <div className="flex items-center gap-1.5 text-[#5B655D] font-semibold">
+            <Calendar className="w-3.5 h-3.5 text-[#247653]" />
+            <span>Período do Retorno:</span>
+          </div>
+
+          <select
+            value={period}
+            onChange={(e) => {
+              setPeriod(e.target.value as CrmPeriod);
+              setPage(1);
+            }}
+            className="dp-input w-auto py-1.5 text-xs"
+          >
+            <option value="7d">Últimos 7 dias</option>
+            <option value="30d">Últimos 30 dias (padrão)</option>
+            <option value="60d">Últimos 60 dias</option>
+            <option value="90d">Últimos 90 dias</option>
+            <option value="month">Este mês</option>
+            <option value="all">Todo o histórico</option>
+            <option value="custom">Intervalo de datas...</option>
+          </select>
+
+          {period === "custom" && (
+            <div className="flex items-center gap-1.5">
+              <input
+                type="date"
+                value={startDate}
+                onChange={(e) => {
+                  setStartDate(e.target.value);
+                  setPage(1);
+                }}
+                className="dp-input w-36 py-1.5 text-xs"
+                title="Data inicial do retorno/contatos"
+              />
+              <span className="text-[#737D75]">até</span>
+              <input
+                type="date"
+                value={endDate}
+                onChange={(e) => {
+                  setEndDate(e.target.value);
+                  setPage(1);
+                }}
+                className="dp-input w-36 py-1.5 text-xs"
+                title="Data final do retorno/contatos"
+              />
+            </div>
+          )}
+
+          <div className="h-4 w-px bg-[#E7EAE7] hidden sm:block" />
+
+          <div className="flex items-center gap-1.5">
+            <span className="text-[#5B655D] font-semibold">Sumidos após:</span>
+            <select
+              value={churnDays}
+              onChange={(e) => {
+                setChurnDays(Number(e.target.value) || 45);
+                setPage(1);
+              }}
+              className="dp-input w-auto py-1.5 text-xs"
+            >
+              <option value={15}>+15 dias</option>
+              <option value={30}>+30 dias</option>
+              <option value={45}>+45 dias (padrão)</option>
+              <option value={60}>+60 dias</option>
+              <option value={90}>+90 dias</option>
+            </select>
+          </div>
+
+          <div className="h-4 w-px bg-[#E7EAE7] hidden sm:block" />
+
+          <div className="flex flex-wrap items-center gap-1.5">
+            <span className="text-[#5B655D] font-semibold">Última visita:</span>
+            <input
+              type="date"
+              value={visitStartDate}
+              onChange={(e) => {
+                setVisitStartDate(e.target.value);
+                setPage(1);
+              }}
+              className="dp-input w-36 py-1.5 text-xs"
+              title="Última visita a partir de"
+            />
+            <span className="text-[#737D75]">até</span>
+            <input
+              type="date"
+              value={visitEndDate}
+              onChange={(e) => {
+                setVisitEndDate(e.target.value);
+                setPage(1);
+              }}
+              className="dp-input w-36 py-1.5 text-xs"
+              title="Última visita até"
+            />
+            {(visitStartDate || visitEndDate) && (
+              <button
+                type="button"
+                onClick={() => {
+                  setVisitStartDate("");
+                  setVisitEndDate("");
+                  setPage(1);
+                }}
+                className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium text-[#737D75] hover:text-[#252B27] hover:bg-[#F7F8F6] cursor-pointer"
+                title="Limpar filtro de última visita"
+              >
+                <X className="w-3 h-3" />
+                Limpar
+              </button>
+            )}
+          </div>
         </div>
       </div>
 

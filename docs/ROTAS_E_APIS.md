@@ -99,7 +99,7 @@
 - `PATCH /api/commissions` — Liquidação em lote (`ADMIN`) com lançamento opcional de despesa no fluxo de caixa e registro em `AuditLog`.
 
 ### CRM & Configurações
-- `GET /api/crm` — (`ADMIN`) Motor de retenção com fila **Para Chamar Hoje (`TODAY`)**, recuperação de orçamentos (`BUDGET_RECOVERY`), garantia/manutenção (`COATING_WARRANTY`), sumidos (`CHURN_RISK`), pós-venda (`POST_SALE`), dia de chuva (`RAINY_DAY`), aniversariantes (`BIRTHDAY`), busca (`q`), anti-spam (`hideContacted`), paginação e **Retorno Gerado (30d)**.
+- `GET /api/crm` — (`ADMIN`) Motor de retenção com fila **Para Chamar Hoje (`TODAY`)**, recuperação de orçamentos (`BUDGET_RECOVERY`), garantia/manutenção (`COATING_WARRANTY`), sumidos (`CHURN_RISK`, limiar configurável via `churnDays`), pós-venda (`POST_SALE`), dia de chuva (`RAINY_DAY`), aniversariantes (`BIRTHDAY`), busca (`q`), anti-spam (`hideContacted`), filtros de intervalo de datas (`period`, `startDate`, `endDate` para Retorno Gerado e `visitStartDate`, `visitEndDate` para última visita), paginação e **Retorno Gerado**.
 - `POST /api/crm/contacts` — (`ADMIN`) Registra contato WhatsApp (`SENT`), adiamento de 15 dias (`POSTPONED`) ou sem interesse (`NO_INTEREST`) em `CrmContactLog` com validação multi-tenant e `AuditLog`.
 - `GET /api/settings` — Dados cadastrais, taxas de maquininha e `googleReviewUrl` do tenant.
 - `PUT /api/settings` — Atualiza dados da empresa, link de avaliação no Google (`googleReviewUrl`) e taxas padrão de cartão (`debitFeeRate`, `credit1xFeeRate`, `credit2to6FeeRate`, `credit7to12FeeRate`, `ADMIN`).

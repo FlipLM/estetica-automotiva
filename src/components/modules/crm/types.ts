@@ -96,6 +96,15 @@ export interface CrmCustomer {
   isSuppressedInCurrentTab?: boolean;
 }
 
+export type CrmPeriod =
+  | "7d"
+  | "30d"
+  | "60d"
+  | "90d"
+  | "month"
+  | "all"
+  | "custom";
+
 export interface CrmSummary {
   totalCustomers: number;
   totalRevenue: number;
@@ -111,6 +120,9 @@ export interface CrmSummary {
   contactedLast30Days: number;
   roi30dRevenue: number;
   roi30dOrdersCount: number;
+  period?: CrmPeriod;
+  periodLabel?: string;
+  churnDays?: number;
 }
 
 export interface CrmPagination {
