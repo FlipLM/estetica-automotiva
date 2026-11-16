@@ -164,6 +164,7 @@ export async function POST(req: NextRequest) {
           role: "ADMIN",
           phone: phone ? phone.trim() : null,
           active: true,
+          mustChangePassword: true,
         },
       });
       return { tenant, user };

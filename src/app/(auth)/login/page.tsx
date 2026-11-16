@@ -56,7 +56,7 @@ export default function LoginPage() {
       let dest = data.redirect || (data.user.role === "OPERATOR" ? "/patio" : "/dashboard");
       // Respeita ?next= somente para caminhos internos e quando não há onboarding pendente
       const next = new URLSearchParams(window.location.search).get("next");
-      if (next && next.startsWith("/") && !next.startsWith("//") && dest !== "/onboarding") {
+      if (next && next.startsWith("/") && !next.startsWith("//") && dest !== "/onboarding" && dest !== "/trocar-senha") {
         dest = next;
       }
       window.location.href = dest;

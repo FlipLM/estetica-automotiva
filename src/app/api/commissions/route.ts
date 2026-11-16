@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
+import { getPeriodDateRange } from "@/lib/date-utils";
 import { z } from "zod";
 
 export const dynamic = "force-dynamic";
@@ -13,11 +14,22 @@ export async function GET(request: NextRequest) {
     }
 
     const { searchParams } = new URL(request.url);
-    const status = searchParams.get("status"); // PENDING | PAID
+    const status = searchParams.get("status"); // PENDING | PAID | ALL
     const filterUserId = searchParams.get("userId");
+    const period = searchParams.get("period");
+    const startDateParam = searchParams.get("startDate");
+    const endDateParam = searchParams.get("endDate");
+    const pageParam = Number(searchParams.get("page") || "1");
+    const limitParam = Number(searchParams.get("limit") || "50");
 
-    // Condição de busca de acordo com o papel do usuário
-    const whereCondition: any = {
+    const page = Number.isFinite(pageParam) && pageParam >= 1 ? Math.floor(pageParam) : 1;
+    const limit =
+      Number.isFinite(limitParam) && limitParam >= 1
+        ? Math.min(200, Math.floor(limitParam))
+        : 50;
+
+    // Condição base (sem o filtro de status, para manter os cards de resumo íntegros)
+    const baseWhere: any = {
       serviceOrder: {
         tenantId: session.tenantId,
       },
@@ -25,70 +37,123 @@ export async function GET(request: NextRequest) {
 
     if (session.role === "OPERATOR") {
       // Operador enxerga exclusivamente suas próprias comissões
-      whereCondition.userId = session.userId;
-    } else if (filterUserId) {
-      whereCondition.userId = filterUserId;
+      baseWhere.userId = session.userId;
+    } else if (filterUserId && filterUserId !== "ALL") {
+      baseWhere.userId = filterUserId;
     }
 
-    if (status) {
-      whereCondition.status = status;
+    if ((period && period !== "all") || startDateParam || endDateParam) {
+      try {
+        const range = getPeriodDateRange({
+          period,
+          startDate: startDateParam,
+          endDate: endDateParam,
+        });
+        baseWhere.createdAt = { gte: range.startDate, lte: range.endDate };
+      } catch {
+        return NextResponse.json(
+          { error: "Parâmetros de período inválidos." },
+          { status: 400 }
+        );
+      }
     }
 
-    const commissions = await prisma.commission.findMany({
-      where: whereCondition,
-      include: {
-        user: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            role: true,
+    const listWhere: any = { ...baseWhere };
+    if (status === "PENDING" || status === "PAID") {
+      listWhere.status = status;
+    }
+
+    const [groupedSummary, filteredCount, commissions] = await Promise.all([
+      prisma.commission.groupBy({
+        by: ["status"],
+        where: baseWhere,
+        _sum: { amount: true },
+        _count: { _all: true },
+      }),
+      prisma.commission.count({ where: listWhere }),
+      prisma.commission.findMany({
+        where: listWhere,
+        include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              role: true,
+            },
           },
-        },
-        serviceOrder: {
-          select: {
-            id: true,
-            orderNumber: true,
-            status: true,
-            completedAt: true,
-            totalAmount: true,
-            vehicle: {
-              select: {
-                plate: true,
-                model: true,
-                customer: {
-                  select: {
-                    name: true,
-                    phone: true,
+          serviceOrder: {
+            select: {
+              id: true,
+              orderNumber: true,
+              status: true,
+              completedAt: true,
+              totalAmount: true,
+              vehicle: {
+                select: {
+                  plate: true,
+                  model: true,
+                  customer: {
+                    select: {
+                      name: true,
+                      phone: true,
+                    },
                   },
                 },
               },
             },
           },
         },
-      },
-      orderBy: {
-        createdAt: "desc",
-      },
-    });
+        orderBy: {
+          createdAt: "desc",
+        },
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+    ]);
 
-    // Métricas resumidas
-    const totalAmount = commissions.reduce((acc, c) => acc + c.amount, 0);
-    const pendingAmount = commissions
-      .filter((c) => c.status === "PENDING")
-      .reduce((acc, c) => acc + c.amount, 0);
-    const paidAmount = commissions
-      .filter((c) => c.status === "PAID")
-      .reduce((acc, c) => acc + c.amount, 0);
+    let pendingAmount = 0;
+    let paidAmount = 0;
+    let totalCount = 0;
+
+    for (const row of groupedSummary) {
+      const amount = row._sum.amount || 0;
+      const count = row._count._all || 0;
+      totalCount += count;
+      if (row.status === "PENDING") {
+        pendingAmount += amount;
+      } else if (row.status === "PAID") {
+        paidAmount += amount;
+      }
+    }
+
+    const totalAmount = pendingAmount + paidAmount;
+    const isAdmin = session.role === "ADMIN";
+
+    // RBAC: Oculta faturamento bruto da OS para OPERATOR
+    const sanitizedCommissions = commissions.map((c) => ({
+      ...c,
+      serviceOrder: {
+        ...c.serviceOrder,
+        totalAmount: isAdmin ? c.serviceOrder.totalAmount : null,
+      },
+    }));
 
     return NextResponse.json({
+      role: session.role,
       summary: {
         totalAmount,
         pendingAmount,
         paidAmount,
-        totalCount: commissions.length,
+        totalCount,
       },
-      commissions,
+      pagination: {
+        page,
+        limit,
+        totalItems: filteredCount,
+        totalPages: Math.max(1, Math.ceil(filteredCount / limit)),
+      },
+      commissions: sanitizedCommissions,
     });
   } catch (error: any) {
     console.error("Erro ao listar comissões:", error);
@@ -110,11 +175,15 @@ export async function PATCH(request: NextRequest) {
     }
 
     if (session.role !== "ADMIN") {
-      return NextResponse.json({ error: "Apenas administradores podem liquidar comissões" }, { status: 403 });
+      return NextResponse.json(
+        { error: "Apenas administradores podem liquidar comissões" },
+        { status: 403 }
+      );
     }
 
     const body = await request.json();
-    const { commissionIds, createExpense, paymentMethod } = settleCommissionSchema.parse(body);
+    const { commissionIds, createExpense, paymentMethod } =
+      settleCommissionSchema.parse(body);
 
     // Valida se as comissões pertencem ao tenant do admin
     const pendingCommissions = await prisma.commission.findMany({
@@ -157,7 +226,9 @@ export async function PATCH(request: NextRequest) {
       // 2. Se marcado para criar despesa no fluxo de caixa/DRE
       let createdExpense = null;
       if (createExpense && totalToSettle > 0) {
-        const collaboratorNames = Array.from(new Set(pendingCommissions.map((c) => c.user.name))).join(", ");
+        const collaboratorNames = Array.from(
+          new Set(pendingCommissions.map((c) => c.user.name))
+        ).join(", ");
         createdExpense = await tx.expense.create({
           data: {
             tenantId: session.tenantId,
@@ -168,10 +239,28 @@ export async function PATCH(request: NextRequest) {
             paid: true,
             paidAt: now,
             paymentMethod,
-            notes: `Comissões das OS: ${pendingCommissions.map((c) => `#${c.serviceOrder.orderNumber}`).join(", ")}`,
+            notes: `Comissões das OS: ${pendingCommissions
+              .map((c) => `#${c.serviceOrder.orderNumber}`)
+              .join(", ")}`,
           },
         });
       }
+
+      await tx.auditLog.create({
+        data: {
+          tenantId: session.tenantId,
+          userId: session.userId,
+          action: "SETTLE_COMMISSIONS",
+          entity: "Commission",
+          entityId: createdExpense?.id || pendingCommissions[0].id,
+          details: JSON.stringify({
+            settledCount: updated.count,
+            totalToSettle,
+            paymentMethod,
+            expenseId: createdExpense?.id || null,
+          }),
+        },
+      });
 
       return {
         settledCount: updated.count,
@@ -186,10 +275,12 @@ export async function PATCH(request: NextRequest) {
     });
   } catch (error: any) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: "Dados inválidos", details: error.errors }, { status: 400 });
+      return NextResponse.json(
+        { error: "Dados inválidos", details: error.errors },
+        { status: 400 }
+      );
     }
     console.error("Erro ao liquidar comissões:", error);
     return NextResponse.json({ error: "Erro interno do servidor" }, { status: 500 });
   }
 }
-

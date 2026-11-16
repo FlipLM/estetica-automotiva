@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireAuth, handleAuthError } from "@/lib/permissions";
+import { resolveItemCommissionRate } from "@/lib/commission";
 
 export const dynamic = "force-dynamic";
 
@@ -84,7 +85,12 @@ export async function POST(
     // 1. Localiza a OS
     const order = await prisma.serviceOrder.findFirst({
       where: { id, tenantId },
-      include: { vehicle: true },
+      include: {
+        vehicle: true,
+        assignedUser: {
+          select: { id: true, commissionRate: true },
+        },
+      },
     });
 
     if (!order) {
@@ -144,7 +150,11 @@ export async function POST(
     }
 
     const totalPrice = unitPrice * quantity;
-    const finalCommissionRate = commissionRate ?? service.defaultCommission ?? 10;
+    const finalCommissionRate = resolveItemCommissionRate({
+      explicitRate: commissionRate,
+      userCommissionRate: order.assignedUser?.commissionRate,
+      serviceDefaultCommission: service.defaultCommission,
+    });
     const commissionAmount = (totalPrice * finalCommissionRate) / 100;
 
     // 4. Criação do item e recálculo dos totais da OS dentro de uma transação
@@ -244,6 +254,23 @@ export async function DELETE(
         { error: "Item não encontrado nesta OS." },
         { status: 404 }
       );
+    }
+
+    if (order.paidAmount > 0) {
+      const projectedSubtotal = Math.max(0, order.subtotal - item.totalPrice);
+      const projectedTotal = Math.max(0, projectedSubtotal - order.discount);
+      if (projectedTotal < order.paidAmount - 0.01) {
+        return NextResponse.json(
+          {
+            error: `Não é possível remover este item pois o valor total da OS (R$ ${projectedTotal.toFixed(
+              2
+            )}) ficaria menor que o valor já pago (R$ ${order.paidAmount.toFixed(
+              2
+            )}). Estorne o pagamento antes.`,
+          },
+          { status: 400 }
+        );
+      }
     }
 
     const result = await prisma.$transaction(async (tx) => {

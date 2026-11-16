@@ -14,6 +14,11 @@ export default async function DashboardLayout({
     redirect("/login");
   }
 
+  // Se o usuário entrou com senha provisória, força a definição de senha pessoal antes de acessar o painel
+  if (session.mustChangePassword) {
+    redirect("/trocar-senha");
+  }
+
   // Se o período de teste de 3 dias expirou, bloqueia o acesso e direciona para a tela de conversão
   if (session.isTrialExpired) {
     redirect("/bloqueado");

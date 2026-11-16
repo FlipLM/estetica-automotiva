@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { getClientIp, isRateLimited } from "@/lib/rate-limit";
+import { getClientIp, isRateLimitedAsync } from "@/lib/rate-limit";
 import { sendPasswordResetEmail } from "@/lib/email";
 
 export const dynamic = "force-dynamic";
@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
   try {
     const ip = getClientIp(req);
     // Limite de 5 solicitações por IP a cada 15 minutos para evitar abuso
-    if (isRateLimited(`forgot-pw:ip:${ip}`, 5, 15 * 60 * 1000)) {
+    if (await isRateLimitedAsync(`forgot-pw:ip:${ip}`, 5, 15 * 60 * 1000)) {
       return NextResponse.json(
         { error: "Muitas tentativas de recuperação. Aguarde alguns minutos." },
         { status: 429 }
@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
     const { email } = parsed.data;
 
     // Limite adicional por e-mail: máximo 3 solicitações a cada 15 minutos
-    if (isRateLimited(`forgot-pw:email:${email}`, 3, 15 * 60 * 1000)) {
+    if (await isRateLimitedAsync(`forgot-pw:email:${email}`, 3, 15 * 60 * 1000)) {
       return NextResponse.json(
         { error: "Muitas tentativas para este e-mail. Verifique sua caixa de entrada." },
         { status: 429 }

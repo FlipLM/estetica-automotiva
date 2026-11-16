@@ -10,8 +10,25 @@ import {
   X,
   Edit2,
   Trash2,
+  Package,
 } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
+
+interface ProductOption {
+  id: string;
+  name: string;
+  unit: string;
+  costPrice: number;
+  currentStock: number;
+}
+
+interface ServiceRecipe {
+  id?: string;
+  productId: string;
+  quantityPerService: number;
+  notes?: string | null;
+  product?: ProductOption;
+}
 
 interface Service {
   id: string;
@@ -26,11 +43,14 @@ interface Service {
   priceSpecial: number;
   estimatedCost: number;
   defaultCommission: number;
+  maintenanceIntervalDays?: number | null;
   active: boolean;
+  recipes?: ServiceRecipe[];
 }
 
 export default function ServicesPage() {
   const [services, setServices] = useState<Service[]>([]);
+  const [products, setProducts] = useState<ProductOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<string>("ALL");
   const [modalOpen, setModalOpen] = useState(false);
@@ -50,15 +70,24 @@ export default function ServicesPage() {
     priceSpecial: 160,
     estimatedCost: 15,
     defaultCommission: 15,
+    maintenanceIntervalDays: "" as string | number,
     active: true,
+    recipes: [] as Array<{ productId: string; quantityPerService: number; notes: string }>,
   });
 
   async function loadServices() {
     try {
       setLoading(true);
-      const res = await fetch("/api/services");
-      const json = await res.json();
+      const [servRes, prodRes] = await Promise.all([
+        fetch("/api/services"),
+        fetch("/api/products"),
+      ]);
+      const json = await servRes.json();
       setServices(json.services || []);
+      if (prodRes.ok) {
+        const prodJson = await prodRes.json();
+        setProducts(prodJson.products || []);
+      }
     } catch (err) {
       console.error("Erro ao carregar serviços:", err);
     } finally {
@@ -84,7 +113,9 @@ export default function ServicesPage() {
       priceSpecial: 160,
       estimatedCost: 15,
       defaultCommission: 15,
+      maintenanceIntervalDays: "",
       active: true,
+      recipes: [],
     });
     setError(null);
     setModalOpen(true);
@@ -104,10 +135,49 @@ export default function ServicesPage() {
       priceSpecial: serv.priceSpecial,
       estimatedCost: serv.estimatedCost,
       defaultCommission: serv.defaultCommission,
+      maintenanceIntervalDays:
+        serv.maintenanceIntervalDays != null ? String(serv.maintenanceIntervalDays) : "",
       active: serv.active,
+      recipes: (serv.recipes || []).map((r) => ({
+        productId: r.productId,
+        quantityPerService: r.quantityPerService,
+        notes: r.notes || "",
+      })),
     });
     setError(null);
     setModalOpen(true);
+  }
+
+  function addRecipeRow() {
+    const firstAvailable = products.find(
+      (p) => !formData.recipes.some((r) => r.productId === p.id)
+    );
+    if (!firstAvailable) return;
+    setFormData((prev) => ({
+      ...prev,
+      recipes: [
+        ...prev.recipes,
+        { productId: firstAvailable.id, quantityPerService: 50, notes: "" },
+      ],
+    }));
+  }
+
+  function updateRecipeRow(
+    index: number,
+    patch: Partial<{ productId: string; quantityPerService: number; notes: string }>
+  ) {
+    setFormData((prev) => {
+      const next = [...prev.recipes];
+      next[index] = { ...next[index], ...patch };
+      return { ...prev, recipes: next };
+    });
+  }
+
+  function removeRecipeRow(index: number) {
+    setFormData((prev) => ({
+      ...prev,
+      recipes: prev.recipes.filter((_, i) => i !== index),
+    }));
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -119,10 +189,25 @@ export default function ServicesPage() {
       const url = editingId ? `/api/services/${editingId}` : "/api/services";
       const method = editingId ? "PUT" : "POST";
 
+      const payload = {
+        ...formData,
+        maintenanceIntervalDays:
+          String(formData.maintenanceIntervalDays).trim() !== ""
+            ? parseInt(String(formData.maintenanceIntervalDays), 10)
+            : null,
+        recipes: formData.recipes
+          .filter((r) => r.productId && r.quantityPerService > 0)
+          .map((r) => ({
+            productId: r.productId,
+            quantityPerService: Number(r.quantityPerService),
+            notes: r.notes?.trim() || null,
+          })),
+      };
+
       const res = await fetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(payload),
       });
 
       const data = await res.json();
@@ -248,6 +333,20 @@ export default function ServicesPage() {
                       {s.description && (
                         <div className="text-[11px] text-[#737D75] line-clamp-1 max-w-sm">
                           {s.description}
+                        </div>
+                      )}
+                      {s.maintenanceIntervalDays && (
+                        <div className="text-[10px] font-medium text-[#247653] mt-0.5">
+                          Lembrete de retorno CRM: a cada {s.maintenanceIntervalDays} dias
+                        </div>
+                      )}
+                      {s.recipes && s.recipes.length > 0 && (
+                        <div className="inline-flex items-center gap-1 text-[10px] font-medium text-[#343C36] bg-[#F1F3F1] px-2 py-0.5 rounded-full mt-1">
+                          <Package className="w-3 h-3 text-[#247653]" />
+                          <span>
+                            Ficha Técnica: {s.recipes.length}{" "}
+                            {s.recipes.length === 1 ? "insumo" : "insumos"}
+                          </span>
                         </div>
                       )}
                     </td>
@@ -445,8 +544,8 @@ export default function ServicesPage() {
                 </div>
               </div>
 
-              {/* TEMPO ESTIMADO E COMISSÃO */}
-              <div className="grid grid-cols-2 gap-3">
+              {/* TEMPO ESTIMADO, COMISSÃO E CICLO DE RETORNO CRM */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
                   <label className="block text-xs font-semibold text-[#343C36] mb-1">
                     Tempo Estimado (minutos)
@@ -464,7 +563,7 @@ export default function ServicesPage() {
 
                 <div>
                   <label className="block text-xs font-semibold text-[#343C36] mb-1">
-                    Comissão Padrão do Operador (%)
+                    Comissão Padrão (%)
                   </label>
                   <input
                     type="number"
@@ -477,6 +576,122 @@ export default function ServicesPage() {
                     className="dp-input"
                   />
                 </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-[#343C36] mb-1">
+                    Retorno / Manutenção (dias)
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="3650"
+                    placeholder="Ex: 180 (opcional)"
+                    value={formData.maintenanceIntervalDays}
+                    onChange={(e) => setFormData({ ...formData, maintenanceIntervalDays: e.target.value })}
+                    className="dp-input"
+                  />
+                </div>
+              </div>
+
+              {/* FICHA TÉCNICA DE INSUMOS (BOM) */}
+              <div className="p-4 bg-[#F7F8F6] border border-[#E7EAE7] rounded-xl space-y-2.5">
+                <div className="flex items-center justify-between gap-2">
+                  <div>
+                    <p className="text-xs font-bold text-[#252B27] flex items-center gap-1.5">
+                      <Package className="w-3.5 h-3.5 text-[#247653]" />
+                      Ficha Técnica de Insumos (Consumo Padrão por OS)
+                    </p>
+                    <p className="text-[11px] text-[#737D75]">
+                      Sugere automaticamente a baixa no estoque quando este serviço for executado em uma OS.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={addRecipeRow}
+                    disabled={products.length === 0 || formData.recipes.length >= products.length}
+                    className="dp-btn-secondary text-[11px] px-2.5 py-1.5 cursor-pointer disabled:opacity-40"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Vincular Insumo</span>
+                  </button>
+                </div>
+
+                {formData.recipes.length === 0 ? (
+                  <p className="text-[11px] text-[#737D75] italic">
+                    Nenhum insumo vinculado ainda. Opcional — ideal para controle real de compostos, ceras, vitrificadores e shampoos.
+                  </p>
+                ) : (
+                  <div className="space-y-2">
+                    {formData.recipes.map((recipe, idx) => {
+                      const prod = products.find((p) => p.id === recipe.productId);
+                      const rowCost = (prod?.costPrice || 0) * (recipe.quantityPerService || 0);
+                      return (
+                        <div
+                          key={`${recipe.productId}-${idx}`}
+                          className="grid grid-cols-12 gap-2 items-center bg-white border border-[#E7EAE7] rounded-lg p-2"
+                        >
+                          <div className="col-span-5">
+                            <select
+                              value={recipe.productId}
+                              onChange={(e) => updateRecipeRow(idx, { productId: e.target.value })}
+                              className="dp-input text-xs py-1.5"
+                            >
+                              {products.map((p) => (
+                                <option key={p.id} value={p.id}>
+                                  {p.name} ({p.unit})
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                          <div className="col-span-3">
+                            <input
+                              type="number"
+                              min="0.01"
+                              step="any"
+                              value={recipe.quantityPerService}
+                              onChange={(e) =>
+                                updateRecipeRow(idx, {
+                                  quantityPerService: parseFloat(e.target.value) || 0,
+                                })
+                              }
+                              className="dp-input text-xs py-1.5 text-right font-semibold"
+                              title={`Quantidade em ${prod?.unit || "un"}`}
+                            />
+                          </div>
+                          <div className="col-span-3 text-right">
+                            <span className="text-[11px] font-semibold text-[#247653]">
+                              {formatCurrency(rowCost)}
+                            </span>
+                            <span className="block text-[10px] text-[#737D75]">
+                              {prod?.unit || ""}
+                            </span>
+                          </div>
+                          <div className="col-span-1 text-right">
+                            <button
+                              type="button"
+                              onClick={() => removeRecipeRow(idx)}
+                              className="p-1.5 text-[#737D75] hover:text-[#DC4C4C] cursor-pointer"
+                              title="Remover insumo"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                    <div className="flex items-center justify-between pt-1 text-[11px]">
+                      <span className="text-[#737D75]">Custo estimado pela ficha técnica:</span>
+                      <span className="font-bold text-[#142D26]">
+                        {formatCurrency(
+                          formData.recipes.reduce((acc, r) => {
+                            const prod = products.find((p) => p.id === r.productId);
+                            return acc + (prod?.costPrice || 0) * (r.quantityPerService || 0);
+                          }, 0)
+                        )}
+                      </span>
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="pt-3 border-t border-[#E7EAE7] flex items-center justify-end gap-2">

@@ -520,7 +520,7 @@ export function Inspection3D({
                       </div>
                       {item.description && (
                         <div className="pt-1 text-[#343C36] bg-[#FAFAF7] p-2 rounded-xl border border-[#DFE2DF]">
-                          "{item.description}"
+                          &ldquo;{item.description}&rdquo;
                         </div>
                       )}
                     </div>
@@ -635,7 +635,7 @@ export function Inspection3D({
                     </p>
                     {d.description && (
                       <p className="text-[10px] text-[#343C36] truncate italic">
-                        "{d.description}"
+                        &ldquo;{d.description}&rdquo;
                       </p>
                     )}
                   </div>

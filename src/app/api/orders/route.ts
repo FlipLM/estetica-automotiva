@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireAuth, handleAuthError } from "@/lib/permissions";
+import { resolveItemCommissionRate } from "@/lib/commission";
 
 export const dynamic = "force-dynamic";
 
@@ -125,11 +126,18 @@ export async function POST(req: NextRequest) {
     }
 
     const data = validated.data;
-    if (data.assignedUserId) {
-      const assignee = await prisma.user.findFirst({ where: { id: data.assignedUserId, tenantId, active: true }, select: { id: true } });
-      if (!assignee) {
-        return NextResponse.json({ error: "Colaborador responsável inválido." }, { status: 400 });
-      }
+    const effectiveAssigneeId = data.assignedUserId || userId;
+    const assignee = await prisma.user.findFirst({
+      where: {
+        id: effectiveAssigneeId,
+        tenantId,
+        ...(data.assignedUserId ? { active: true } : {}),
+      },
+      select: { id: true, commissionRate: true },
+    });
+
+    if (data.assignedUserId && !assignee) {
+      return NextResponse.json({ error: "Colaborador responsável inválido." }, { status: 400 });
     }
 
     // Se um box foi selecionado na entrada, valida sua capacidade e bloqueia se estiver cheio
@@ -223,7 +231,11 @@ export async function POST(req: NextRequest) {
       const totalPrice = unitPrice * inputItem.quantity;
       subtotal += totalPrice;
 
-      const commissionRate = inputItem.commissionRate ?? serv.defaultCommission ?? 10;
+      const commissionRate = resolveItemCommissionRate({
+        explicitRate: inputItem.commissionRate,
+        userCommissionRate: assignee?.commissionRate,
+        serviceDefaultCommission: serv.defaultCommission,
+      });
       const commissionAmount = (totalPrice * commissionRate) / 100;
 
       return {
@@ -265,6 +277,10 @@ export async function POST(req: NextRequest) {
           scheduledFor: data.scheduledFor ? new Date(data.scheduledFor) : null,
           notes: data.notes || null,
           startedAt: data.status === "IN_PROGRESS" ? new Date() : null,
+          completedAt:
+            data.status === "DONE" || data.status === "PAID" ? new Date() : null,
+          paidAt: data.status === "PAID" ? new Date() : null,
+          paidAmount: data.status === "PAID" ? totalAmount : 0,
           items: {
             create: itemsToCreate,
           },

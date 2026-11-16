@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireAuth, handleAuthError } from "@/lib/permissions";
+import { parseDateInput } from "@/lib/date-utils";
 
 export const dynamic = "force-dynamic";
 
@@ -86,6 +87,7 @@ export async function GET(req: NextRequest) {
         phone: c.phone,
         whatsapp: c.whatsapp,
         email: c.email,
+        birthDate: c.birthDate,
         address: c.address,
         notes: c.notes,
         totalSpent: c.totalSpent,
@@ -119,6 +121,18 @@ export async function POST(req: NextRequest) {
 
     const data = validated.data;
 
+    let parsedBirthDate: Date | null = null;
+    if (data.birthDate && data.birthDate.trim() !== "") {
+      try {
+        parsedBirthDate = parseDateInput(data.birthDate);
+      } catch {
+        return NextResponse.json(
+          { error: "Data de nascimento inválida." },
+          { status: 400 }
+        );
+      }
+    }
+
     const customer = await prisma.customer.create({
       data: {
         tenantId,
@@ -127,7 +141,7 @@ export async function POST(req: NextRequest) {
         phone: data.phone || null,
         whatsapp: data.whatsapp || data.phone || null,
         email: data.email || null,
-        birthDate: data.birthDate ? new Date(data.birthDate) : null,
+        birthDate: parsedBirthDate,
         address: data.address || null,
         notes: data.notes || null,
       },

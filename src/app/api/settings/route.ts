@@ -2,7 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { z } from "zod";
-import { getTenantLocalStorageUsage, safeDeleteLocalTenantFile } from "@/lib/storage-quota";
+import {
+  getTenantLocalStorageUsage,
+  safeDeleteLocalTenantFile,
+} from "@/lib/storage-quota";
 
 export const dynamic = "force-dynamic";
 
@@ -26,6 +29,24 @@ const optionalEmail = z
     "E-mail de contato informado é inválido"
   );
 
+const optionalUrl = z
+  .string()
+  .nullish()
+  .transform((val) => {
+    if (!val || val.trim() === "") return null;
+    return val.trim();
+  })
+  .refine(
+    (val) => !val || /^https?:\/\/[^\s]+$/i.test(val),
+    "URL de avaliação do Google inválida (use http:// ou https://)"
+  );
+
+const feeRateField = z.coerce
+  .number()
+  .min(0, "A taxa não pode ser negativa.")
+  .max(100, "A taxa não pode ultrapassar 100%.")
+  .optional();
+
 const updateTenantSchema = z.object({
   name: z
     .string()
@@ -38,6 +59,11 @@ const updateTenantSchema = z.object({
   email: optionalEmail,
   address: optionalText,
   logoUrl: optionalText,
+  debitFeeRate: feeRateField,
+  credit1xFeeRate: feeRateField,
+  credit2to6FeeRate: feeRateField,
+  credit7to12FeeRate: feeRateField,
+  googleReviewUrl: optionalUrl,
 });
 
 export async function GET(request: NextRequest) {
@@ -63,7 +89,10 @@ export async function GET(request: NextRequest) {
     });
 
     if (!tenant) {
-      return NextResponse.json({ error: "Empresa não encontrada" }, { status: 404 });
+      return NextResponse.json(
+        { error: "Empresa não encontrada" },
+        { status: 404 }
+      );
     }
 
     const localUsage = await getTenantLocalStorageUsage(tenant.id);
@@ -80,7 +109,10 @@ export async function GET(request: NextRequest) {
     });
   } catch (error: any) {
     console.error("Erro ao obter configurações da empresa:", error);
-    return NextResponse.json({ error: "Erro interno do servidor" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Erro interno do servidor" },
+      { status: 500 }
+    );
   }
 }
 
@@ -92,7 +124,10 @@ export async function PUT(request: NextRequest) {
     }
 
     if (session.role !== "ADMIN") {
-      return NextResponse.json({ error: "Acesso restrito ao administrador" }, { status: 403 });
+      return NextResponse.json(
+        { error: "Acesso restrito ao administrador" },
+        { status: 403 }
+      );
     }
 
     const body = await request.json();
@@ -129,9 +164,15 @@ export async function PUT(request: NextRequest) {
   } catch (error: any) {
     if (error instanceof z.ZodError) {
       const msg = error.errors[0]?.message || "Dados inválidos no formulário.";
-      return NextResponse.json({ error: msg, details: error.errors }, { status: 400 });
+      return NextResponse.json(
+        { error: msg, details: error.errors },
+        { status: 400 }
+      );
     }
     console.error("Erro ao atualizar configurações:", error);
-    return NextResponse.json({ error: "Erro interno do servidor" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Erro interno do servidor" },
+      { status: 500 }
+    );
   }
 }

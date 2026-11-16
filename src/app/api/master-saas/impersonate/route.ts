@@ -47,6 +47,8 @@ export async function POST(req: NextRequest) {
       trialExpiresAt: tenant.trialExpiresAt ? tenant.trialExpiresAt.toISOString() : null,
       isTrialExpired: false, // Dono do SaaS nunca fica bloqueado em modo suporte
       onboardingCompleted: true,
+      tokenVersion: adminUser.tokenVersion,
+      mustChangePassword: false,
     };
 
     const token = await signToken(sessionPayload);

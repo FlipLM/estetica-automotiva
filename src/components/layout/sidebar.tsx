@@ -163,7 +163,7 @@ export function Sidebar({ role, tenantName, tenantLogo }: SidebarProps) {
         ...(role === "ADMIN"
           ? [
               {
-                name: "Financeiro e DRE",
+                name: "Financeiro",
                 href: "/financeiro",
                 icon: CircleDollarSign,
               },

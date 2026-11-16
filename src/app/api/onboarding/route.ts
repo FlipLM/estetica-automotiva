@@ -239,6 +239,7 @@ export async function POST(req: NextRequest) {
               phone: emp.phone || null,
               commissionRate: emp.commissionRate || 15.0,
               active: true,
+              mustChangePassword: true,
             },
           });
         }

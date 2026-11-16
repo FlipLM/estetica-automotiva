@@ -10,7 +10,17 @@ import { jwtVerify } from "jose";
  */
 const AUTH_COOKIE_NAME = "detailing_saas_token";
 
-const PUBLIC_PAGES = ["/login", "/register", "/esqueci-senha", "/redefinir-senha", "/gestor-master", "/vulpto_logo.png", "/brand", "/favicon.ico", "/apple-touch-icon.png"];
+const PUBLIC_PAGES = [
+  "/login",
+  "/register",
+  "/esqueci-senha",
+  "/redefinir-senha",
+  "/gestor-master",
+  "/vulpto_logo.png",
+  "/brand",
+  "/favicon.ico",
+  "/apple-touch-icon.png",
+];
 const PUBLIC_API_PREFIXES = [
   "/api/auth/login",
   "/api/auth/register",
@@ -22,19 +32,31 @@ const PUBLIC_API_PREFIXES = [
   "/api/master-saas", // protegido internamente por requireMasterAuth / login master
 ];
 
+const CHANGE_PASSWORD_ALLOWED_APIS = [
+  "/api/auth/change-password",
+  "/api/auth/logout",
+  "/api/auth/me",
+];
+
 function matches(pathname: string, prefixes: string[]) {
   return prefixes.some((p) => pathname === p || pathname.startsWith(p + "/"));
 }
 
-async function hasValidSession(req: NextRequest): Promise<boolean> {
+async function getVerifiedSessionPayload(
+  req: NextRequest
+): Promise<{ mustChangePassword?: boolean } | null> {
   const token = req.cookies.get(AUTH_COOKIE_NAME)?.value;
   const secret = process.env.JWT_SECRET;
-  if (!token || !secret) return false;
+  if (!token || !secret) return null;
   try {
-    await jwtVerify(token, new TextEncoder().encode(secret), { algorithms: ["HS256"] });
-    return true;
+    const { payload } = await jwtVerify(
+      token,
+      new TextEncoder().encode(secret),
+      { algorithms: ["HS256"] }
+    );
+    return payload as { mustChangePassword?: boolean };
   } catch {
-    return false;
+    return null;
   }
 }
 
@@ -44,13 +66,19 @@ function withSecurityHeaders(res: NextResponse) {
   res.headers.set("X-DNS-Prefetch-Control", "off");
   res.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
   res.headers.set("Cross-Origin-Opener-Policy", "same-origin");
-  res.headers.set("Permissions-Policy", "camera=(self), microphone=(), geolocation=()");
+  res.headers.set(
+    "Permissions-Policy",
+    "camera=(self), microphone=(), geolocation=()"
+  );
   res.headers.set(
     "Content-Security-Policy",
     "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; connect-src 'self' blob: data: https://accounts.google.com https://oauth2.googleapis.com https://www.googleapis.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self' https://accounts.google.com"
   );
   if (process.env.NODE_ENV === "production") {
-    res.headers.set("Strict-Transport-Security", "max-age=31536000; includeSubDomains; preload");
+    res.headers.set(
+      "Strict-Transport-Security",
+      "max-age=31536000; includeSubDomains; preload"
+    );
   }
   return res;
 }
@@ -90,13 +118,30 @@ export async function middleware(req: NextRequest) {
     }
   }
 
-  const isPublic = isApi ? matches(pathname, PUBLIC_API_PREFIXES) : matches(pathname, PUBLIC_PAGES);
-  if (isPublic) return withSecurityHeaders(NextResponse.next());
+  const isPublic = isApi
+    ? matches(pathname, PUBLIC_API_PREFIXES)
+    : matches(pathname, PUBLIC_PAGES);
+  if (isPublic) {
+    if (pathname === "/login") {
+      const payload = await getVerifiedSessionPayload(req);
+      if (payload?.mustChangePassword === true) {
+        const url = req.nextUrl.clone();
+        url.pathname = "/trocar-senha";
+        url.search = "";
+        return withSecurityHeaders(NextResponse.redirect(url));
+      }
+    }
+    return withSecurityHeaders(NextResponse.next());
+  }
 
-  if (!(await hasValidSession(req))) {
+  const sessionPayload = await getVerifiedSessionPayload(req);
+  if (!sessionPayload) {
     if (isApi) {
       return withSecurityHeaders(
-        NextResponse.json({ error: "Não autorizado. Faça login para continuar." }, { status: 401 })
+        NextResponse.json(
+          { error: "Não autorizado. Faça login para continuar." },
+          { status: 401 }
+        )
       );
     }
     const url = req.nextUrl.clone();
@@ -108,11 +153,35 @@ export async function middleware(req: NextRequest) {
     return withSecurityHeaders(res);
   }
 
+  // Troca obrigatória de senha provisória: libera apenas /trocar-senha e APIs de troca/sessão
+  if (sessionPayload.mustChangePassword === true) {
+    if (isApi) {
+      if (!matches(pathname, CHANGE_PASSWORD_ALLOWED_APIS)) {
+        return withSecurityHeaders(
+          NextResponse.json(
+            {
+              error:
+                "Troca obrigatória de senha pendente. Defina sua senha pessoal antes de continuar.",
+              redirect: "/trocar-senha",
+            },
+            { status: 403 }
+          )
+        );
+      }
+    } else if (pathname !== "/trocar-senha") {
+      const url = req.nextUrl.clone();
+      url.pathname = "/trocar-senha";
+      url.search = "";
+      return withSecurityHeaders(NextResponse.redirect(url));
+    }
+  }
+
   return withSecurityHeaders(NextResponse.next());
 }
 
 export const config = {
   // Exclui apenas assets estáticos do Next e modelos 3D. Uploads (fotos de vistoria) exigem login.
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|apple-touch-icon.png|vulpto_logo.png|brand/|models/).*)"],
+  matcher: [
+    "/((?!_next/static|_next/image|favicon.ico|apple-touch-icon.png|vulpto_logo.png|brand/|models/).*)",
+  ],
 };
-

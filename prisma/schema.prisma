@@ -38,6 +38,15 @@ model Tenant {
   storageFolderId     String?                           // ID da pasta/canal/bucket onde as vistorias da equipe são salvas
   storageConnected    Boolean  @default(false)          // Se a integração foi validada pelo Administrador
 
+  // Taxas padrão de maquininha (%)
+  debitFeeRate        Float    @default(0.0)
+  credit1xFeeRate     Float    @default(0.0)
+  credit2to6FeeRate   Float    @default(0.0)
+  credit7to12FeeRate  Float    @default(0.0)
+
+  // Pós-venda & CRM
+  googleReviewUrl     String?  // Link oficial de avaliação no Google para pós-venda
+
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
@@ -50,7 +59,9 @@ model Tenant {
   workBays       WorkBay[]
   expenses       Expense[]
   products       Product[]
+  serviceRecipes ServiceProductRecipe[]
   auditLogs      AuditLog[]
+  crmContactLogs CrmContactLog[]
 
   @@map("tenants")
 }
@@ -63,16 +74,20 @@ model User {
   passwordHash   String
   googleId       String?  @unique // Subject (sub) do Google OAuth, quando vinculado
   role           String   @default("OPERATOR") // ADMIN | OPERATOR
-  phone          String?
-  commissionRate Float?   // Comissão padrão percentual (ex: 15.0)
-  active         Boolean  @default(true)
-  createdAt      DateTime @default(now())
+  phone              String?
+  commissionRate     Float?   // Comissão padrão percentual (ex: 15.0)
+  active             Boolean  @default(true)
+  tokenVersion       Int      @default(1)
+  mustChangePassword Boolean  @default(false)
+  createdAt          DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
   tenant         Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   commissions    Commission[]
   assignedOrders ServiceOrder[] @relation("AssignedOperator")
+  stockMovements StockMovement[]
   auditLogs      AuditLog[]
+  crmContactLogs CrmContactLog[]
 
   @@unique([tenantId, email])
   @@index([tenantId])
@@ -103,6 +118,7 @@ model Customer {
   tenant         Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   vehicles       Vehicle[]
   customerVehicles CustomerVehicle[]
+  crmContactLogs CrmContactLog[]
 
   @@index([tenantId])
   @@index([tenantId, name])
@@ -128,6 +144,7 @@ model Vehicle {
   customer       Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
   customerVehicles CustomerVehicle[]
   serviceOrders  ServiceOrder[]
+  crmContactLogs CrmContactLog[]
 
   @@unique([tenantId, plate])
   @@index([tenantId])
@@ -174,14 +191,16 @@ model Service {
   priceMotorcycle    Float    @default(50.0)
   priceSpecial       Float    @default(150.0)
 
-  estimatedCost      Float    @default(0.0) // Custo de insumos
-  defaultCommission  Float    @default(10.0) // Percentual padrão
-  active             Boolean  @default(true)
+  estimatedCost           Float    @default(0.0) // Custo de insumos
+  defaultCommission       Float    @default(10.0) // Percentual padrão
+  maintenanceIntervalDays Int?     // Ciclo sugerido de retorno/manutenção em dias (ex: 180 vitrificação, 30 lavagem)
+  active                  Boolean  @default(true)
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
 
   tenant             Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   orderItems         ServiceOrderItem[]
+  recipes            ServiceProductRecipe[]
 
   @@index([tenantId])
   @@map("services")
@@ -229,6 +248,8 @@ model ServiceOrder {
   checklist          Checklist?
   payments           Payment[]
   commissions        Commission[]
+  stockMovements     StockMovement[]
+  crmContactLogs     CrmContactLog[]
 
   @@index([tenantId])
   @@index([tenantId, status])
@@ -327,6 +348,10 @@ model Payment {
   amount             Float
   // Método: PIX | CREDIT_CARD | DEBIT_CARD | CASH | TRANSFER
   method             String
+  installments       Int          @default(1)
+  feeRate            Float        @default(0.0)
+  feeAmount          Float        @default(0.0)
+  netAmount          Float        @default(0.0)
   paidAt             DateTime     @default(now())
   notes              String?
 
@@ -346,6 +371,12 @@ model Expense {
   paid               Boolean  @default(true)
   paidAt             DateTime?
   paymentMethod      String?
+  supplier           String?
+  recurrenceGroupId  String?
+  // Tipo: SINGLE | INSTALLMENT | RECURRING
+  recurrenceType     String   @default("SINGLE")
+  installmentNumber  Int?
+  totalInstallments  Int?
   notes              String?
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
@@ -355,6 +386,7 @@ model Expense {
 
   @@index([tenantId])
   @@index([tenantId, dueDate])
+  @@index([tenantId, recurrenceGroupId])
   @@map("expenses")
 }
 
@@ -379,30 +411,41 @@ model Commission {
 // -------------------------------------------------------------
 
 model Product {
-  id                 String   @id @default(uuid())
+  id                 String    @id @default(uuid())
   tenantId           String
-  name               String   // Ex: Carnaúba Tok Final, Vonixx V-Floc, Menzerna 400
-  category           String   @default("CHEMICAL") // CHEMICAL | ACCESSORY | TOOL
-  unit               String   @default("ML") // ML | L | G | KG | UN
-  currentStock       Float    @default(0.0)
-  minStock           Float    @default(5.0)
-  costPrice          Float    @default(0.0)
+  name               String    // Ex: Carnaúba Tok Final, Vonixx V-Floc, Menzerna 400
+  category           String    @default("CHEMICAL") // CHEMICAL | ACCESSORY | TOOL
+  unit               String    @default("ML") // ML | L | G | KG | UN | M | M2
+  currentStock       Float     @default(0.0)
+  minStock           Float     @default(5.0)
+  costPrice          Float     @default(0.0)
   supplier           String?
-  purchasedAt        DateTime? // Data de aquisição / compra
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
+  purchasedAt        DateTime? // Data da última aquisição / compra
+  packSize           Float?    // Conteúdo de cada embalagem/galão na unidade-base (ex: 5000 para 5L)
+  packLabel          String?   // Rótulo amigável da embalagem (ex: "Galão 5L", "Frasco 500ml", "Rolo 15m")
+  defaultDilution    String?   // Diluição padrão de fábrica/bancada (ex: "1:10", "1:50", "Pronto uso")
+  openedAt           DateTime? // Data em que o frasco em uso foi aberto (pot-life de vitrificadores/selantes)
+  daysValidAfterOpen Int?      // Validade após aberto em dias (ex: 30 dias para coating)
+  expirationDate     DateTime? // Data de validade do lote fechado
+  active             Boolean   @default(true) // Soft-delete para preservar despesas e histórico contábil
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
 
   tenant             Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   movements          StockMovement[]
+  recipes            ServiceProductRecipe[]
 
   @@index([tenantId])
+  @@index([tenantId, active])
   @@map("products")
 }
 
 model StockMovement {
   id                 String    @id @default(uuid())
   productId          String
-  // Tipo: IN (entrada) | OUT (saída manual) | OS_CONSUMPTION (gasto em OS) | LOSS (perda/avaria)
+  userId             String?   // Operador ou gestor que registrou a movimentação
+  serviceOrderId     String?   // OS vinculada (para OS_CONSUMPTION ou baixa operacional rastreável)
+  // Tipo: IN (entrada) | OUT (saída manual) | OS_CONSUMPTION (gasto em OS) | LOSS (perda/avaria) | ADJUSTMENT (ajuste de inventário)
   type               String
   quantity           Float
   unitCost           Float?    // Custo unitário praticado nesta movimentação
@@ -410,15 +453,39 @@ model StockMovement {
   reason             String?
   recovered          Boolean   @default(false) // Indica se um item em LOSS foi reencontrado e retornado ao estoque
   recoveredAt        DateTime?
-  expenseId          String?   @unique // Vincula a despesa gerada no financeiro (quando for entrada paga)
+  expenseId          String?   @unique // Vincula a despesa gerada no financeiro (quando for entrada paga/a pagar)
   createdAt          DateTime  @default(now())
 
-  product            Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
-  expense            Expense?  @relation(fields: [expenseId], references: [id], onDelete: SetNull)
+  product            Product       @relation(fields: [productId], references: [id], onDelete: Cascade)
+  user               User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
+  serviceOrder       ServiceOrder? @relation(fields: [serviceOrderId], references: [id], onDelete: SetNull)
+  expense            Expense?      @relation(fields: [expenseId], references: [id], onDelete: SetNull)
 
   @@index([productId])
   @@index([type])
+  @@index([productId, type, createdAt])
+  @@index([serviceOrderId])
   @@map("stock_movements")
+}
+
+// Ficha Técnica (BOM) por Serviço -> Produtos consumidos automaticamente na OS
+model ServiceProductRecipe {
+  id                 String   @id @default(uuid())
+  tenantId           String
+  serviceId          String
+  productId          String
+  quantityPerService Float
+  notes              String?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  tenant             Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  service            Service  @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  product            Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([serviceId, productId])
+  @@index([tenantId])
+  @@map("service_product_recipes")
 }
 
 // -------------------------------------------------------------
@@ -455,4 +522,32 @@ model PasswordResetToken {
 
   @@index([email])
   @@map("password_reset_tokens")
+}
+
+// -------------------------------------------------------------
+// 9. CRM & RETENÇÃO DE CLIENTES
+// -------------------------------------------------------------
+
+model CrmContactLog {
+  id             String    @id @default(uuid())
+  tenantId       String
+  customerId     String
+  vehicleId      String?
+  serviceOrderId String?
+  userId         String?
+  campaign       String    // BUDGET_RECOVERY | COATING_WARRANTY | CHURN_RISK | POST_SALE | RAINY_DAY | BIRTHDAY | VIP | MANUAL
+  outcome        String    @default("SENT") // SENT | POSTPONED | NO_INTEREST
+  message        String?
+  snoozeUntil    DateTime?
+  createdAt      DateTime  @default(now())
+
+  tenant         Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  customer       Customer      @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  vehicle        Vehicle?      @relation(fields: [vehicleId], references: [id], onDelete: SetNull)
+  serviceOrder   ServiceOrder? @relation(fields: [serviceOrderId], references: [id], onDelete: SetNull)
+  user           User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, customerId, createdAt])
+  @@index([tenantId, campaign, createdAt])
+  @@map("crm_contact_logs")
 }

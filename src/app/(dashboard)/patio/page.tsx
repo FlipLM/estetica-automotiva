@@ -25,6 +25,7 @@ import {
 import { formatCurrency } from "@/lib/utils";
 import { ManageOrderServicesModal } from "@/components/modules/manage-order-services-modal";
 import { TransferOrderBoxModal } from "@/components/modules/transfer-order-box-modal";
+import { OrderPaymentModal } from "@/components/modules/order-payment-modal";
 import {
   Button,
   Badge,
@@ -58,6 +59,7 @@ interface Order {
   status: "TODO" | "IN_PROGRESS" | "DONE" | "PAID";
   box: string;
   totalAmount: number | null;
+  paidAmount?: number | null;
   mainService: string;
   assignedTo: string;
   createdAt: string;
@@ -81,10 +83,6 @@ export default function PatioKanbanPage() {
 
   // Modais
   const [paymentModalOrder, setPaymentModalOrder] = useState<Order | null>(null);
-  const [paymentMethod, setPaymentMethod] = useState<
-    "PIX" | "CREDIT_CARD" | "DEBIT_CARD" | "CASH" | "TRANSFER"
-  >("PIX");
-  const [submittingPayment, setSubmittingPayment] = useState(false);
 
   // Modal de Gestão/Adição de Serviços para OS existente
   const [selectedOrderForServices, setSelectedOrderForServices] = useState<Order | null>(null);
@@ -125,6 +123,7 @@ export default function PatioKanbanPage() {
             status: os.status,
             box: os.box || "Pátio Geral",
             totalAmount: jsonStats.role === "ADMIN" ? os.totalAmount : null,
+            paidAmount: jsonStats.role === "ADMIN" ? os.paidAmount ?? 0 : null,
             mainService: os.items?.[0]?.serviceName || "Serviço Geral",
             assignedTo: os.assignedUser?.name || "Não atribuído",
             createdAt: os.createdAt,
@@ -151,6 +150,10 @@ export default function PatioKanbanPage() {
     method?: string
   ) {
     if (newStatus === "PAID" && !method) {
+      if (role !== "ADMIN") {
+        alert("Apenas administradores podem registrar o pagamento e dar baixa na OS.");
+        return;
+      }
       const order = orders.find((o) => o.id === orderId);
       if (order) {
         setPaymentModalOrder(order);
@@ -203,20 +206,6 @@ export default function PatioKanbanPage() {
       console.error(err);
       alert("Erro na conexão ao transferir veículo.");
       return false;
-    }
-  }
-
-  async function handleConfirmPayment(e: React.FormEvent) {
-    e.preventDefault();
-    if (!paymentModalOrder) return;
-
-    setSubmittingPayment(true);
-    try {
-      await updateOrderStatus(paymentModalOrder.id, "PAID", paymentMethod);
-      setPaymentModalOrder(null);
-      loadPatio();
-    } finally {
-      setSubmittingPayment(false);
     }
   }
 
@@ -1192,82 +1181,24 @@ export default function PatioKanbanPage() {
         />
       )}
 
-      {/* MODAL DE BAIXA DE PAGAMENTO */}
-      <Modal
-        isOpen={!!paymentModalOrder}
+      {/* MODAL DE BAIXA DE PAGAMENTO (COM PARCIAL / TAXAS) */}
+      <OrderPaymentModal
+        order={
+          paymentModalOrder && paymentModalOrder.totalAmount !== null
+            ? {
+                id: paymentModalOrder.id,
+                orderNumber: paymentModalOrder.orderNumber,
+                plate: paymentModalOrder.plate,
+                model: paymentModalOrder.model,
+                customerName: paymentModalOrder.customerName,
+                totalAmount: paymentModalOrder.totalAmount,
+                paidAmount: paymentModalOrder.paidAmount ?? 0,
+              }
+            : null
+        }
         onClose={() => setPaymentModalOrder(null)}
-        title={paymentModalOrder ? `Registrar Pagamento — OS #${paymentModalOrder.orderNumber}` : "Registrar Pagamento"}
-        description="Confirme a forma de pagamento recebida para encerrar e dar baixa na Ordem de Serviço."
-        size="md"
-      >
-        {paymentModalOrder && (
-          <form onSubmit={handleConfirmPayment} className="space-y-4">
-            <div className="p-3.5 bg-[#F7F8F6] rounded-xl border border-[#E7EAE7] space-y-1.5 text-sm">
-              <div className="flex justify-between">
-                <span className="text-[#737D75]">Veículo:</span>
-                <strong className="text-[#252B27]">
-                  {paymentModalOrder.plate} — {paymentModalOrder.model}
-                </strong>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-[#737D75]">Cliente:</span>
-                <strong className="text-[#252B27]">{paymentModalOrder.customerName}</strong>
-              </div>
-              <div className="pt-2.5 mt-2 border-t border-[#E7EAE7] flex items-center justify-between">
-                <span className="text-[#737D75] font-medium">Total a Receber:</span>
-                <span className="text-lg font-bold text-[#247653]">
-                  {paymentModalOrder.totalAmount !== null
-                    ? formatCurrency(paymentModalOrder.totalAmount)
-                    : "-"}
-                </span>
-              </div>
-            </div>
-
-            <div>
-              <label className="form-label">Forma de Pagamento Recebida *</label>
-              <div className="grid grid-cols-2 gap-2.5 text-sm">
-                {[
-                  { id: "PIX", label: "PIX" },
-                  { id: "CREDIT_CARD", label: "Cartão de Crédito" },
-                  { id: "DEBIT_CARD", label: "Cartão de Débito" },
-                  { id: "CASH", label: "Dinheiro em Espécie" },
-                ].map((m) => (
-                  <button
-                    key={m.id}
-                    type="button"
-                    onClick={() => setPaymentMethod(m.id as any)}
-                    className={`p-3 rounded-lg border text-left font-medium transition-all cursor-pointer ${
-                      paymentMethod === m.id
-                        ? "bg-[#E9F3EC] text-[#142D26] border-[#247653] font-semibold"
-                        : "bg-white text-[#737D75] border-[#E7EAE7] hover:border-[#247653]/40"
-                    }`}
-                  >
-                    {m.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="pt-4 border-t border-[#E7EAE7] flex items-center justify-end gap-2.5">
-              <Button
-                type="button"
-                variant="secondary"
-                onClick={() => setPaymentModalOrder(null)}
-              >
-                Cancelar
-              </Button>
-              <Button
-                type="submit"
-                variant="primary"
-                isLoading={submittingPayment}
-                leftIcon={<CheckCircle2 className="w-4 h-4" />}
-              >
-                Confirmar e Baixar OS
-              </Button>
-            </div>
-          </form>
-        )}
-      </Modal>
+        onPaid={loadPatio}
+      />
 
       {/* Modal de Gestão/Adição de Serviços da OS */}
       {selectedOrderForServices && (

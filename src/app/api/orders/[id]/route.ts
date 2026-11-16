@@ -34,13 +34,40 @@ export async function GET(
           },
         },
         items: {
-          include: { service: true },
+          include: {
+            service: {
+              include: {
+                recipes: {
+                  include: {
+                    product: {
+                      select: {
+                        id: true,
+                        name: true,
+                        unit: true,
+                        currentStock: true,
+                        costPrice: true,
+                        defaultDilution: true,
+                        active: true,
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
         },
         assignedUser: { select: { id: true, name: true, phone: true } },
         checklist: {
           include: { damageRecords: true },
         },
-        payments: true,
+        payments: { orderBy: { paidAt: "asc" } },
+        stockMovements: {
+          orderBy: { createdAt: "desc" },
+          include: {
+            product: { select: { id: true, name: true, unit: true } },
+            user: { select: { id: true, name: true } },
+          },
+        },
       },
     });
 
@@ -64,11 +91,27 @@ export async function GET(
       discount: role === "ADMIN" ? order.discount : null,
       paidAmount: role === "ADMIN" ? order.paidAmount : null,
       payments: role === "ADMIN" ? order.payments : [],
+      stockMovements: order.stockMovements.map((m) => ({
+        ...m,
+        unitCost: role === "ADMIN" ? m.unitCost : null,
+        totalCost: role === "ADMIN" ? m.totalCost : null,
+      })),
       items: order.items.map((i) => ({
         ...i,
         unitPrice: role === "ADMIN" ? i.unitPrice : null,
         totalPrice: role === "ADMIN" ? i.totalPrice : null,
         commissionAmount: role === "ADMIN" ? i.commissionAmount : null,
+        service: {
+          ...i.service,
+          estimatedCost: role === "ADMIN" ? i.service.estimatedCost : 0,
+          recipes: i.service.recipes.map((r) => ({
+            ...r,
+            product: {
+              ...r.product,
+              costPrice: role === "ADMIN" ? r.product.costPrice : 0,
+            },
+          })),
+        },
       })),
     };
 
@@ -109,6 +152,40 @@ export async function PUT(
         { error: "Ordem de serviço não encontrada." },
         { status: 404 }
       );
+    }
+
+    if (
+      existing.status === "PAID" &&
+      body.discount !== undefined &&
+      body.discount !== existing.discount
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            "Não é possível alterar o desconto ou o valor total de uma OS já paga. Estorne o pagamento antes de editar valores.",
+        },
+        { status: 400 }
+      );
+    }
+
+    if (
+      existing.paidAmount > 0 &&
+      role === "ADMIN" &&
+      body.discount !== undefined
+    ) {
+      const projectedTotal = Math.max(0, existing.subtotal - body.discount);
+      if (projectedTotal < existing.paidAmount - 0.01) {
+        return NextResponse.json(
+          {
+            error: `O novo valor total (R$ ${projectedTotal.toFixed(
+              2
+            )}) ficaria menor que o valor já pago nesta OS (R$ ${existing.paidAmount.toFixed(
+              2
+            )}). Estorne o pagamento antes de aumentar o desconto.`,
+          },
+          { status: 400 }
+        );
+      }
     }
 
     // Se estiver transferindo para outro box, valida a capacidade máxima e bloqueia se estiver cheio
@@ -153,10 +230,13 @@ export async function PUT(
         box: body.box !== undefined ? body.box : existing.box,
         notes: body.notes !== undefined ? body.notes : existing.notes,
         mileage: body.mileage !== undefined ? body.mileage : existing.mileage,
-        // Desconto só pode ser alterado por Administrador
-        discount: role === "ADMIN" && body.discount !== undefined ? body.discount : existing.discount,
+        // Desconto só pode ser alterado por Administrador e nunca quando a OS já está paga
+        discount:
+          existing.status !== "PAID" && role === "ADMIN" && body.discount !== undefined
+            ? body.discount
+            : existing.discount,
         totalAmount:
-          role === "ADMIN" && body.discount !== undefined
+          existing.status !== "PAID" && role === "ADMIN" && body.discount !== undefined
             ? Math.max(0, existing.subtotal - body.discount)
             : existing.totalAmount,
       },

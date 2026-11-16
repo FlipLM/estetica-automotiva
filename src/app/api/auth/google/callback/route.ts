@@ -4,7 +4,7 @@ import { randomBytes } from "crypto";
 import { prisma } from "@/lib/prisma";
 import { hashPassword, signToken, AUTH_COOKIE_NAME } from "@/lib/auth";
 import { GOOGLE_STATE_COOKIE, getAppOrigin } from "@/lib/google-oauth";
-import { getClientIp, isRateLimited } from "@/lib/rate-limit";
+import { getClientIp, isRateLimitedAsync } from "@/lib/rate-limit";
 
 export const dynamic = "force-dynamic";
 
@@ -18,7 +18,7 @@ function fail(req: NextRequest, code: string) {
 
 export async function GET(req: NextRequest) {
   try {
-    if (isRateLimited(`google:${getClientIp(req)}`, 20, 15 * 60 * 1000)) return fail(req, "google_rate_limited");
+    if (await isRateLimitedAsync(`google:${getClientIp(req)}`, 20, 15 * 60 * 1000)) return fail(req, "google_rate_limited");
 
     const clientId = process.env.GOOGLE_CLIENT_ID;
     const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
@@ -154,10 +154,13 @@ export async function GET(req: NextRequest) {
       tenantName: user.tenant.tradingName || user.tenant.name,
       plan: user.tenant.plan,
       trialExpiresAt: user.tenant.trialExpiresAt?.toISOString() || null,
+      tokenVersion: user.tokenVersion,
+      mustChangePassword: user.mustChangePassword,
     });
 
     let dest = user.role === "OPERATOR" ? "/patio" : "/dashboard";
-    if (!user.tenant.onboardingCompleted) dest = "/onboarding";
+    if (user.mustChangePassword) dest = "/trocar-senha";
+    else if (!user.tenant.onboardingCompleted) dest = "/onboarding";
     else if (flow.next && flow.next.startsWith("/") && !flow.next.startsWith("//")) dest = flow.next;
 
     const res = NextResponse.redirect(new URL(dest, getAppOrigin(req)));

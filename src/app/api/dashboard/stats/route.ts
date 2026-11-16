@@ -1,6 +1,12 @@
 import { NextResponse } from "next/server";
 import { requireAuth, handleAuthError } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
+import {
+  getPeriodDateRange,
+  getTodayEnd,
+  getTodayStart,
+} from "@/lib/date-utils";
+import { roundMoney } from "@/lib/payment-fees";
 
 export const dynamic = "force-dynamic";
 
@@ -10,20 +16,32 @@ export async function GET() {
     const { tenantId, role, userId } = session;
 
     const now = new Date();
-    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const startOfToday = getTodayStart(now);
+    const endOfToday = getTodayEnd(now);
+    const { startDate: sevenDaysAgo } = getPeriodDateRange({
+      period: "7_days",
+      reference: now,
+    });
+    const { startDate: startOfMonth, endDate: endOfMonth } = getPeriodDateRange({
+      period: "current_month",
+      reference: now,
+    });
 
     // 1. Dados Operacionais do Pátio (Visíveis tanto para ADMIN quanto para OPERATOR)
-    const [todoCount, inProgressCount, doneCount, paidCount, myAssignedCount] = await Promise.all([
-      prisma.serviceOrder.count({ where: { tenantId, status: "TODO" } }),
-      prisma.serviceOrder.count({ where: { tenantId, status: "IN_PROGRESS" } }),
-      prisma.serviceOrder.count({ where: { tenantId, status: "DONE" } }),
-      prisma.serviceOrder.count({ where: { tenantId, status: "PAID" } }),
-      prisma.serviceOrder.count({
-        where: { tenantId, assignedUserId: userId, status: { in: ["TODO", "IN_PROGRESS"] } },
-      }),
-    ]);
+    const [todoCount, inProgressCount, doneCount, paidCount, myAssignedCount] =
+      await Promise.all([
+        prisma.serviceOrder.count({ where: { tenantId, status: "TODO" } }),
+        prisma.serviceOrder.count({ where: { tenantId, status: "IN_PROGRESS" } }),
+        prisma.serviceOrder.count({ where: { tenantId, status: "DONE" } }),
+        prisma.serviceOrder.count({ where: { tenantId, status: "PAID" } }),
+        prisma.serviceOrder.count({
+          where: {
+            tenantId,
+            assignedUserId: userId,
+            status: { in: ["TODO", "IN_PROGRESS"] },
+          },
+        }),
+      ]);
 
     // Últimos veículos em atendimento no pátio
     const recentOrders = await prisma.serviceOrder.findMany({
@@ -58,7 +76,8 @@ export async function GET() {
         myAssigned: myAssignedCount,
       },
       recentOrders: recentOrders.map((os) => {
-        const cust = os.vehicle.customer || os.vehicle.customerVehicles?.[0]?.customer;
+        const cust =
+          os.vehicle.customer || os.vehicle.customerVehicles?.[0]?.customer;
         return {
           id: os.id,
           orderNumber: os.orderNumber,
@@ -70,6 +89,7 @@ export async function GET() {
           status: os.status,
           box: os.box || "Geral",
           totalAmount: role === "ADMIN" ? os.totalAmount : null,
+          paidAmount: role === "ADMIN" ? os.paidAmount : null,
           mainService: os.items[0]?.serviceName || "Serviço Geral",
           assignedTo: os.assignedUser?.name || "Não atribuído",
           createdAt: os.createdAt,
@@ -85,46 +105,83 @@ export async function GET() {
       });
     }
 
-    // 2. Dados Financeiros Exclusivos para ADMINISTRADORES
-    const [ordersToday, orders7Days, ordersMonth, allPaidOrders, expensesMonth] = await Promise.all([
-      prisma.serviceOrder.findMany({
-        where: { tenantId, status: "PAID", paidAt: { gte: startOfToday } },
-        select: { totalAmount: true },
+    // 2. Dados Financeiros Exclusivos para ADMINISTRADORES (Regime de Caixa real via Payment)
+    const [
+      paymentsTodayAgg,
+      payments7DaysAgg,
+      paymentsMonthAgg,
+      ordersMonthAgg,
+      expensesMonthAgg,
+      totalCustomers,
+      totalVehicles,
+    ] = await Promise.all([
+      prisma.payment.aggregate({
+        where: {
+          serviceOrder: { tenantId, status: { not: "CANCELLED" } },
+          paidAt: { gte: startOfToday, lte: endOfToday },
+        },
+        _sum: { amount: true, feeAmount: true },
       }),
-      prisma.serviceOrder.findMany({
-        where: { tenantId, status: "PAID", paidAt: { gte: sevenDaysAgo } },
-        select: { totalAmount: true },
+      prisma.payment.aggregate({
+        where: {
+          serviceOrder: { tenantId, status: { not: "CANCELLED" } },
+          paidAt: { gte: sevenDaysAgo, lte: endOfToday },
+        },
+        _sum: { amount: true, feeAmount: true },
       }),
-      prisma.serviceOrder.findMany({
-        where: { tenantId, status: "PAID", paidAt: { gte: startOfMonth } },
-        select: { totalAmount: true },
+      prisma.payment.aggregate({
+        where: {
+          serviceOrder: { tenantId, status: { not: "CANCELLED" } },
+          paidAt: { gte: startOfMonth, lte: endOfMonth },
+        },
+        _sum: { amount: true, feeAmount: true },
       }),
-      prisma.serviceOrder.findMany({
-        where: { tenantId, status: "PAID" },
-        select: { totalAmount: true },
+      prisma.serviceOrder.aggregate({
+        where: {
+          tenantId,
+          status: "PAID",
+          paidAt: { gte: startOfMonth, lte: endOfMonth },
+        },
+        _sum: { totalAmount: true },
+        _count: { _all: true },
       }),
-      prisma.expense.findMany({
-        where: { tenantId, dueDate: { gte: startOfMonth }, paid: true },
-        select: { amount: true, category: true },
+      prisma.expense.aggregate({
+        where: {
+          tenantId,
+          paid: true,
+          OR: [
+            { paidAt: { gte: startOfMonth, lte: endOfMonth } },
+            { paidAt: null, dueDate: { gte: startOfMonth, lte: endOfMonth } },
+          ],
+        },
+        _sum: { amount: true },
       }),
-    ]);
-
-    const revenueToday = ordersToday.reduce((acc, curr) => acc + curr.totalAmount, 0);
-    const revenue7Days = orders7Days.reduce((acc, curr) => acc + curr.totalAmount, 0);
-    const revenueMonth = ordersMonth.reduce((acc, curr) => acc + curr.totalAmount, 0);
-
-    const totalPaidOrdersCount = allPaidOrders.length;
-    const totalPaidRevenue = allPaidOrders.reduce((acc, curr) => acc + curr.totalAmount, 0);
-    const averageTicket = totalPaidOrdersCount > 0 ? totalPaidRevenue / totalPaidOrdersCount : 0;
-
-    const totalExpensesMonth = expensesMonth.reduce((acc, curr) => acc + curr.amount, 0);
-    const netProfitMonth = revenueMonth - totalExpensesMonth;
-    const profitMargin = revenueMonth > 0 ? (netProfitMonth / revenueMonth) * 100 : 0;
-
-    const [totalCustomers, totalVehicles] = await Promise.all([
       prisma.customer.count({ where: { tenantId } }),
       prisma.vehicle.count({ where: { tenantId } }),
     ]);
+
+    const revenueToday = roundMoney(
+      (paymentsTodayAgg._sum.amount || 0) -
+        (paymentsTodayAgg._sum.feeAmount || 0)
+    );
+    const revenue7Days = roundMoney(
+      (payments7DaysAgg._sum.amount || 0) -
+        (payments7DaysAgg._sum.feeAmount || 0)
+    );
+    const revenueMonth = roundMoney(
+      (paymentsMonthAgg._sum.amount || 0) -
+        (paymentsMonthAgg._sum.feeAmount || 0)
+    );
+
+    const ordersMonthTotal = ordersMonthAgg._sum.totalAmount || 0;
+    const ordersMonthCount = ordersMonthAgg._count._all || 0;
+    const averageTicketMonth =
+      ordersMonthCount > 0 ? ordersMonthTotal / ordersMonthCount : 0;
+
+    const totalExpensesMonth = roundMoney(expensesMonthAgg._sum.amount || 0);
+    const netProfitMonth = roundMoney(revenueMonth - totalExpensesMonth);
+    const profitMargin =
+      revenueMonth > 0 ? (netProfitMonth / revenueMonth) * 100 : 0;
 
     return NextResponse.json({
       ...baseResponse,
@@ -132,7 +189,8 @@ export async function GET() {
         revenueToday,
         revenue7Days,
         revenueMonth,
-        averageTicket,
+        averageTicket: averageTicketMonth,
+        averageTicketMonth,
         totalExpensesMonth,
         netProfitMonth,
         profitMargin,

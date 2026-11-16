@@ -5,6 +5,12 @@ import { requireAdmin, handleAuthError } from "@/lib/permissions";
 
 export const dynamic = "force-dynamic";
 
+const recipeItemSchema = z.object({
+  productId: z.string().uuid("Produto inválido na ficha técnica."),
+  quantityPerService: z.number().positive("Quantidade do insumo deve ser maior que zero."),
+  notes: z.string().trim().max(200).nullish(),
+});
+
 const serviceUpdateSchema = z.object({
   name: z.string().min(2, "Nome do serviço deve ter no mínimo 2 caracteres."),
   description: z.string().optional().nullable(),
@@ -19,7 +25,14 @@ const serviceUpdateSchema = z.object({
   priceSpecial: z.number().min(0, "Preço Especial inválido."),
   estimatedCost: z.number().min(0).optional().default(0),
   defaultCommission: z.number().min(0).max(100).optional().default(10),
+  maintenanceIntervalDays: z
+    .union([
+      z.number().int().min(1, "Ciclo mínimo de 1 dia.").max(3650, "Ciclo máximo de 3650 dias."),
+      z.null(),
+    ])
+    .optional(),
   active: z.boolean().optional().default(true),
+  recipes: z.array(recipeItemSchema).optional(),
 });
 
 export async function PUT(
@@ -54,22 +67,86 @@ export async function PUT(
       );
     }
 
-    const updated = await prisma.service.update({
-      where: { id },
-      data: {
-        name: data.name,
-        description: data.description || null,
-        category: data.category,
-        estimatedMinutes: data.estimatedMinutes,
-        priceHatch: data.priceHatch,
-        priceSedan: data.priceSedan,
-        priceSuvPickup: data.priceSuvPickup,
-        priceMotorcycle: data.priceMotorcycle,
-        priceSpecial: data.priceSpecial,
-        estimatedCost: data.estimatedCost,
-        defaultCommission: data.defaultCommission,
-        active: data.active,
-      },
+    const uniqueRecipes = new Map<string, { productId: string; quantityPerService: number; notes: string | null }>();
+    if (data.recipes !== undefined) {
+      for (const r of data.recipes) {
+        uniqueRecipes.set(r.productId, {
+          productId: r.productId,
+          quantityPerService: r.quantityPerService,
+          notes: r.notes?.trim() || null,
+        });
+      }
+
+      if (uniqueRecipes.size > 0) {
+        const productIds = Array.from(uniqueRecipes.keys());
+        const validProducts = await prisma.product.findMany({
+          where: { tenantId, id: { in: productIds } },
+          select: { id: true },
+        });
+        if (validProducts.length !== productIds.length) {
+          return NextResponse.json(
+            { error: "Um ou mais produtos da ficha técnica não foram encontrados." },
+            { status: 400 }
+          );
+        }
+      }
+    }
+
+    const updated = await prisma.$transaction(async (tx) => {
+      if (data.recipes !== undefined) {
+        await tx.serviceProductRecipe.deleteMany({
+          where: { serviceId: id, tenantId },
+        });
+        if (uniqueRecipes.size > 0) {
+          await tx.serviceProductRecipe.createMany({
+            data: Array.from(uniqueRecipes.values()).map((r) => ({
+              tenantId,
+              serviceId: id,
+              productId: r.productId,
+              quantityPerService: r.quantityPerService,
+              notes: r.notes,
+            })),
+          });
+        }
+      }
+
+      return tx.service.update({
+        where: { id },
+        data: {
+          name: data.name,
+          description: data.description || null,
+          category: data.category,
+          estimatedMinutes: data.estimatedMinutes,
+          priceHatch: data.priceHatch,
+          priceSedan: data.priceSedan,
+          priceSuvPickup: data.priceSuvPickup,
+          priceMotorcycle: data.priceMotorcycle,
+          priceSpecial: data.priceSpecial,
+          estimatedCost: data.estimatedCost,
+          defaultCommission: data.defaultCommission,
+          maintenanceIntervalDays:
+            data.maintenanceIntervalDays === undefined
+              ? existing.maintenanceIntervalDays
+              : data.maintenanceIntervalDays,
+          active: data.active,
+        },
+        include: {
+          recipes: {
+            include: {
+              product: {
+                select: {
+                  id: true,
+                  name: true,
+                  unit: true,
+                  costPrice: true,
+                  currentStock: true,
+                  active: true,
+                },
+              },
+            },
+          },
+        },
+      });
     });
 
     return NextResponse.json({ service: updated });

@@ -91,6 +91,7 @@ export async function POST(req: NextRequest) {
         phone: parsed.phone,
         commissionRate: parsed.commissionRate,
         active: parsed.active,
+        mustChangePassword: true,
       },
       select: {
         id: true,

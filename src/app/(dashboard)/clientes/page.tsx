@@ -16,6 +16,7 @@ import {
   Pencil,
 } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
+import { formatDateInputValue } from "@/lib/date-utils";
 import { CustomerChecklistHistoryModal } from "@/components/modules/customer-checklist-history-modal";
 
 interface Vehicle {
@@ -68,6 +69,7 @@ export default function CustomersPage() {
     phone: "",
     whatsapp: "",
     email: "",
+    birthDate: "",
     address: "",
     notes: "",
     addVehicle: true,
@@ -91,6 +93,7 @@ export default function CustomersPage() {
     phone: "",
     whatsapp: "",
     email: "",
+    birthDate: "",
     address: "",
     notes: "",
   });
@@ -174,6 +177,7 @@ export default function CustomersPage() {
           phone: formData.phone || null,
           whatsapp: formData.whatsapp || formData.phone || null,
           email: formData.email || null,
+          birthDate: formData.birthDate || null,
           address: formData.address || null,
           notes: formData.notes || null,
         }),
@@ -215,6 +219,7 @@ export default function CustomersPage() {
         phone: "",
         whatsapp: "",
         email: "",
+        birthDate: "",
         address: "",
         notes: "",
         addVehicle: true,
@@ -245,6 +250,7 @@ export default function CustomersPage() {
       phone: c.phone || "",
       whatsapp: c.whatsapp || c.phone || "",
       email: c.email || "",
+      birthDate: c.birthDate ? formatDateInputValue(c.birthDate) : "",
       address: c.address || "",
       notes: c.notes || "",
     });
@@ -269,6 +275,7 @@ export default function CustomersPage() {
           phone: editFormData.phone.trim() || null,
           whatsapp: editFormData.whatsapp.trim() || editFormData.phone.trim() || null,
           email: editFormData.email.trim() || null,
+          birthDate: editFormData.birthDate.trim() || null,
           address: editFormData.address.trim() || null,
           notes: editFormData.notes.trim() || null,
         }),
@@ -607,7 +614,7 @@ export default function CustomersPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
                   <label className="block text-xs font-semibold text-[#343C36] mb-1">
                     E-mail (opcional)
@@ -617,6 +624,18 @@ export default function CustomersPage() {
                     placeholder="cliente@email.com"
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    className="dp-input"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-[#343C36] mb-1">
+                    Data de Nascimento (CRM)
+                  </label>
+                  <input
+                    type="date"
+                    value={formData.birthDate}
+                    onChange={(e) => setFormData({ ...formData, birthDate: e.target.value })}
                     className="dp-input"
                   />
                 </div>
@@ -861,7 +880,7 @@ export default function CustomersPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
                   <label className="block text-xs font-semibold text-[#343C36] mb-1">
                     E-mail
@@ -870,6 +889,18 @@ export default function CustomersPage() {
                     type="email"
                     value={editFormData.email}
                     onChange={(e) => setEditFormData({ ...editFormData, email: e.target.value })}
+                    className="dp-input"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-[#343C36] mb-1">
+                    Data de Nascimento (CRM)
+                  </label>
+                  <input
+                    type="date"
+                    value={editFormData.birthDate}
+                    onChange={(e) => setEditFormData({ ...editFormData, birthDate: e.target.value })}
                     className="dp-input"
                   />
                 </div>

@@ -1,403 +1,397 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
+import Link from "next/link";
 import {
-  CloudRain,
-  Clock,
+  BellRing,
+  FileText,
   ShieldCheck,
-  Star,
+  UserX,
+  HeartHandshake,
+  CloudRain,
+  Cake,
+  Crown,
   Users,
-  MessageCircle,
-  ExternalLink,
-  Car,
-  Award,
+  RefreshCw,
 } from "lucide-react";
 import {
+  PageHeader,
+  Alert,
+  LoadingState,
+  EmptyState,
+  SearchInput,
+  Pagination,
   Button,
   Badge,
-  PageHeader,
-  Modal,
-  EmptyState,
-  LoadingState,
-  Textarea,
 } from "@/components/ui";
+import { CrmSummaryCards } from "@/components/modules/crm/crm-summary-cards";
+import { CrmCustomerTable } from "@/components/modules/crm/crm-customer-table";
+import { CrmWhatsAppModal } from "@/components/modules/crm/crm-whatsapp-modal";
+import {
+  type CrmCustomer,
+  type CrmPagination,
+  type CrmSegment,
+  type CrmSummary,
+  type CrmTenantInfo,
+  resolveEffectiveCampaign,
+} from "@/components/modules/crm/types";
 
-interface AnalyzedCustomer {
-  id: string;
-  name: string;
-  phone: string;
-  whatsapp: string;
-  email?: string;
-  totalSpent: number;
-  ordersCount: number;
-  lastVisitDate?: string;
-  daysSinceLastVisit?: number;
-  primaryVehicle?: {
-    plate: string;
-    model: string;
-    category: string;
-  };
-  lastServiceName: string;
-  hasCoating: boolean;
-  hasInteriorClean: boolean;
-  isChurnRisk: boolean;
-  isPostSaleReady: boolean;
-  isCoatingDue: boolean;
-  classification: "A" | "B" | "C";
+interface SegmentTabConfig {
+  id: CrmSegment;
+  label: string;
+  countKey: keyof CrmSummary;
+  icon: React.ReactNode;
 }
 
-interface CRMSummary {
-  totalCustomers: number;
-  vipCustomersCount: number;
-  churnRiskCount: number;
-  coatingDueCount: number;
-  postSalePendingCount: number;
-  averageLTV: number;
-}
+const SEGMENT_TABS: SegmentTabConfig[] = [
+  {
+    id: "TODAY",
+    label: "Para Chamar Hoje",
+    countKey: "todayCount",
+    icon: <BellRing className="w-3.5 h-3.5" />,
+  },
+  {
+    id: "BUDGET_RECOVERY",
+    label: "Orçamentos em Aberto",
+    countKey: "budgetRecoveryCount",
+    icon: <FileText className="w-3.5 h-3.5" />,
+  },
+  {
+    id: "COATING_WARRANTY",
+    label: "Manutenção / Garantia",
+    countKey: "coatingDueCount",
+    icon: <ShieldCheck className="w-3.5 h-3.5" />,
+  },
+  {
+    id: "CHURN_RISK",
+    label: "Sumidos (+45d)",
+    countKey: "churnRiskCount",
+    icon: <UserX className="w-3.5 h-3.5" />,
+  },
+  {
+    id: "POST_SALE",
+    label: "Pós-Venda",
+    countKey: "postSaleCount",
+    icon: <HeartHandshake className="w-3.5 h-3.5" />,
+  },
+  {
+    id: "RAINY_DAY",
+    label: "Dia de Chuva",
+    countKey: "rainyDayCount",
+    icon: <CloudRain className="w-3.5 h-3.5" />,
+  },
+  {
+    id: "BIRTHDAY",
+    label: "Aniversariantes",
+    countKey: "birthdayCount",
+    icon: <Cake className="w-3.5 h-3.5" />,
+  },
+  {
+    id: "VIP",
+    label: "Clientes Ouro",
+    countKey: "vipCount",
+    icon: <Crown className="w-3.5 h-3.5" />,
+  },
+  {
+    id: "ALL",
+    label: "Todos",
+    countKey: "allCount",
+    icon: <Users className="w-3.5 h-3.5" />,
+  },
+];
 
-export default function CRMPage() {
-  const [customers, setCustomers] = useState<AnalyzedCustomer[]>([]);
-  const [summary, setSummary] = useState<CRMSummary | null>(null);
-  const [activeTab, setActiveTab] = useState<
-    "RAINY_DAY" | "CHURN_RISK" | "COATING_WARRANTY" | "POST_SALE" | "VIP" | "ALL"
-  >("RAINY_DAY");
+const INITIAL_SUMMARY: CrmSummary = {
+  totalCustomers: 0,
+  totalRevenue: 0,
+  todayCount: 0,
+  budgetRecoveryCount: 0,
+  coatingDueCount: 0,
+  churnRiskCount: 0,
+  postSaleCount: 0,
+  rainyDayCount: 0,
+  birthdayCount: 0,
+  vipCount: 0,
+  allCount: 0,
+  contactedLast30Days: 0,
+  roi30dRevenue: 0,
+  roi30dOrdersCount: 0,
+};
+
+export default function CrmRetentionPage() {
+  const [activeTab, setActiveTab] = useState<CrmSegment>("TODAY");
+  const [searchInput, setSearchInput] = useState("");
+  const [debouncedQuery, setDebouncedQuery] = useState("");
+  const [hideContacted, setHideContacted] = useState(true);
+  const [page, setPage] = useState(1);
+
   const [loading, setLoading] = useState(true);
+  const [forbidden, setForbidden] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const [selectedCustomer, setSelectedCustomer] = useState<AnalyzedCustomer | null>(null);
-  const [customMessage, setCustomMessage] = useState("");
-  const [showModal, setShowModal] = useState(false);
+  const [tenantInfo, setTenantInfo] = useState<CrmTenantInfo>({
+    name: "Sua Estética",
+    googleReviewUrl: null,
+  });
+  const [summary, setSummary] = useState<CrmSummary>(INITIAL_SUMMARY);
+  const [customers, setCustomers] = useState<CrmCustomer[]>([]);
+  const [pagination, setPagination] = useState<CrmPagination>({
+    page: 1,
+    limit: 25,
+    totalItems: 0,
+    totalPages: 1,
+  });
 
-  const fetchCRMData = async () => {
-    setLoading(true);
+  const [selectedCustomer, setSelectedCustomer] = useState<CrmCustomer | null>(
+    null
+  );
+
+  // Debounce da busca
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedQuery(searchInput.trim());
+      setPage(1);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchInput]);
+
+  const loadCrmData = useCallback(async () => {
     try {
-      const res = await fetch(`/api/crm?filter=${activeTab}`);
-      if (res.ok) {
-        const data = await res.json();
-        setCustomers(data.customers || []);
-        setSummary(data.summary || null);
+      setLoading(true);
+      setError(null);
+
+      const params = new URLSearchParams({
+        filter: activeTab,
+        page: String(page),
+        limit: "25",
+        hideContacted: String(hideContacted),
+      });
+      if (debouncedQuery) {
+        params.set("q", debouncedQuery);
       }
-    } catch (err) {
-      console.error("Erro ao carregar dados do CRM:", err);
+
+      const res = await fetch(`/api/crm?${params.toString()}`);
+
+      if (res.status === 403) {
+        setForbidden(true);
+        setLoading(false);
+        return;
+      }
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Erro ao carregar CRM & Retenção.");
+      }
+
+      setForbidden(false);
+      setTenantInfo(
+        data.tenant || { name: "Sua Estética", googleReviewUrl: null }
+      );
+      setSummary(data.summary || INITIAL_SUMMARY);
+      setCustomers(data.customers || []);
+      setPagination(
+        data.pagination || { page: 1, limit: 25, totalItems: 0, totalPages: 1 }
+      );
+    } catch (err: any) {
+      setError(err.message || "Falha ao carregar os dados de retenção.");
     } finally {
       setLoading(false);
     }
-  };
+  }, [activeTab, debouncedQuery, hideContacted, page]);
 
   useEffect(() => {
-    fetchCRMData();
-  }, [activeTab]);
+    loadCrmData();
+  }, [loadCrmData]);
 
-  const generateMessage = (customer: AnalyzedCustomer, type: string) => {
-    const vehicleName = customer.primaryVehicle
-      ? `${customer.primaryVehicle.model}`
-      : "seu veículo";
-
-    if (type === "RAINY_DAY") {
-      return `Olá, ${customer.name}! Tudo bem?\n\nNotamos o tempo chuvoso hoje e preparamos uma condição especial para cuidar do seu ${vehicleName} na nossa cabine interna:\n\n🌧️ *Cristalização de Para-brisa* (repelência imediata de água e máxima visibilidade);\n✨ *Higienização de Bancos & Oxi-Sanitização do Ar-Condicionado*.\n\nPodemos reservar um horário para você hoje?`;
+  function handleSelectTab(tab: CrmSegment) {
+    setActiveTab(tab);
+    setPage(1);
+    // Nas abas de histórico completo, mostra todos por padrão; nas filas de ação, aplica anti-spam
+    if (tab === "VIP" || tab === "ALL") {
+      setHideContacted(false);
+    } else {
+      setHideContacted(true);
     }
+  }
 
-    if (type === "CHURN_RISK") {
-      return `Olá, ${customer.name}! Já faz algum tempo desde a última visita do seu ${vehicleName}.\n\nPara mantermos a pintura e a proteção sempre impecáveis, queremos te presentear com uma *Descontaminação dos Vidros de Cortesia* na sua próxima lavagem técnica.\n\nQual o melhor dia desta semana para você nos visitar?`;
-    }
+  if (forbidden) {
+    return (
+      <div className="space-y-6 max-w-3xl">
+        <PageHeader
+          title="CRM & Retenção"
+          description="Central de relacionamento e reativação de clientes."
+        />
+        <Alert
+          variant="error"
+          title="Acesso restrito a administradores"
+          description="O módulo de CRM exibe faturamento acumulado por cliente e listas de contato comercial, disponíveis apenas para usuários com perfil Administrador."
+        />
+        <div>
+          <Link href="/patio">
+            <Button variant="outline">Voltar para o Pátio</Button>
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
-    if (type === "COATING_WARRANTY") {
-      return `Olá, ${customer.name}! Esperamos que esteja tudo ótimo.\n\nConstatamos que o seu ${vehicleName} está no período ideal para a *Revisão Preventiva da Vitrificação Cerâmica*. Essa manutenção é essencial para renovar o brilho e assegurar a garantia da proteção da pintura.\n\nPodemos agendar a sua vistoria sem custo esta semana?`;
-    }
-
-    if (type === "POST_SALE") {
-      return `Olá, ${customer.name}! Como está o ${vehicleName} após o atendimento conosco?\n\nSua satisfação é a nossa maior prioridade. Se puder dedicar 30 segundos para nos avaliar no link abaixo, ficaríamos muito gratos:\nhttps://g.page/review/detail-pro-auto\n\nQualquer dúvida ou detalhe, estamos à disposição!`;
-    }
-
-    return `Olá, ${customer.name}! Como cliente VIP da nossa estética, estamos passando para agradecer sua fidelidade e apresentar novos cuidados exclusivos para o seu ${vehicleName}.`;
-  };
-
-  const handleOpenMessageModal = (customer: AnalyzedCustomer) => {
-    setSelectedCustomer(customer);
-    const msg = generateMessage(customer, activeTab);
-    setCustomMessage(msg);
-    setShowModal(true);
-  };
-
-  const handleSendWhatsApp = () => {
-    if (!selectedCustomer) return;
-    const cleanPhone = selectedCustomer.whatsapp.replace(/\D/g, "");
-    const encoded = encodeURIComponent(customMessage);
-    const url = `https://wa.me/55${cleanPhone}?text=${encoded}`;
-    window.open(url, "_blank");
-    setShowModal(false);
-  };
-
-  const campaignCards = [
-    {
-      id: "RAINY_DAY" as const,
-      label: "Dias de Chuva",
-      value: "Campanha Ativa",
-      subtitle: "Serviços de Cabine Interna",
-      icon: CloudRain,
-      activeBorder: "border-[#2563EB]",
-      activeBg: "bg-[#EFF6FF]/60",
-      iconColor: "text-[#2563EB]",
-    },
-    {
-      id: "CHURN_RISK" as const,
-      label: "Sem Retorno (45+ dias)",
-      value: `${summary?.churnRiskCount ?? 0} clientes`,
-      subtitle: "Risco de inatividade",
-      icon: Clock,
-      activeBorder: "border-[#DC4C4C]",
-      activeBg: "bg-[#FEF2F2]/60",
-      iconColor: "text-[#DC4C4C]",
-    },
-    {
-      id: "COATING_WARRANTY" as const,
-      label: "Garantia Vitrificação",
-      value: `${summary?.coatingDueCount ?? 0} revisões`,
-      subtitle: "Manutenção semestral",
-      icon: ShieldCheck,
-      activeBorder: "border-[#D97706]",
-      activeBg: "bg-[#FFFBEB]/60",
-      iconColor: "text-[#D97706]",
-    },
-    {
-      id: "POST_SALE" as const,
-      label: "Pós-Venda e Avaliação",
-      value: `${summary?.postSalePendingCount ?? 0} avaliações`,
-      subtitle: "Últimos 1 a 3 dias",
-      icon: Star,
-      activeBorder: "border-[#16A36A]",
-      activeBg: "bg-[#ECFDF5]/60",
-      iconColor: "text-[#16A36A]",
-    },
-    {
-      id: "VIP" as const,
-      label: "Curva ABC (VIPs)",
-      value: `${summary?.vipCustomersCount ?? 0} VIPs`,
-      subtitle: "70% do faturamento",
-      icon: Award,
-      activeBorder: "border-[#247653]",
-      activeBg: "bg-[#E9F3EC]/70",
-      iconColor: "text-[#247653]",
-    },
-  ];
+  const effectiveModalCampaign = selectedCustomer
+    ? resolveEffectiveCampaign(selectedCustomer, activeTab)
+    : "MANUAL";
 
   return (
     <div className="space-y-6">
       <PageHeader
-        title="CRM e Retenção de Clientes"
-        description="Fidelização ativa, campanhas para dias de chuva, revisões de vitrificação e acompanhamento pós-venda."
+        title="CRM & Retenção de Clientes"
+        description="Descubra quem chamar hoje no WhatsApp para recuperar orçamentos, evitar clientes sumidos e gerar retorno recorrente."
+        badge={
+          <Badge variant="success" size="sm">
+            {summary.totalCustomers} clientes na base
+          </Badge>
+        }
         actions={
           <Button
-            variant="secondary"
+            variant="outline"
             size="sm"
-            onClick={() => setActiveTab(activeTab === "ALL" ? "RAINY_DAY" : "ALL")}
+            onClick={loadCrmData}
+            disabled={loading}
+            leftIcon={
+              <RefreshCw
+                className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`}
+              />
+            }
           >
-            {activeTab === "ALL" ? "Voltar às Campanhas" : "Ver Todos os Clientes"}
+            Atualizar fila
           </Button>
         }
       />
 
-      {/* Cards de Segmentação */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5">
-        {campaignCards.map((card) => {
-          const isActive = activeTab === card.id;
-          const Icon = card.icon;
-          return (
-            <div
-              key={card.id}
-              onClick={() => setActiveTab(card.id)}
-              className={`rounded-xl p-4 border cursor-pointer transition-all shadow-xs ${
-                isActive
-                  ? `${card.activeBg} ${card.activeBorder}`
-                  : "bg-white border-[#E7EAE7] hover:border-[#247653]/40"
-              }`}
-            >
-              <div className="flex items-center justify-between text-xs text-[#737D75] font-medium mb-1.5">
-                <span>{card.label}</span>
-                <Icon className={`w-4 h-4 ${card.iconColor}`} />
-              </div>
-              <div className="text-lg font-bold text-[#252B27]">{card.value}</div>
-              <div className="text-xs text-[#737D75] mt-1">{card.subtitle}</div>
-            </div>
-          );
-        })}
-      </div>
+      {error && (
+        <Alert
+          variant="error"
+          title="Não foi possível carregar o CRM"
+          description={error}
+        />
+      )}
 
-      {/* Explicação da Estratégia Ativa */}
-      <div className="bg-[#E9F3EC]/60 border border-[#247653]/20 rounded-xl p-4 flex items-center justify-between text-xs text-[#142D26]">
-        <div>
-          {activeTab === "RAINY_DAY" && (
-            <p>
-              🌧️ <strong>Campanha de Dias de Chuva:</strong> Envie ofertas de serviços internos que não dependem do clima (higienização de bancos, oxi-sanitização e cristalização de para-brisa) para manter o pátio produtivo mesmo em dias chuvosos.
-            </p>
-          )}
-          {activeTab === "CHURN_RISK" && (
-            <p>
-              ⚠️ <strong>Resgate de Clientes Inativos:</strong> Clientes que não visitam a estética há mais de 45 dias recebem um convite personalizado com cortesia para agendar o retorno.
-            </p>
-          )}
-          {activeTab === "COATING_WARRANTY" && (
-            <p>
-              🛡️ <strong>Manutenção de Vitrificação:</strong> Convide clientes com proteção cerâmica para a revisão semestral de repelência e renovação de garantia.
-            </p>
-          )}
-          {activeTab === "POST_SALE" && (
-            <p>
-              ⭐ <strong>Pós-Venda Automático:</strong> Colete feedbacks após a entrega do veículo e convide o cliente para avaliar sua estética no Google.
-            </p>
-          )}
-          {activeTab === "VIP" && (
-            <p>
-              💎 <strong>Clientes Classe A (Curva ABC):</strong> Seus maiores clientes em volume investido (LTV). Ofereça atendimento prioritário e benefícios exclusivos.
-            </p>
-          )}
-          {activeTab === "ALL" && (
-            <p>
-              👥 <strong>Base Completa de Clientes:</strong> Visão geral de todos os clientes analisados pelo CRM com histórico de visitas e classificação ABC.
-            </p>
-          )}
+      {/* KPIs acionáveis e ROI dos últimos 30 dias */}
+      <CrmSummaryCards
+        summary={summary}
+        activeTab={activeTab}
+        onSelectTab={handleSelectTab}
+      />
+
+      {/* Abas de Segmentação */}
+      <div className="bg-white border border-[#E7EAE7] rounded-xl p-3 space-y-3">
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
+          {SEGMENT_TABS.map((tab) => {
+            const isActive = activeTab === tab.id;
+            const countValue = summary[tab.countKey] ?? 0;
+
+            return (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => handleSelectTab(tab.id)}
+                className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium whitespace-nowrap transition-colors cursor-pointer ${
+                  isActive
+                    ? "bg-[#142D26] text-white shadow-2xs"
+                    : "bg-[#F7F8F6] text-[#5B655D] hover:bg-[#E9F3EC] hover:text-[#142D26]"
+                }`}
+              >
+                {tab.icon}
+                <span>{tab.label}</span>
+                <span
+                  className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
+                    isActive
+                      ? "bg-[#247653] text-white"
+                      : "bg-white text-[#252B27] border border-[#E7EAE7]"
+                  }`}
+                >
+                  {countValue}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Busca + Anti-spam */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2 border-t border-[#E7EAE7]">
+          <div className="w-full sm:max-w-sm">
+            <SearchInput
+              placeholder="Buscar por nome, telefone, placa ou carro..."
+              value={searchInput}
+              onChange={(val) => setSearchInput(val)}
+              onClear={() => setSearchInput("")}
+            />
+          </div>
+
+          <label className="inline-flex items-center gap-2 text-xs text-[#343C36] font-medium cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={hideContacted}
+              onChange={(e) => {
+                setHideContacted(e.target.checked);
+                setPage(1);
+              }}
+              className="rounded accent-[#247653]"
+            />
+            <span>Ocultar clientes já chamados recentemente ou adiados</span>
+          </label>
         </div>
       </div>
 
-      {/* Lista de Clientes do Segmento */}
-      <div className="bg-white border border-[#E7EAE7] rounded-xl overflow-hidden shadow-xs">
-        {loading ? (
-          <LoadingState message="Analisando histórico de visitas e campanhas..." />
-        ) : customers.length === 0 ? (
-          <EmptyState
-            icon={<Users className="w-6 h-6" />}
-            title="Nenhum cliente neste segmento"
-            description="Não há clientes enquadrados neste filtro de campanha no momento."
-          />
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm">
-              <thead className="bg-[#F7F8F6] text-[#737D75] uppercase text-xs border-b border-[#E7EAE7]">
-                <tr>
-                  <th className="px-6 py-3 font-semibold">Cliente</th>
-                  <th className="px-6 py-3 font-semibold">Veículo Principal</th>
-                  <th className="px-6 py-3 font-semibold">Classificação</th>
-                  <th className="px-6 py-3 font-semibold">LTV / Total Investido</th>
-                  <th className="px-6 py-3 font-semibold">Última Visita</th>
-                  <th className="px-6 py-3 font-semibold text-right">Contato Rápido</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[#F1F3F1]">
-                {customers.map((c) => (
-                  <tr key={c.id} className="hover:bg-[#F7F8F6]/70 transition-colors">
-                    <td className="px-6 py-3.5">
-                      <div className="font-semibold text-[#252B27]">{c.name}</div>
-                      <div className="text-xs text-[#737D75]">{c.whatsapp || c.phone}</div>
-                    </td>
-                    <td className="px-6 py-3.5">
-                      {c.primaryVehicle ? (
-                        <div className="text-xs">
-                          <span className="font-semibold text-[#252B27] flex items-center gap-1.5">
-                            <Car className="w-3.5 h-3.5 text-[#247653]" />
-                            {c.primaryVehicle.model}
-                          </span>
-                          <span className="text-[#737D75]">Placa: {c.primaryVehicle.plate}</span>
-                        </div>
-                      ) : (
-                        <span className="text-xs text-[#9CA49E]">Sem veículo cadastrado</span>
-                      )}
-                    </td>
-                    <td className="px-6 py-3.5">
-                      <Badge
-                        variant={
-                          c.classification === "A"
-                            ? "brand"
-                            : c.classification === "B"
-                            ? "info"
-                            : "neutral"
-                        }
-                        size="sm"
-                      >
-                        Classe {c.classification}
-                      </Badge>
-                    </td>
-                    <td className="px-6 py-3.5 font-semibold text-[#247653]">
-                      R$ {c.totalSpent.toFixed(2)}
-                      <div className="text-xs text-[#737D75] font-normal">
-                        {c.ordersCount} atendimentos
-                      </div>
-                    </td>
-                    <td className="px-6 py-3.5 text-xs text-[#737D75]">
-                      {c.daysSinceLastVisit !== null && c.daysSinceLastVisit !== undefined ? (
-                        <>
-                          <div className="font-medium text-[#252B27]">
-                            há {c.daysSinceLastVisit} dias
-                          </div>
-                          {c.lastVisitDate && (
-                            <div className="text-[11px] text-[#737D75]">
-                              {new Date(c.lastVisitDate).toLocaleDateString("pt-BR")}
-                            </div>
-                          )}
-                        </>
-                      ) : (
-                        "Sem histórico"
-                      )}
-                    </td>
-                    <td className="px-6 py-3.5 text-right">
-                      <Button
-                        variant="primary"
-                        size="sm"
-                        onClick={() => handleOpenMessageModal(c)}
-                        leftIcon={<MessageCircle className="w-3.5 h-3.5" />}
-                      >
-                        Enviar WhatsApp
-                      </Button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
-
-      {/* Modal de Envio Personalizado WhatsApp */}
-      <Modal
-        isOpen={showModal && !!selectedCustomer}
-        onClose={() => setShowModal(false)}
-        title="Enviar Mensagem pelo WhatsApp"
-        description={
-          selectedCustomer
-            ? `Destinatário: ${selectedCustomer.name} (${selectedCustomer.whatsapp})`
-            : ""
-        }
-        size="md"
-      >
-        <div className="space-y-4">
-          <Textarea
-            label="Texto da Mensagem (você pode editar antes de enviar)"
-            rows={7}
-            value={customMessage}
-            onChange={(e) => setCustomMessage(e.target.value)}
+      {/* Lista de Clientes */}
+      {loading ? (
+        <LoadingState message="Analisando histórico de ordens pagas e oportunidades..." />
+      ) : customers.length === 0 ? (
+        <EmptyState
+          icon={<BellRing className="w-6 h-6 text-[#247653]" />}
+          title="Nenhum cliente pendente nesta lista"
+          description={
+            hideContacted
+              ? "Todos os clientes deste filtro já foram atendidos recentemente ou não há pendências no momento."
+              : "Não encontramos clientes correspondentes a este filtro ou pesquisa."
+          }
+          action={
+            hideContacted ? (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setHideContacted(false);
+                  setPage(1);
+                }}
+              >
+                Mostrar inclusive já contatados
+              </Button>
+            ) : undefined
+          }
+        />
+      ) : (
+        <>
+          <CrmCustomerTable
+            customers={customers}
+            activeTab={activeTab}
+            onOpenWhatsAppModal={(c) => setSelectedCustomer(c)}
           />
 
-          <div className="text-xs text-[#737D75] bg-[#F7F8F6] p-3 rounded-lg border border-[#E7EAE7]">
-            Ao clicar em <strong>Abrir no WhatsApp</strong>, o sistema abrirá a conversa diretamente com o cliente já com a mensagem preenchida.
-          </div>
+          <Pagination
+            currentPage={pagination.page}
+            totalPages={pagination.totalPages}
+            totalItems={pagination.totalItems}
+            onPageChange={(newPage) => setPage(newPage)}
+          />
+        </>
+      )}
 
-          <div className="flex justify-end gap-2.5 pt-4 border-t border-[#E7EAE7]">
-            <Button
-              type="button"
-              variant="secondary"
-              onClick={() => setShowModal(false)}
-            >
-              Cancelar
-            </Button>
-            <Button
-              type="button"
-              variant="primary"
-              onClick={handleSendWhatsApp}
-              leftIcon={<ExternalLink className="w-4 h-4" />}
-            >
-              Abrir no WhatsApp
-            </Button>
-          </div>
-        </div>
-      </Modal>
+      {/* Modal de Disparo + Log Anti-spam */}
+      <CrmWhatsAppModal
+        customer={selectedCustomer}
+        campaign={effectiveModalCampaign}
+        tenant={tenantInfo}
+        onClose={() => setSelectedCustomer(null)}
+        onSuccess={loadCrmData}
+      />
     </div>
   );
 }

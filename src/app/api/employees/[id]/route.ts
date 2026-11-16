@@ -65,6 +65,8 @@ export async function PUT(
 
     if (parsed.password && parsed.password.trim().length >= 6) {
       updateData.passwordHash = await hashPassword(parsed.password.trim());
+      updateData.mustChangePassword = true;
+      updateData.tokenVersion = { increment: 1 };
     }
 
     const updated = await prisma.user.update({

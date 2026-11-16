@@ -6,7 +6,9 @@ import { prisma } from "./prisma";
 function getJwtSecret(): Uint8Array {
   const secret = process.env.JWT_SECRET;
   if (!secret || secret.length < 32) {
-    throw new Error("JWT_SECRET ausente ou curto demais (mínimo 32 caracteres). Configure no ambiente.");
+    throw new Error(
+      "JWT_SECRET ausente ou curto demais (mínimo 32 caracteres). Configure no ambiente."
+    );
   }
   return new TextEncoder().encode(secret);
 }
@@ -24,6 +26,8 @@ export interface SessionPayload {
   trialExpiresAt?: string | null;
   isTrialExpired?: boolean;
   onboardingCompleted?: boolean;
+  tokenVersion?: number;
+  mustChangePassword?: boolean;
 }
 
 export async function hashPassword(password: string): Promise<string> {
@@ -31,7 +35,10 @@ export async function hashPassword(password: string): Promise<string> {
   return bcrypt.hash(password, salt);
 }
 
-export async function comparePassword(password: string, hash: string): Promise<boolean> {
+export async function comparePassword(
+  password: string,
+  hash: string
+): Promise<boolean> {
   return bcrypt.compare(password, hash);
 }
 
@@ -43,9 +50,13 @@ export async function signToken(payload: SessionPayload): Promise<string> {
     .sign(getJwtSecret());
 }
 
-export async function verifyToken(token: string): Promise<SessionPayload | null> {
+export async function verifyToken(
+  token: string
+): Promise<SessionPayload | null> {
   try {
-    const { payload } = await jwtVerify(token, getJwtSecret(), { algorithms: ["HS256"] });
+    const { payload } = await jwtVerify(token, getJwtSecret(), {
+      algorithms: ["HS256"],
+    });
     return payload as unknown as SessionPayload;
   } catch {
     return null;
@@ -63,7 +74,7 @@ export async function getSession(): Promise<SessionPayload | null> {
   if (!session || !session.userId || !session.tenantId) return null;
 
   try {
-    // Revalida usuário e tenant no banco a cada requisição (desativação/mudança de perfil têm efeito imediato).
+    // Revalida usuário, tokenVersion e tenant no banco a cada requisição (desativação/mudança de perfil/troca de senha têm efeito imediato).
     const user = await prisma.user.findUnique({
       where: { id: session.userId },
       select: {
@@ -73,6 +84,8 @@ export async function getSession(): Promise<SessionPayload | null> {
         name: true,
         role: true,
         active: true,
+        tokenVersion: true,
+        mustChangePassword: true,
         tenant: {
           select: {
             name: true,
@@ -87,7 +100,16 @@ export async function getSession(): Promise<SessionPayload | null> {
       },
     });
 
-    if (!user || !user.active || !user.tenant.active || user.tenantId !== session.tenantId) {
+    if (
+      !user ||
+      !user.active ||
+      !user.tenant.active ||
+      user.tenantId !== session.tenantId
+    ) {
+      return null;
+    }
+
+    if ((session.tokenVersion ?? 1) !== user.tokenVersion) {
       return null;
     }
 
@@ -109,12 +131,15 @@ export async function getSession(): Promise<SessionPayload | null> {
       trialExpiresAt: tenant.trialExpiresAt?.toISOString() || null,
       isTrialExpired,
       onboardingCompleted: tenant.onboardingCompleted,
+      tokenVersion: user.tokenVersion,
+      mustChangePassword: user.mustChangePassword,
     };
   } catch {
     // Falha de banco: nega acesso (fail-closed) em vez de confiar apenas no JWT.
     return null;
   }
 }
+
 export function setAuthCookie(token: string) {
   const cookieStore = cookies();
   cookieStore.set(AUTH_COOKIE_NAME, token, {
@@ -136,4 +161,3 @@ export function clearAuthCookie() {
     maxAge: 0,
   });
 }
-

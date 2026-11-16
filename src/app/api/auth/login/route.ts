@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { comparePassword, signToken, AUTH_COOKIE_NAME } from "@/lib/auth";
-import { getClientIp, isRateLimited } from "@/lib/rate-limit";
+import { getClientIp, isRateLimitedAsync } from "@/lib/rate-limit";
 
 const loginSchema = z.object({
   email: z.string().email("E-mail inválido."),
@@ -13,7 +13,7 @@ const loginSchema = z.object({
 export async function POST(req: NextRequest) {
   try {
     const ip = getClientIp(req);
-    if (isRateLimited(`login:ip:${ip}`, 20, 15 * 60 * 1000)) {
+    if (await isRateLimitedAsync(`login:ip:${ip}`, 20, 15 * 60 * 1000)) {
       return NextResponse.json(
         { error: "Muitas tentativas. Aguarde alguns minutos e tente novamente." },
         { status: 429 }
@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
     const { email: rawEmail, password } = validated.data;
     const email = rawEmail.trim().toLowerCase();
 
-    if (isRateLimited(`login:email:${email}`, 8, 15 * 60 * 1000)) {
+    if (await isRateLimitedAsync(`login:email:${email}`, 8, 15 * 60 * 1000)) {
       return NextResponse.json(
         { error: "Muitas tentativas para este e-mail. Aguarde alguns minutos." },
         { status: 429 }
@@ -61,7 +61,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Gera o token JWT com os dados da sessão
+    // Gera o token JWT com os dados da sessão e tokenVersion para revogação
     const token = await signToken({
       userId: user.id,
       tenantId: user.tenantId,
@@ -71,6 +71,8 @@ export async function POST(req: NextRequest) {
       tenantName: user.tenant.tradingName || user.tenant.name,
       plan: user.tenant.plan,
       trialExpiresAt: user.tenant.trialExpiresAt?.toISOString() || null,
+      tokenVersion: user.tokenVersion,
+      mustChangePassword: user.mustChangePassword,
     });
 
     // Registra auditoria de login
@@ -89,8 +91,11 @@ export async function POST(req: NextRequest) {
       req.url.startsWith("https://") ||
       req.headers.get("x-forwarded-proto") === "https";
 
-    const needsOnboarding = user.role === "ADMIN" && !user.tenant.onboardingCompleted;
-    const redirect = needsOnboarding
+    const needsOnboarding =
+      user.role === "ADMIN" && !user.tenant.onboardingCompleted;
+    const redirect = user.mustChangePassword
+      ? "/trocar-senha"
+      : needsOnboarding
       ? "/onboarding"
       : user.role === "OPERATOR"
       ? "/patio"
@@ -104,6 +109,7 @@ export async function POST(req: NextRequest) {
         name: user.name,
         email: user.email,
         role: user.role,
+        mustChangePassword: user.mustChangePassword,
         tenant: {
           id: user.tenant.id,
           name: user.tenant.name,
@@ -131,4 +137,3 @@ export async function POST(req: NextRequest) {
     );
   }
 }
-

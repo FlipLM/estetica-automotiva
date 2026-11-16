@@ -2,22 +2,27 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { hashPassword, signToken, AUTH_COOKIE_NAME } from "@/lib/auth";
-import { getClientIp, isRateLimited } from "@/lib/rate-limit";
+import { getClientIp, isRateLimitedAsync } from "@/lib/rate-limit";
 
 const registerSchema = z.object({
-  companyName: z.string().min(3, "Nome da empresa deve ter no mínimo 3 caracteres."),
+  companyName: z
+    .string()
+    .min(3, "Nome da empresa deve ter no mínimo 3 caracteres."),
   tradingName: z.string().optional(),
   document: z.string().optional(),
   phone: z.string().optional(),
   adminName: z.string().min(3, "Seu nome deve ter no mínimo 3 caracteres."),
-  email: z.string().email("E-mail inválido.").transform((v) => v.trim().toLowerCase()),
+  email: z
+    .string()
+    .email("E-mail inválido.")
+    .transform((v) => v.trim().toLowerCase()),
   password: z.string().min(8, "A senha deve ter no mínimo 8 caracteres."),
   website: z.string().max(0, "Detecção anti-bot acionada.").optional(),
 });
 
 export async function POST(req: NextRequest) {
   try {
-    if (isRateLimited(`register:${getClientIp(req)}`, 5, 60 * 60 * 1000)) {
+    if (await isRateLimitedAsync(`register:${getClientIp(req)}`, 5, 60 * 60 * 1000)) {
       return NextResponse.json(
         { error: "Muitas tentativas de cadastro. Tente novamente mais tarde." },
         { status: 429 }
@@ -77,6 +82,7 @@ export async function POST(req: NextRequest) {
           role: "ADMIN",
           phone: data.phone,
           active: true,
+          mustChangePassword: false,
         },
       });
 
@@ -93,6 +99,8 @@ export async function POST(req: NextRequest) {
       plan: "TRIAL",
       trialExpiresAt: result.tenant.trialExpiresAt?.toISOString() || null,
       onboardingCompleted: false,
+      tokenVersion: result.user.tokenVersion,
+      mustChangePassword: false,
     });
 
     const isHttps =

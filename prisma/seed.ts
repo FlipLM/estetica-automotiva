@@ -7,13 +7,17 @@ async function main() {
   console.log("[*] Verificando estado atual do banco de dados...");
   const tenantCount = await prisma.tenant.count();
   if (tenantCount > 0 && process.env.FORCE_SEED !== "true") {
-    console.log(`[*] ${tenantCount} tenant(s) já existente(s) no banco. Seed ignorado para proteger dados de produção.`);
-    console.log("[*] Para forçar a recriação do seed demo, execute com FORCE_SEED=true.");
+    console.log(
+      `[*] ${tenantCount} tenant(s) já existente(s) no banco. Seed ignorado para proteger dados de produção.`
+    );
+    console.log(
+      "[*] Para forçar a recriação do seed demo, execute com FORCE_SEED=true."
+    );
     return;
   }
   console.log("[*] Iniciando seed do banco de dados...");
 
-  // Limpa registros anteriores para evitar duplicidade em reexecuÃ§Ãµes
+  // Limpa registros anteriores para evitar duplicidade em reexecuções
   await prisma.auditLog.deleteMany({});
   await prisma.stockMovement.deleteMany({});
   await prisma.product.deleteMany({});
@@ -30,16 +34,16 @@ async function main() {
   await prisma.user.deleteMany({});
   await prisma.tenant.deleteMany({});
 
-  // 1. CriaÃ§Ã£o do Tenant Demonstrativo Oficial (Master Tenant Ativo Permanente)
+  // 1. Criação do Tenant Demonstrativo Oficial (Master Tenant Ativo Permanente)
   const tenant = await prisma.tenant.create({
     data: {
-      name: "EstÃºdio Prime Detailing & EstÃ©tica Automotiva",
+      name: "Estúdio Prime Detailing & Estética Automotiva",
       tradingName: "Prime Detailing",
       document: "45.123.456/0001-89",
       phone: "(11) 98765-4321",
       whatsapp: "5511987654321",
       email: "contato@primedetailing.com.br",
-      address: "Av. dos Bandeirantes, 1500 - SÃ£o Paulo, SP",
+      address: "Av. dos Bandeirantes, 1500 - São Paulo, SP",
       active: true,
       plan: "ACTIVE",
       trialExpiresAt: null,
@@ -50,7 +54,7 @@ async function main() {
 
   console.log(`[+] Tenant criado: ${tenant.name} (${tenant.id})`);
 
-  // 2. CriaÃ§Ã£o de UsuÃ¡rios: 1 Admin e 1 Operador
+  // 2. Criação de Usuários: 1 Admin e 1 Operador
   const passwordHash = await bcrypt.hash("senha123", 10);
 
   const admin = await prisma.user.create({
@@ -62,30 +66,35 @@ async function main() {
       role: "ADMIN",
       phone: "(11) 99999-0001",
       active: true,
+      mustChangePassword: false,
     },
   });
 
   const operator = await prisma.user.create({
     data: {
       tenantId: tenant.id,
-      name: "Marcos Polidor (Operador de PÃ¡tio)",
+      name: "Marcos Polidor (Operador de Pátio)",
       email: "operador@detailing.com",
       passwordHash,
       role: "OPERATOR",
       phone: "(11) 99999-0002",
       commissionRate: 15.0,
       active: true,
+      mustChangePassword: false,
     },
   });
 
-  console.log(`[+] UsuÃ¡rios criados: Admin (${admin.email}) e Operador (${operator.email})`);
+  console.log(
+    `[+] Usuários criados: Admin (${admin.email}) e Operador (${operator.email})`
+  );
 
-  // 3. CatÃ¡logo de ServiÃ§os com Matriz de PreÃ§os
+  // 3. Catálogo de Serviços com Matriz de Preços
   const servLavagem = await prisma.service.create({
     data: {
       tenantId: tenant.id,
-      name: "Lavagem TÃ©cnica Detalhada",
-      description: "Lavagem minuciosa com descontaminaÃ§Ã£o ferrosa, limpeza de caixas de roda e secagem com ar forÃ§ado.",
+      name: "Lavagem Técnica Detalhada",
+      description:
+        "Lavagem minuciosa com descontaminação ferrosa, limpeza de caixas de roda e secagem com ar forçado.",
       category: "LAVAGEM",
       estimatedMinutes: 90,
       priceHatch: 90.0,
@@ -102,8 +111,9 @@ async function main() {
   const servHigienizacao = await prisma.service.create({
     data: {
       tenantId: tenant.id,
-      name: "HigienizaÃ§Ã£o Interna Completa",
-      description: "ExtraÃ§Ã£o de estofados a quente, higienizaÃ§Ã£o de cintos, teto, painel e oxi-sanitizaÃ§Ã£o de cabine.",
+      name: "Higienização Interna Completa",
+      description:
+        "Extração de estofados a quente, higienização de cintos, teto, painel e oxi-sanitização de cabine.",
       category: "HIGIENIZACAO",
       estimatedMinutes: 240,
       priceHatch: 350.0,
@@ -120,8 +130,9 @@ async function main() {
   const servPolimento = await prisma.service.create({
     data: {
       tenantId: tenant.id,
-      name: "Polimento TÃ©cnico & CorreÃ§Ã£o de Pintura",
-      description: "EliminaÃ§Ã£o de swirls, riscos mÃ©dios e restauraÃ§Ã£o de brilho em 2 ou 3 etapas.",
+      name: "Polimento Técnico & Correção de Pintura",
+      description:
+        "Eliminação de swirls, riscos médios e restauração de brilho em 2 ou 3 etapas.",
       category: "POLIMENTO",
       estimatedMinutes: 480,
       priceHatch: 600.0,
@@ -138,8 +149,9 @@ async function main() {
   const servVitrificacao = await prisma.service.create({
     data: {
       tenantId: tenant.id,
-      name: "VitrificaÃ§Ã£o CerÃ¢mica 9H (ProteÃ§Ã£o 3 Anos)",
-      description: "AplicaÃ§Ã£o de nano-revestimento cerÃ¢mico com alta hidrofobia e proteÃ§Ã£o contra raios UV e seiva.",
+      name: "Vitrificação Cerâmica 9H (Proteção 3 Anos)",
+      description:
+        "Aplicação de nano-revestimento cerâmico com alta hidrofobia e proteção contra raios UV e seiva.",
       category: "PROTECAO",
       estimatedMinutes: 300,
       priceHatch: 900.0,
@@ -153,9 +165,9 @@ async function main() {
     },
   });
 
-  console.log("[+] 4 ServiÃ§os padrÃ£o criados com matriz de preÃ§os por porte.");
+  console.log("[+] 4 Serviços padrão criados com matriz de preços por porte.");
 
-  // 4. Clientes e VeÃ­culos
+  // 4. Clientes e Veículos
   const c1 = await prisma.customer.create({
     data: {
       tenantId: tenant.id,
@@ -234,11 +246,11 @@ async function main() {
     },
   });
 
-  console.log("[+] 3 Clientes e 3 VeÃ­culos criados.");
+  console.log("[+] 3 Clientes e 3 Veículos criados.");
 
-  // 5. Ordens de ServiÃ§o nos diferentes status do PÃ¡tio
+  // 5. Ordens de Serviço nos diferentes status do Pátio
   // OS 1: Para Fazer (Hatch - Onix)
-  const os1 = await prisma.serviceOrder.create({
+  await prisma.serviceOrder.create({
     data: {
       tenantId: tenant.id,
       orderNumber: 1001,
@@ -249,7 +261,7 @@ async function main() {
       totalAmount: 90.0,
       box: "Box 1 - Entrada",
       mileage: 28500,
-      notes: "Cliente solicitou atenÃ§Ã£o especial nas rodas.",
+      notes: "Cliente solicitou atenção especial nas rodas.",
       items: {
         create: [
           {
@@ -266,8 +278,8 @@ async function main() {
     },
   });
 
-  // OS 2: Em ServiÃ§o (Sedan - Corolla - Polimento + HigienizaÃ§Ã£o)
-  const os2 = await prisma.serviceOrder.create({
+  // OS 2: Em Serviço (Sedan - Corolla - Polimento + Higienização)
+  await prisma.serviceOrder.create({
     data: {
       tenantId: tenant.id,
       orderNumber: 1002,
@@ -305,7 +317,7 @@ async function main() {
       checklist: {
         create: {
           fuelLevel: 65,
-          valuablesLeft: "Ã“culos de sol no porta-luvas",
+          valuablesLeft: "Óculos de sol no porta-luvas",
           damageRecords: {
             create: [
               {
@@ -325,8 +337,8 @@ async function main() {
     },
   });
 
-  // OS 3: ConcluÃ­do (SUV - Compass - VitrificaÃ§Ã£o)
-  const os3 = await prisma.serviceOrder.create({
+  // OS 3: Concluído (SUV - Compass - Vitrificação)
+  await prisma.serviceOrder.create({
     data: {
       tenantId: tenant.id,
       orderNumber: 1003,
@@ -335,7 +347,7 @@ async function main() {
       status: "DONE",
       subtotal: 1400.0,
       totalAmount: 1400.0,
-      box: "Box 2 - Secagem/FinalizaÃ§Ã£o",
+      box: "Box 2 - Secagem/Finalização",
       startedAt: new Date(Date.now() - 3600000 * 5),
       completedAt: new Date(),
       mileage: 9500,
@@ -361,7 +373,7 @@ async function main() {
     data: [
       {
         tenantId: tenant.id,
-        description: "Aluguel do GalpÃ£o da EstÃ©tica",
+        description: "Aluguel do Galpão da Estética",
         category: "RENT",
         amount: 3500.0,
         dueDate: new Date(),
@@ -370,7 +382,7 @@ async function main() {
       },
       {
         tenantId: tenant.id,
-        description: "Conta de Ãgua Sabesp (Consumo Alto)",
+        description: "Conta de Água Sabesp (Consumo Alto)",
         category: "UTILITIES",
         amount: 620.0,
         dueDate: new Date(),
@@ -405,5 +417,3 @@ main()
   .finally(async () => {
     await prisma.$disconnect();
   });
-
-

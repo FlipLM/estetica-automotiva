@@ -14,6 +14,8 @@ import {
   Loader2,
   HardDrive,
   ExternalLink,
+  CreditCard,
+  Star,
 } from "lucide-react";
 import {
   Button,
@@ -35,6 +37,11 @@ interface TenantData {
   email?: string;
   address?: string;
   logoUrl?: string;
+  debitFeeRate?: number;
+  credit1xFeeRate?: number;
+  credit2to6FeeRate?: number;
+  credit7to12FeeRate?: number;
+  googleReviewUrl?: string | null;
   storageConnected?: boolean;
   localStorageUsage?: {
     percentUsed: number;
@@ -76,6 +83,11 @@ export default function ConfiguracoesPage() {
     email: "",
     address: "",
     logoUrl: "",
+    debitFeeRate: "0",
+    credit1xFeeRate: "0",
+    credit2to6FeeRate: "0",
+    credit7to12FeeRate: "0",
+    googleReviewUrl: "",
   });
 
   const fetchTenant = async () => {
@@ -97,6 +109,11 @@ export default function ConfiguracoesPage() {
           email: data.tenant.email || "",
           address: data.tenant.address || "",
           logoUrl: data.tenant.logoUrl || "",
+          debitFeeRate: String(data.tenant.debitFeeRate ?? 0),
+          credit1xFeeRate: String(data.tenant.credit1xFeeRate ?? 0),
+          credit2to6FeeRate: String(data.tenant.credit2to6FeeRate ?? 0),
+          credit7to12FeeRate: String(data.tenant.credit7to12FeeRate ?? 0),
+          googleReviewUrl: data.tenant.googleReviewUrl || "",
         });
       }
     } catch (err) {
@@ -114,8 +131,6 @@ export default function ConfiguracoesPage() {
     setLogoUploadError(null);
 
     try {
-      // Comprime a logomarca no navegador (512x512 WebP, ~20KB a 40KB)
-      // Evita sobrecarregar a cota de armazenamento com arquivos pesados de câmeras
       const compressedFile = await compressLogoImage(file);
 
       const formData = new FormData();
@@ -130,7 +145,8 @@ export default function ConfiguracoesPage() {
       if (!res.ok) {
         if (res.status === 403 && data.redirectTo) {
           setLogoUploadError(
-            data.error || "Limite de armazenamento temporário atingido (100% utilizado)."
+            data.error ||
+              "Limite de armazenamento temporário atingido (100% utilizado)."
           );
           if (data.percentUsed !== undefined) {
             setLocalUsage({
@@ -175,10 +191,22 @@ export default function ConfiguracoesPage() {
     setSaveError(null);
 
     try {
+      const parseRate = (val: string) => {
+        const n = Number(String(val || "0").replace(",", "."));
+        return Number.isFinite(n) ? n : 0;
+      };
+
       const res = await fetch("/api/settings", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify({
+          ...form,
+          debitFeeRate: parseRate(form.debitFeeRate),
+          credit1xFeeRate: parseRate(form.credit1xFeeRate),
+          credit2to6FeeRate: parseRate(form.credit2to6FeeRate),
+          credit7to12FeeRate: parseRate(form.credit7to12FeeRate),
+          googleReviewUrl: form.googleReviewUrl.trim() || null,
+        }),
       });
 
       const data = await res.json();
@@ -188,7 +216,9 @@ export default function ConfiguracoesPage() {
         setTimeout(() => setSavedSuccess(false), 4000);
         await fetchTenant();
       } else {
-        setSaveError(data.error || "Erro ao atualizar configurações da empresa.");
+        setSaveError(
+          data.error || "Erro ao atualizar configurações da empresa."
+        );
       }
     } catch (err) {
       console.error(err);
@@ -206,14 +236,14 @@ export default function ConfiguracoesPage() {
     <div className="space-y-6 max-w-5xl">
       <PageHeader
         title="Configurações da Empresa"
-        description="Personalize os dados cadastrais exibidos em orçamentos, laudos de vistoria em PDF e comunicações com clientes."
+        description="Personalize os dados cadastrais exibidos em orçamentos, laudos de vistoria em PDF e taxas padrão da maquininha."
       />
 
       {savedSuccess && (
         <Alert
           variant="success"
           title="Informações salvas com sucesso!"
-          description="Os dados da sua estética foram atualizados em todo o sistema."
+          description="Os dados e taxas da sua estética foram atualizados em todo o sistema."
         />
       )}
 
@@ -263,7 +293,7 @@ export default function ConfiguracoesPage() {
 
       {/* Formulário de Configuração */}
       <div className="bg-white border border-[#E7EAE7] rounded-xl p-6 shadow-xs">
-        <form onSubmit={handleSubmit} className="space-y-5">
+        <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Input
               label="Razão Social / Nome Oficial da Empresa"
@@ -275,7 +305,9 @@ export default function ConfiguracoesPage() {
             <Input
               label="Nome Fantasia (Marca visível aos clientes)"
               value={form.tradingName}
-              onChange={(e) => setForm({ ...form, tradingName: e.target.value })}
+              onChange={(e) =>
+                setForm({ ...form, tradingName: e.target.value })
+              }
             />
           </div>
 
@@ -319,13 +351,115 @@ export default function ConfiguracoesPage() {
             />
           </div>
 
+          {/* Pós-Venda & CRM */}
+          <div className="p-5 rounded-xl border border-[#E7EAE7] bg-[#F7F8F6] space-y-3">
+            <div className="flex items-start gap-3">
+              <div className="w-9 h-9 rounded-lg bg-[#E9F3EC] text-[#247653] flex items-center justify-center shrink-0">
+                <Star className="w-4 h-4" />
+              </div>
+              <div>
+                <h3 className="text-[15px] font-semibold text-[#252B27]">
+                  Pós-Venda e Avaliações no Google (CRM)
+                </h3>
+                <p className="text-[12px] text-[#737D75] mt-0.5">
+                  Cole o link direto de avaliação da sua estética no Google Meu Negócio. Quando preenchido, ele aparece automaticamente nas mensagens de pós-venda enviadas pelo CRM.
+                </p>
+              </div>
+            </div>
+
+            <Input
+              label="Link de Avaliação no Google (opcional)"
+              type="url"
+              placeholder="https://g.page/r/seu-link-de-avaliacao/review"
+              value={form.googleReviewUrl}
+              onChange={(e) =>
+                setForm({ ...form, googleReviewUrl: e.target.value })
+              }
+            />
+          </div>
+
+          {/* Taxas de Maquininha */}
+          <div
+            id="taxas-maquininha"
+            className="p-5 rounded-xl border border-[#E7EAE7] bg-[#F7F8F6] space-y-4"
+          >
+            <div className="flex items-start gap-3">
+              <div className="w-9 h-9 rounded-lg bg-[#E9F3EC] text-[#247653] flex items-center justify-center shrink-0">
+                <CreditCard className="w-4 h-4" />
+              </div>
+              <div>
+                <h3 className="text-[15px] font-semibold text-[#252B27]">
+                  Taxas de Maquininha (%)
+                </h3>
+                <p className="text-[12px] text-[#737D75] mt-0.5">
+                  Informe as taxas cobradas pela sua operadora de cartão. Ao receber pagamentos no
+                  cartão, o sistema calcula automaticamente quanto caiu líquido no seu caixa. PIX,
+                  Dinheiro e Transferência têm taxa 0%.
+                </p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+              <Input
+                label="Débito (%)"
+                type="number"
+                step="0.01"
+                min="0"
+                max="100"
+                placeholder="Ex: 1.49"
+                value={form.debitFeeRate}
+                onChange={(e) =>
+                  setForm({ ...form, debitFeeRate: e.target.value })
+                }
+              />
+
+              <Input
+                label="Crédito à vista 1x (%)"
+                type="number"
+                step="0.01"
+                min="0"
+                max="100"
+                placeholder="Ex: 3.19"
+                value={form.credit1xFeeRate}
+                onChange={(e) =>
+                  setForm({ ...form, credit1xFeeRate: e.target.value })
+                }
+              />
+
+              <Input
+                label="Crédito 2x a 6x (%)"
+                type="number"
+                step="0.01"
+                min="0"
+                max="100"
+                placeholder="Ex: 5.49"
+                value={form.credit2to6FeeRate}
+                onChange={(e) =>
+                  setForm({ ...form, credit2to6FeeRate: e.target.value })
+                }
+              />
+
+              <Input
+                label="Crédito 7x a 12x (%)"
+                type="number"
+                step="0.01"
+                min="0"
+                max="100"
+                placeholder="Ex: 8.99"
+                value={form.credit7to12FeeRate}
+                onChange={(e) =>
+                  setForm({ ...form, credit7to12FeeRate: e.target.value })
+                }
+              />
+            </div>
+          </div>
+
           {/* Upload de Logo da Empresa */}
           <div className="space-y-3 pt-2">
             <label className="block text-sm font-semibold text-[#142D26]">
               Logo da Empresa (Menu Lateral, Vistorias e Laudos PDF)
             </label>
 
-            {/* Aviso de Armazenamento Local Temporário e link para nuvem */}
             {localUsage && !localUsage.storageConnected && (
               <div
                 className={`p-3.5 rounded-xl border flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 text-xs ${
@@ -339,14 +473,16 @@ export default function ConfiguracoesPage() {
                 <div className="flex items-center gap-2">
                   <HardDrive className="w-4 h-4 shrink-0 text-[#247653]" />
                   <span>
-                    <strong>Armazenamento Local Temporário:</strong> {localUsage.percentUsed}% utilizado
+                    <strong>Armazenamento Local Temporário:</strong>{" "}
+                    {localUsage.percentUsed}% utilizado
                   </span>
                 </div>
                 <Link
                   href="/armazenamento"
                   className="inline-flex items-center gap-1 font-bold text-[#247653] hover:underline shrink-0"
                 >
-                  Conectar Armazenamento em Nuvem Próprio <ExternalLink className="w-3 h-3" />
+                  Conectar Armazenamento em Nuvem Próprio{" "}
+                  <ExternalLink className="w-3 h-3" />
                 </Link>
               </div>
             )}
@@ -364,9 +500,9 @@ export default function ConfiguracoesPage() {
             )}
 
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 p-4 rounded-xl border border-[#E7EAE7] bg-[#F9FAF9]">
-              {/* Preview da Logo */}
               <div className="w-20 h-20 rounded-xl border border-[#E7EAE7] bg-white flex items-center justify-center overflow-hidden shrink-0 shadow-xs relative">
                 {form.logoUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src={form.logoUrl}
                     alt="Logo da Empresa"
@@ -380,7 +516,6 @@ export default function ConfiguracoesPage() {
                 )}
               </div>
 
-              {/* Controles de Upload */}
               <div className="space-y-2 flex-1">
                 <input
                   type="file"
@@ -413,7 +548,9 @@ export default function ConfiguracoesPage() {
                   {form.logoUrl && (
                     <button
                       type="button"
-                      onClick={() => setForm((prev) => ({ ...prev, logoUrl: "" }))}
+                      onClick={() =>
+                        setForm((prev) => ({ ...prev, logoUrl: "" }))
+                      }
                       disabled={uploadingLogo}
                       className="px-3.5 py-2 rounded-xl border border-[#D0D5DD] hover:bg-[#EAEAEA] text-[#344054] text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer"
                     >
@@ -424,7 +561,8 @@ export default function ConfiguracoesPage() {
                 </div>
 
                 <p className="text-[11px] text-[#737D75]">
-                  <strong>Dimensão recomendada:</strong> 512×512 px (proporção quadrada 1:1, mín. 256×256 px). Formatos: PNG, JPG ou WebP.
+                  <strong>Dimensão recomendada:</strong> 512×512 px (proporção
+                  quadrada 1:1, mín. 256×256 px). Formatos: PNG, JPG ou WebP.
                 </p>
               </div>
             </div>

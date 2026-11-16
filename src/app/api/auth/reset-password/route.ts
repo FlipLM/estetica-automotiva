@@ -3,20 +3,22 @@ import crypto from "crypto";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { getClientIp, isRateLimited } from "@/lib/rate-limit";
+import { getClientIp, isRateLimitedAsync } from "@/lib/rate-limit";
 
 export const dynamic = "force-dynamic";
 
 const resetSchema = z.object({
   token: z.string().min(10, "Token inválido."),
   email: z.string().email("E-mail inválido.").toLowerCase().trim(),
-  newPassword: z.string().min(6, "A nova senha deve ter no mínimo 6 caracteres."),
+  newPassword: z
+    .string()
+    .min(6, "A nova senha deve ter no mínimo 6 caracteres."),
 });
 
 export async function POST(req: NextRequest) {
   try {
     const ip = getClientIp(req);
-    if (isRateLimited(`reset-pw:ip:${ip}`, 10, 15 * 60 * 1000)) {
+    if (await isRateLimitedAsync(`reset-pw:ip:${ip}`, 10, 15 * 60 * 1000)) {
       return NextResponse.json(
         { error: "Muitas tentativas. Aguarde alguns minutos." },
         { status: 429 }
@@ -51,7 +53,10 @@ export async function POST(req: NextRequest) {
 
     if (!resetRecord) {
       return NextResponse.json(
-        { error: "Este link de recuperação é inválido ou já expirou. Solicite um novo link." },
+        {
+          error:
+            "Este link de recuperação é inválido ou já expirou. Solicite um novo link.",
+        },
         { status: 400 }
       );
     }
@@ -74,11 +79,15 @@ export async function POST(req: NextRequest) {
     // Hash da nova senha
     const passwordHash = await bcrypt.hash(newPassword, 10);
 
-    // Atualiza a senha e marca o token como utilizado em transação atômica
+    // Atualiza a senha, incrementa tokenVersion (revoga sessões antigas), limpa mustChangePassword e marca token como usado
     await prisma.$transaction([
       prisma.user.update({
         where: { id: user.id },
-        data: { passwordHash },
+        data: {
+          passwordHash,
+          tokenVersion: { increment: 1 },
+          mustChangePassword: false,
+        },
       }),
       prisma.passwordResetToken.update({
         where: { id: resetRecord.id },
@@ -89,11 +98,22 @@ export async function POST(req: NextRequest) {
         where: { email, used: false },
         data: { used: true },
       }),
+      prisma.auditLog.create({
+        data: {
+          tenantId: user.tenantId,
+          userId: user.id,
+          action: "RESET_PASSWORD",
+          entity: "User",
+          entityId: user.id,
+          details: JSON.stringify({ email: user.email }),
+        },
+      }),
     ]);
 
     return NextResponse.json({
       success: true,
-      message: "Senha alterada com sucesso! Você já pode fazer login com sua nova credencial.",
+      message:
+        "Senha alterada com sucesso! Você já pode fazer login com sua nova credencial.",
     });
   } catch (err: any) {
     console.error("[RESET_PASSWORD_ERROR]", err);
@@ -103,4 +123,3 @@ export async function POST(req: NextRequest) {
     );
   }
 }
-

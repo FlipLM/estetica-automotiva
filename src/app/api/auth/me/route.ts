@@ -19,6 +19,7 @@ export async function GET() {
       email: true,
       role: true,
       phone: true,
+      mustChangePassword: true,
       tenant: {
         select: {
           id: true,
