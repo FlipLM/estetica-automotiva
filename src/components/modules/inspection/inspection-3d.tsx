@@ -448,59 +448,61 @@ export function Inspection3D({
               </div>
 
               {/* Upload de Fotos da Avaria */}
-              <div>
-                <div className="flex items-center justify-between mb-1.5">
-                  <label className="text-[10px] font-bold text-[#737D75] uppercase">
-                    Fotos da Avaria ({pendingDamage.photos.length})
-                  </label>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    multiple
-                    ref={fileInputPendingRef}
-                    onChange={handlePendingPhotoUpload}
-                    className="hidden"
-                  />
-                  <button
-                    type="button"
-                    disabled={uploadingPhoto}
-                    onClick={() => fileInputPendingRef.current?.click()}
-                    className="text-[10px] font-semibold text-[#247653] hover:underline flex items-center gap-1 cursor-pointer"
-                  >
-                    <Camera className="w-3 h-3" />
-                    <span>{uploadingPhoto ? "Enviando..." : "+ Tirar/Anexar Foto"}</span>
-                  </button>
-                </div>
-
-                {pendingDamage.photos.length > 0 && (
-                  <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto">
-                    {pendingDamage.photos.map((url, pIdx) => (
-                      <div
-                        key={pIdx}
-                        className="relative w-12 h-12 rounded-lg overflow-hidden border border-[#DFE2DF] group"
-                      >
-                        <img src={url} alt="Avaria" className="w-full h-full object-cover" />
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setPendingDamage((p) =>
-                              p
-                                ? {
-                                    ...p,
-                                    photos: p.photos.filter((_, idx) => idx !== pIdx),
-                                  }
-                                : null
-                            )
-                          }
-                          className="absolute top-0.5 right-0.5 bg-black/70 hover:bg-red-600 text-white rounded-full p-0.5"
-                        >
-                          <X className="w-2.5 h-2.5" />
-                        </button>
-                      </div>
-                    ))}
+              {!demoMode && (
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="text-[10px] font-bold text-[#737D75] uppercase">
+                      Fotos da Avaria ({pendingDamage.photos.length})
+                    </label>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      ref={fileInputPendingRef}
+                      onChange={handlePendingPhotoUpload}
+                      className="hidden"
+                    />
+                    <button
+                      type="button"
+                      disabled={uploadingPhoto}
+                      onClick={() => fileInputPendingRef.current?.click()}
+                      className="text-[10px] font-semibold text-[#247653] hover:underline flex items-center gap-1 cursor-pointer"
+                    >
+                      <Camera className="w-3 h-3" />
+                      <span>{uploadingPhoto ? "Enviando..." : "+ Tirar/Anexar Foto"}</span>
+                    </button>
                   </div>
-                )}
-              </div>
+
+                  {pendingDamage.photos.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto">
+                      {pendingDamage.photos.map((url, pIdx) => (
+                        <div
+                          key={pIdx}
+                          className="relative w-12 h-12 rounded-lg overflow-hidden border border-[#DFE2DF] group"
+                        >
+                          <img src={url} alt="Avaria" className="w-full h-full object-cover" />
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setPendingDamage((p) =>
+                                p
+                                  ? {
+                                      ...p,
+                                      photos: p.photos.filter((_, idx) => idx !== pIdx),
+                                    }
+                                  : null
+                              )
+                            }
+                            className="absolute top-0.5 right-0.5 bg-black/70 hover:bg-red-600 text-white rounded-full p-0.5"
+                          >
+                            <X className="w-2.5 h-2.5" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* Botões de Ação */}
               <div className="flex items-center gap-2 pt-2">
@@ -575,54 +577,56 @@ export function Inspection3D({
                     </div>
 
                     {/* Galeria de Fotos */}
-                    <div>
-                      <div className="flex items-center justify-between mb-1.5">
-                        <span className="text-[10px] font-bold text-[#737D75] uppercase">
-                          Fotografias ({photos.length})
-                        </span>
-                        {!readOnly && (
-                          <>
-                            <input
-                              type="file"
-                              accept="image/*"
-                              multiple
-                              ref={fileInputExistingRef}
-                              onChange={handleExistingPhotoUpload}
-                              className="hidden"
-                            />
-                            <button
-                              type="button"
-                              disabled={uploadingPhoto}
-                              onClick={() => fileInputExistingRef.current?.click()}
-                              className="text-[10px] font-semibold text-[#247653] hover:underline flex items-center gap-1 cursor-pointer"
-                            >
-                              <Camera className="w-3 h-3" />
-                              <span>{uploadingPhoto ? "Enviando..." : "+ Foto"}</span>
-                            </button>
-                          </>
+                    {!demoMode && (
+                      <div>
+                        <div className="flex items-center justify-between mb-1.5">
+                          <span className="text-[10px] font-bold text-[#737D75] uppercase">
+                            Fotografias ({photos.length})
+                          </span>
+                          {!readOnly && (
+                            <>
+                              <input
+                                type="file"
+                                accept="image/*"
+                                multiple
+                                ref={fileInputExistingRef}
+                                onChange={handleExistingPhotoUpload}
+                                className="hidden"
+                              />
+                              <button
+                                type="button"
+                                disabled={uploadingPhoto}
+                                onClick={() => fileInputExistingRef.current?.click()}
+                                className="text-[10px] font-semibold text-[#247653] hover:underline flex items-center gap-1 cursor-pointer"
+                              >
+                                <Camera className="w-3 h-3" />
+                                <span>{uploadingPhoto ? "Enviando..." : "+ Foto"}</span>
+                              </button>
+                            </>
+                          )}
+                        </div>
+
+                        {photos.length > 0 ? (
+                          <div className="flex flex-wrap gap-2">
+                            {photos.map((src, pIdx) => (
+                              <button
+                                key={pIdx}
+                                type="button"
+                                onClick={() => setViewingPhoto(src)}
+                                className="relative w-14 h-14 rounded-xl overflow-hidden border border-[#DFE2DF] hover:opacity-90 group cursor-pointer"
+                              >
+                                <img src={src} alt="Foto" className="w-full h-full object-cover" />
+                                <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity text-white">
+                                  <Maximize2 className="w-3.5 h-3.5" />
+                                </div>
+                              </button>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="text-[11px] text-[#737D75] italic">Nenhuma foto anexada.</p>
                         )}
                       </div>
-
-                      {photos.length > 0 ? (
-                        <div className="flex flex-wrap gap-2">
-                          {photos.map((src, pIdx) => (
-                            <button
-                              key={pIdx}
-                              type="button"
-                              onClick={() => setViewingPhoto(src)}
-                              className="relative w-14 h-14 rounded-xl overflow-hidden border border-[#DFE2DF] hover:opacity-90 group cursor-pointer"
-                            >
-                              <img src={src} alt="Foto" className="w-full h-full object-cover" />
-                              <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity text-white">
-                                <Maximize2 className="w-3.5 h-3.5" />
-                              </div>
-                            </button>
-                          ))}
-                        </div>
-                      ) : (
-                        <p className="text-[11px] text-[#737D75] italic">Nenhuma foto anexada.</p>
-                      )}
-                    </div>
+                    )}
 
                     {!readOnly && (
                       <div className="flex items-center justify-between pt-2 border-t border-[#F2F4F1]">
