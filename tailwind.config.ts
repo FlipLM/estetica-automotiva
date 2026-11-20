@@ -11,6 +11,8 @@ const config: Config = {
       fontFamily: {
         sans: ['"Inter"', '-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'Roboto', 'sans-serif'],
         display: ['"Inter"', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
+        heading: ['"Urbanist"', '"Inter"', 'system-ui', 'sans-serif'],
+        editorial: ['"Plus Jakarta Sans"', '"Inter"', 'system-ui', 'sans-serif'],
         mono: ['"JetBrains Mono"', 'ui-monospace', 'SFMono-Regular', 'monospace'],
       },
       fontSize: {

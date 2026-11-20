@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500" width="100%" height="100%" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <linearGradient id="bgPatioGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#091612"/>
+      <stop offset="55%" stop-color="#142D26"/>
+      <stop offset="100%" stop-color="#1D5E42"/>
+    </linearGradient>
+    <radialGradient id="studioGlow" cx="65%" cy="35%" r="55%">
+      <stop offset="0%" stop-color="#318B63" stop-opacity="0.45"/>
+      <stop offset="55%" stop-color="#247653" stop-opacity="0.16"/>
+      <stop offset="100%" stop-color="#091612" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="hexBeam" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#A8D1B8" stop-opacity="0.45"/>
+      <stop offset="100%" stop-color="#247653" stop-opacity="0.08"/>
+    </linearGradient>
+    <pattern id="hexDetailing" width="96" height="83.14" patternUnits="userSpaceOnUse" patternTransform="scale(1.15) rotate(-8)">
+      <path d="M24 0 L72 0 L96 41.57 L72 83.14 L24 83.14 L0 41.57 Z" fill="none" stroke="url(#hexBeam)" stroke-width="2.2"/>
+      <path d="M28 8 L68 8 L88 41.57 L68 75.14 L28 75.14 L8 41.57 Z" fill="none" stroke="#7AB894" stroke-opacity="0.14" stroke-width="1"/>
+    </pattern>
+  </defs>
+  <rect width="800" height="500" fill="url(#bgPatioGrad)"/>
+  <rect width="800" height="500" fill="url(#studioGlow)"/>
+  <rect width="800" height="500" fill="url(#hexDetailing)" opacity="0.68"/>
+  <!-- Faixas de iluminação LED de teto de estúdio -->
+  <g opacity="0.55">
+    <path d="M90 85 L310 55 L340 115 L120 145 Z" fill="none" stroke="#A8D1B8" stroke-width="2.5"/>
+    <path d="M410 42 L670 18 L705 88 L445 112 Z" fill="none" stroke="#E9F3EC" stroke-opacity="0.45" stroke-width="2.5"/>
+    <path d="M160 365 L540 315 L580 390 L200 440 Z" fill="none" stroke="#7AB894" stroke-opacity="0.28" stroke-width="2"/>
+  </g>
+  <!-- Reflexo especular de carroceria -->
+  <path d="M-40 370 C 160 285, 390 250, 840 330" fill="none" stroke="#A8D1B8" stroke-opacity="0.35" stroke-width="3"/>
+  <path d="M-40 392 C 175 310, 415 278, 840 355" fill="none" stroke="#318B63" stroke-opacity="0.45" stroke-width="1.5"/>
+</svg>
