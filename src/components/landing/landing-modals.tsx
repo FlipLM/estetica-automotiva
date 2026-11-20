@@ -6,17 +6,17 @@ import {
   AlertCircle,
   ArrowRight,
   Building2,
+  CarFront,
+  CheckCircle2,
   ClipboardCheck,
-  DollarSign,
   FileText,
-  Gauge,
   HelpCircle,
   Layers,
   Loader2,
   Lock,
   Mail,
   Phone,
-  TrendingUp,
+  PlaySquare,
   User,
   X,
 } from "lucide-react";
@@ -31,8 +31,8 @@ interface LandingMobileDrawerProps {
 }
 
 /**
- * Drawer Mobile Editorial inspirado no MobileDrawer da Cia do Lacre:
- * alvos de toque >= 48px, bloqueio de scroll no body e fechamento por ESC ou clique externo.
+ * Menu lateral responsivo para celulares com botões amplos (>= 48px),
+ * trava de rolagem e fechamento por teclado (ESC).
  */
 export function LandingMobileDrawer({
   isOpen,
@@ -60,12 +60,12 @@ export function LandingMobileDrawer({
   if (!isOpen) return null;
 
   const navItems = [
-    { href: "#showcase", label: "Módulos do Sistema", icon: Layers },
-    { href: "#diferenciais", label: "Diferenciais", icon: ClipboardCheck },
-    { href: "#metrics-panel", label: "Impacto no Pátio", icon: Gauge },
-    { href: "#roi", label: "Simulador de Retorno", icon: TrendingUp },
-    { href: "#planos", label: "Planos & Trial 72h", icon: DollarSign },
-    { href: "#faq", label: "Dúvidas Frequentes", icon: HelpCircle },
+    { href: "#patio-video", label: "Pátio ao Vivo", icon: PlaySquare },
+    { href: "#visao-geral", label: "Como Funciona", icon: ClipboardCheck },
+    { href: "#modulos", label: "Telas do Sistema", icon: Layers },
+    { href: "#diferenciais", label: "Para Quem É Dono", icon: CarFront },
+    { href: "#planos", label: "Teste Grátis", icon: CheckCircle2 },
+    { href: "#duvidas", label: "Dúvidas Comuns", icon: HelpCircle },
   ];
 
   return (
@@ -73,27 +73,27 @@ export function LandingMobileDrawer({
       className="fixed inset-0 z-[100] lg:hidden flex justify-end"
       role="dialog"
       aria-modal="true"
-      aria-label="Menu de navegação"
+      aria-label="Menu principal"
     >
       <div
-        className="fixed inset-0 bg-[#142D26]/75 backdrop-blur-sm"
+        className="fixed inset-0 bg-black/75 backdrop-blur-sm"
         onClick={onClose}
         aria-hidden="true"
       />
 
-      <div className="relative w-full max-w-sm bg-[#F7F8F6] h-full shadow-2xl flex flex-col z-10 overflow-hidden border-l border-[#E7EAE7]">
-        {/* Topo do Drawer */}
-        <div className="px-5 py-4 border-b border-[#E7EAE7] bg-white flex items-center justify-between">
+      <div className="relative w-full max-w-sm bg-[#0B0F17] h-full shadow-2xl flex flex-col z-10 overflow-hidden border-l border-white/15">
+        {/* Cabeçalho do menu */}
+        <div className="px-5 py-4 border-b border-white/10 bg-[#111622] flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <div className="w-10 h-10 rounded-xl bg-[#0B0F0D] border border-[#247653]/40 flex items-center justify-center p-1">
+            <div className="w-10 h-10 rounded-xl bg-[#07090E] border border-white/15 flex items-center justify-center p-1">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src="/vulpto_logo.png"
-                alt="Vulpto Logo"
+                alt="Marca Vulpto"
                 className="w-full h-full object-contain rounded-lg"
               />
             </div>
-            <span className="font-heading text-lg font-extrabold tracking-tight text-[#142D26]">
+            <span className="font-heading text-lg font-extrabold tracking-tight text-white">
               VULPTO
             </span>
           </div>
@@ -102,50 +102,50 @@ export function LandingMobileDrawer({
             type="button"
             onClick={onClose}
             aria-label="Fechar menu"
-            className="w-12 h-12 rounded-full bg-[#F7F8F6] border border-[#E7EAE7] text-[#252B27] flex items-center justify-center cursor-pointer"
+            className="w-12 h-12 rounded-full bg-white/[0.06] border border-white/15 text-white flex items-center justify-center cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Links em Alvo Tátil >= 48px */}
+        {/* Links principais */}
         <div className="flex-1 overflow-y-auto px-4 py-5 space-y-1.5">
           {navItems.map(({ href, label, icon: Icon }) => (
             <a
               key={href}
               href={href}
               onClick={onClose}
-              className="w-full min-h-[48px] px-4 py-3 rounded-2xl flex items-center gap-3 text-left text-[#252B27] hover:bg-white hover:text-[#247653] transition-colors font-semibold text-sm"
+              className="w-full min-h-[48px] px-4 py-3 rounded-2xl flex items-center gap-3 text-left text-[#CBD5E1] hover:bg-white/[0.06] hover:text-white transition-colors font-semibold text-sm"
             >
-              <span className="w-8 h-8 rounded-xl bg-[#E9F3EC] text-[#247653] flex items-center justify-center shrink-0">
+              <span className="w-8 h-8 rounded-xl bg-white/[0.06] border border-white/10 text-[#E2E8F0] flex items-center justify-center shrink-0">
                 <Icon className="w-4 h-4" />
               </span>
               <span>{label}</span>
             </a>
           ))}
 
-          <div className="mt-4 pt-4 border-t border-[#E7EAE7]">
-            <div className="p-4 rounded-3xl bg-white border border-[#E7EAE7]">
-              <div className="flex items-center gap-2 text-xs font-bold text-[#247653] mb-1">
-                <MiniVulpto className="w-4 h-4 text-[#247653]" />
-                <span>Avaliação Imediata de 72 Horas</span>
+          <div className="mt-4 pt-4 border-t border-white/10">
+            <div className="p-4 rounded-3xl bg-[#111622] border border-white/10">
+              <div className="flex items-center gap-2 text-xs font-bold text-white mb-1">
+                <MiniVulpto className="w-4 h-4" />
+                <span>3 Dias de Teste Grátis</span>
               </div>
-              <p className="text-xs text-[#737D75] leading-relaxed">
-                Crie o ambiente da sua estética com vistoria 360º, Kanban e DRE sem cadastrar cartão.
+              <p className="text-xs text-[#94A3B8] leading-relaxed">
+                Comece hoje com vistoria em 3D, quadro de vagas, caixa do dia e lembretes no WhatsApp sem precisar cadastrar cartão.
               </p>
             </div>
           </div>
         </div>
 
-        {/* Rodapé do Drawer */}
-        <div className="p-4 border-t border-[#E7EAE7] bg-white space-y-2.5">
+        {/* Botões de ação */}
+        <div className="p-4 border-t border-white/10 bg-[#111622] space-y-2.5">
           <button
             type="button"
             onClick={() => {
               onClose();
               onOpenRegister();
             }}
-            className="w-full min-h-[48px] px-5 rounded-full bg-[#247653] hover:bg-[#142D26] text-white text-sm font-bold flex items-center justify-center gap-2 cursor-pointer transition-colors"
+            className="w-full min-h-[48px] px-5 rounded-full bg-gradient-to-b from-[#F8FAFC] to-[#CBD5E1] text-[#07090E] text-sm font-bold flex items-center justify-center gap-2 cursor-pointer transition-all hover:brightness-105"
           >
             <span>Testar 3 Dias Grátis</span>
             <ArrowRight className="w-4 h-4" />
@@ -154,9 +154,9 @@ export function LandingMobileDrawer({
           <Link
             href={isAuthenticated ? dashboardHref : "/login"}
             onClick={onClose}
-            className="w-full min-h-[48px] px-5 rounded-full bg-[#E9F3EC] text-[#142D26] text-sm font-bold flex items-center justify-center border border-[#247653]/20"
+            className="w-full min-h-[48px] px-5 rounded-full bg-white/[0.06] hover:bg-white/[0.1] text-white text-sm font-bold flex items-center justify-center border border-white/15 transition-colors"
           >
-            {isAuthenticated ? "Acessar Meu Painel" : "Entrar na Conta"}
+            {isAuthenticated ? "Abrir Meu Painel" : "Entrar na Minha Conta"}
           </Link>
         </div>
       </div>
@@ -170,9 +170,12 @@ interface LandingRegisterModalProps {
 }
 
 /**
- * Modal de Cadastro Rápido integrado diretamente a POST /api/auth/register.
+ * Janela de criação rápida de conta conectada ao cadastro oficial da plataforma.
  */
-export function LandingRegisterModal({ isOpen, onClose }: LandingRegisterModalProps) {
+export function LandingRegisterModal({
+  isOpen,
+  onClose,
+}: LandingRegisterModalProps) {
   const [formData, setFormData] = useState({
     companyName: "",
     tradingName: "",
@@ -198,7 +201,7 @@ export function LandingRegisterModal({ isOpen, onClose }: LandingRegisterModalPr
     setError(null);
 
     if (formData.password.length < 8) {
-      setError("A senha de acesso deve ter no mínimo 8 caracteres.");
+      setError("A senha de acesso deve ter no mínimo 8 dígitos.");
       setLoading(false);
       return;
     }
@@ -212,7 +215,7 @@ export function LandingRegisterModal({ isOpen, onClose }: LandingRegisterModalPr
 
       const data = await res.json();
       if (!res.ok) {
-        throw new Error(data.error || "Erro ao registrar empresa.");
+        throw new Error(data.error || "Não foi possível concluir o cadastro.");
       }
 
       window.location.href = data.redirect || "/onboarding";
@@ -224,27 +227,32 @@ export function LandingRegisterModal({ isOpen, onClose }: LandingRegisterModalPr
     }
   }
 
+  const inputClass =
+    "w-full min-h-[44px] rounded-xl bg-[#161D2B] border border-white/15 px-3.5 py-2 text-sm text-white placeholder:text-[#64748B] focus:outline-none focus:border-[#38BDF8]";
+  const labelClass =
+    "text-xs font-semibold text-[#CBD5E1] mb-1.5 flex items-center gap-1.5";
+
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm"
       role="dialog"
       aria-modal="true"
-      aria-label="Cadastro de Estética Automotiva"
+      aria-label="Criar conta gratuita da estética automotiva"
     >
-      <div className="bg-white rounded-3xl max-w-lg w-full max-h-[90vh] overflow-y-auto border border-[#E7EAE7] shadow-modal p-6 sm:p-7 text-left">
-        <div className="flex items-center justify-between pb-4 border-b border-[#E7EAE7]">
+      <div className="bg-[#0E131E] rounded-3xl max-w-lg w-full max-h-[90vh] overflow-y-auto border border-white/15 shadow-[0_32px_100px_rgba(0,0,0,0.8)] p-6 sm:p-7 text-left text-white">
+        <div className="flex items-center justify-between pb-4 border-b border-white/10">
           <div>
-            <h3 className="font-heading text-xl font-extrabold text-[#142D26]">
+            <h3 className="font-heading text-xl font-extrabold text-white">
               Cadastre Sua Estética Automotiva
             </h3>
-            <p className="text-xs text-[#737D75] mt-0.5">
-              Liberação instantânea do ambiente de avaliação por 3 dias
+            <p className="text-xs text-[#94A3B8] mt-0.5">
+              Liberação imediata por 3 dias sem pedir cartão de crédito
             </p>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="w-10 h-10 rounded-full bg-[#F7F8F6] hover:bg-[#E7EAE7] text-[#343C36] flex items-center justify-center cursor-pointer shrink-0"
+            className="w-10 h-10 rounded-full bg-white/[0.06] hover:bg-white/[0.12] text-[#CBD5E1] hover:text-white flex items-center justify-center cursor-pointer shrink-0 border border-white/10"
             aria-label="Fechar cadastro"
           >
             <X className="w-4 h-4" />
@@ -252,7 +260,7 @@ export function LandingRegisterModal({ isOpen, onClose }: LandingRegisterModalPr
         </div>
 
         {error && (
-          <div className="mt-4 p-3 rounded-2xl bg-[#FEF2F2] border border-[#FECACA] text-[#DC4C4C] text-xs font-medium flex items-center gap-2">
+          <div className="mt-4 p-3 rounded-2xl bg-red-500/15 border border-red-400/30 text-red-200 text-xs font-medium flex items-center gap-2">
             <AlertCircle className="w-4 h-4 shrink-0" />
             <span>{error}</span>
           </div>
@@ -272,8 +280,8 @@ export function LandingRegisterModal({ isOpen, onClose }: LandingRegisterModalPr
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="dp-label flex items-center gap-1.5">
-                <Building2 className="w-3.5 h-3.5 text-[#247653]" />
+              <label className={labelClass}>
+                <Building2 className="w-3.5 h-3.5 text-[#38BDF8]" />
                 <span>Nome da Empresa *</span>
               </label>
               <input
@@ -281,41 +289,41 @@ export function LandingRegisterModal({ isOpen, onClose }: LandingRegisterModalPr
                 name="companyName"
                 required
                 minLength={3}
-                placeholder="Ex: Prime Detailing Ltda"
+                placeholder="Ex: Brilho Real Estética"
                 value={formData.companyName}
                 onChange={handleChange}
-                className="dp-input w-full"
+                className={inputClass}
               />
             </div>
             <div>
-              <label className="dp-label">Nome Fantasia</label>
+              <label className={labelClass}>Nome da Loja / Fachada</label>
               <input
                 type="text"
                 name="tradingName"
-                placeholder="Ex: Prime Car Care"
+                placeholder="Ex: Studio Brilho Carro"
                 value={formData.tradingName}
                 onChange={handleChange}
-                className="dp-input w-full"
+                className={inputClass}
               />
             </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="dp-label">CNPJ ou CPF (Opcional)</label>
+              <label className={labelClass}>CNPJ ou CPF (Opcional)</label>
               <input
                 type="text"
                 name="document"
                 placeholder="00.000.000/0001-00"
                 value={formData.document}
                 onChange={handleChange}
-                className="dp-input w-full"
+                className={inputClass}
               />
             </div>
             <div>
-              <label className="dp-label flex items-center gap-1.5">
-                <Phone className="w-3.5 h-3.5 text-[#247653]" />
-                <span>WhatsApp / Telefone</span>
+              <label className={labelClass}>
+                <Phone className="w-3.5 h-3.5 text-[#38BDF8]" />
+                <span>WhatsApp da Loja</span>
               </label>
               <input
                 type="text"
@@ -323,49 +331,49 @@ export function LandingRegisterModal({ isOpen, onClose }: LandingRegisterModalPr
                 placeholder="(11) 98765-4321"
                 value={formData.phone}
                 onChange={handleChange}
-                className="dp-input w-full"
+                className={inputClass}
               />
             </div>
           </div>
 
-          <div className="pt-2 border-t border-[#E7EAE7] space-y-3">
+          <div className="pt-3 border-t border-white/10 space-y-3">
             <div>
-              <label className="dp-label flex items-center gap-1.5">
-                <User className="w-3.5 h-3.5 text-[#247653]" />
-                <span>Nome do Administrador *</span>
+              <label className={labelClass}>
+                <User className="w-3.5 h-3.5 text-[#38BDF8]" />
+                <span>Seu Nome Completo *</span>
               </label>
               <input
                 type="text"
                 name="adminName"
                 required
                 minLength={3}
-                placeholder="Seu nome completo"
+                placeholder="Ex: Carlos Eduardo"
                 value={formData.adminName}
                 onChange={handleChange}
-                className="dp-input w-full"
+                className={inputClass}
               />
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="dp-label flex items-center gap-1.5">
-                  <Mail className="w-3.5 h-3.5 text-[#247653]" />
+                <label className={labelClass}>
+                  <Mail className="w-3.5 h-3.5 text-[#38BDF8]" />
                   <span>E-mail de Acesso *</span>
                 </label>
                 <input
                   type="email"
                   name="email"
                   required
-                  placeholder="admin@empresa.com"
+                  placeholder="contato@sualoja.com.br"
                   value={formData.email}
                   onChange={handleChange}
-                  className="dp-input w-full"
+                  className={inputClass}
                 />
               </div>
               <div>
-                <label className="dp-label flex items-center gap-1.5">
-                  <Lock className="w-3.5 h-3.5 text-[#247653]" />
-                  <span>Senha (mín. 8 dígitos) *</span>
+                <label className={labelClass}>
+                  <Lock className="w-3.5 h-3.5 text-[#38BDF8]" />
+                  <span>Crie uma Senha *</span>
                 </label>
                 <input
                   type="password"
@@ -375,7 +383,7 @@ export function LandingRegisterModal({ isOpen, onClose }: LandingRegisterModalPr
                   placeholder="Mínimo 8 caracteres"
                   value={formData.password}
                   onChange={handleChange}
-                  className="dp-input w-full"
+                  className={inputClass}
                 />
               </div>
             </div>
@@ -384,25 +392,28 @@ export function LandingRegisterModal({ isOpen, onClose }: LandingRegisterModalPr
           <button
             type="submit"
             disabled={loading}
-            className="w-full min-h-[48px] rounded-full bg-[#247653] hover:bg-[#142D26] text-white font-bold text-sm flex items-center justify-center gap-2 transition-colors cursor-pointer disabled:opacity-60 mt-2"
+            className="w-full min-h-[48px] rounded-full bg-gradient-to-b from-[#F8FAFC] to-[#CBD5E1] text-[#07090E] font-bold text-sm flex items-center justify-center gap-2 transition-all cursor-pointer disabled:opacity-60 hover:brightness-105 mt-2 shadow-[0_8px_24px_rgba(255,255,255,0.14)]"
           >
             {loading ? (
               <>
                 <Loader2 className="w-4 h-4 animate-spin" />
-                <span>Criando ambiente...</span>
+                <span>Preparando seu espaço...</span>
               </>
             ) : (
               <>
-                <span>Criar Conta e Iniciar Onboarding</span>
+                <span>Começar Meus 3 Dias Grátis</span>
                 <ArrowRight className="w-4 h-4" />
               </>
             )}
           </button>
 
-          <p className="text-center text-xs text-[#737D75] pt-1">
-            Já tem cadastro?{" "}
-            <Link href="/login" className="text-[#247653] font-semibold underline">
-              Fazer login no sistema
+          <p className="text-center text-xs text-[#94A3B8] pt-1">
+            Já possui cadastro?{" "}
+            <Link
+              href="/login"
+              className="text-white font-semibold underline hover:text-[#CBD5E1]"
+            >
+              Entrar na conta existente
             </Link>
           </p>
         </form>
@@ -421,55 +432,55 @@ export function LandingLegalModal({ mode, onClose }: LandingLegalModalProps) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm"
       role="dialog"
       aria-modal="true"
     >
-      <div className="bg-white rounded-3xl max-w-xl w-full border border-[#E7EAE7] shadow-modal overflow-hidden text-left">
-        <div className="p-5 border-b border-[#E7EAE7] flex items-center justify-between bg-[#F7F8F6]">
-          <div className="flex items-center gap-2 font-heading font-bold text-base text-[#142D26]">
-            <FileText className="w-4 h-4 text-[#247653]" />
+      <div className="bg-[#0E131E] rounded-3xl max-w-xl w-full border border-white/15 shadow-2xl overflow-hidden text-left text-white">
+        <div className="p-5 border-b border-white/10 flex items-center justify-between bg-[#111622]">
+          <div className="flex items-center gap-2 font-heading font-bold text-base text-white">
+            <FileText className="w-4 h-4 text-[#38BDF8]" />
             <span>
               {mode === "TERMS"
                 ? "Termos de Uso — Vulpto"
-                : "Privacidade & Proteção de Dados (LGPD)"}
+                : "Privacidade e Dados da Sua Loja"}
             </span>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="w-10 h-10 rounded-full bg-white border border-[#E7EAE7] flex items-center justify-center cursor-pointer"
-            aria-label="Fechar modal legal"
+            className="w-10 h-10 rounded-full bg-white/[0.06] border border-white/15 text-[#CBD5E1] flex items-center justify-center cursor-pointer"
+            aria-label="Fechar janela"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
-        <div className="p-6 text-xs sm:text-sm text-[#343C36] leading-relaxed space-y-3">
+        <div className="p-6 text-xs sm:text-sm text-[#CBD5E1] leading-relaxed space-y-3">
           {mode === "TERMS" ? (
             <>
               <p>
-                O Vulpto fornece plataforma web multi-tenant para gestão operacional, vistorias veiculares, ordens de serviço, estoque químico e financeiro de estéticas automotivas.
+                O Vulpto oferece acesso pela internet para organizar a rotina da sua estética automotiva: entrada de veículos, controle do pátio, caixa, estoque de produtos e retorno de clientes.
               </p>
               <p>
-                O período inicial de avaliação tem duração de 3 dias (72 horas) sem exigência prévia de cartão de crédito.
+                Novos cadastros contam com 3 dias de teste gratuito sem necessidade de cadastrar cartão antecipadamente.
               </p>
             </>
           ) : (
             <>
               <p>
-                Cada empresa cadastrada opera em ambiente multi-tenant isolado por identificador próprio no banco relacional, com sessões em Cookies HttpOnly e controle de acesso baseado em papéis (RBAC).
+                Todas as informações de clientes, placas, fotos de vistoria e movimentações financeiras pertencem exclusivamente à sua loja e ficam separadas das demais empresas cadastradas.
               </p>
               <p>
-                Credenciais opcionais de armazenamento em nuvem corporativa são protegidas com criptografia AES-256-GCM.
+                Cada dono escolhe quem da equipe pode acessar a conta e o que cada pessoa enxerga no dia a dia.
               </p>
             </>
           )}
         </div>
-        <div className="p-4 border-t border-[#E7EAE7] bg-[#F7F8F6] flex justify-end">
+        <div className="p-4 border-t border-white/10 bg-[#111622] flex justify-end">
           <button
             type="button"
             onClick={onClose}
-            className="min-h-[44px] px-6 rounded-full bg-[#247653] hover:bg-[#142D26] text-white text-xs font-bold cursor-pointer transition-colors"
+            className="min-h-[44px] px-6 rounded-full bg-gradient-to-b from-[#F8FAFC] to-[#CBD5E1] text-[#07090E] text-xs font-bold cursor-pointer transition-all hover:brightness-105"
           >
             Fechar
           </button>

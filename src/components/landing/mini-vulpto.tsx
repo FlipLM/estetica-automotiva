@@ -1,263 +1,197 @@
 import React from "react";
 
 /**
- * MiniVulpto — Emblema vetorial autoral inspirado no "V" aerodinâmico do Vulpto.
- * Substitui ícones genéricos (como estrelas/sparkles) por identidade própria da marca.
+ * MiniVulpto — Emblema metálico em "V" fiel ao logotipo oficial do Vulpto.
  */
-export function MiniVulpto({ className = "w-4 h-4 text-[#247653]" }: { className?: string }) {
+export function MiniVulpto({ className = "w-4 h-4" }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <defs>
+        <linearGradient id="miniVulptoChrome" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#FFFFFF" />
+          <stop offset="50%" stopColor="#CBD5E1" />
+          <stop offset="100%" stopColor="#64748B" />
+        </linearGradient>
+      </defs>
+      <path d="M3 5L12 20.5L12 14L6.8 5H3Z" fill="url(#miniVulptoChrome)" />
+      <path d="M21 5L12 20.5L12 14L17.2 5H21Z" fill="#94A3B8" />
+    </svg>
+  );
+}
+
+/**
+ * Animação estilo SVGator para o topo/fundo do estúdio automotivo:
+ * feixes de iluminação de cabine e traços contínuos desenhados em tempo real.
+ */
+export function AnimatedStudioBeams() {
   return (
     <svg
-      className={className}
-      viewBox="0 0 24 24"
+      className="pointer-events-none absolute inset-0 w-full h-full opacity-55"
+      viewBox="0 0 1440 720"
       fill="none"
+      preserveAspectRatio="xMidYMid slice"
       aria-hidden="true"
     >
+      <defs>
+        <linearGradient id="vulptoBeamGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" stopColor="#38BDF8" stopOpacity="0" />
+          <stop offset="50%" stopColor="#E2E8F0" stopOpacity="0.65" />
+          <stop offset="100%" stopColor="#38BDF8" stopOpacity="0" />
+        </linearGradient>
+        <linearGradient id="vulptoLightCone" x1="50%" y1="0%" x2="50%" y2="100%">
+          <stop offset="0%" stopColor="#E2E8F0" stopOpacity="0.16" />
+          <stop offset="100%" stopColor="#07090E" stopOpacity="0" />
+        </linearGradient>
+      </defs>
+
+      {/* Luz de cabine superior */}
+      <polygon points="420,0 1020,0 1320,660 120,660" fill="url(#vulptoLightCone)" />
+
+      {/* Linhas aerodinâmicas com traçado contínuo animado (SVGator style) */}
       <path
-        d="M3.5 5.5L12 20.5L12 14.5L7.2 5.5H3.5Z"
-        fill="currentColor"
+        d="M-60 510 C 260 440, 560 415, 920 445 C 1180 468, 1340 420, 1520 350"
+        stroke="url(#vulptoBeamGrad)"
+        strokeWidth="2"
+        strokeDasharray="240 1200"
+        className="vulpto-svg-flow"
       />
       <path
-        d="M20.5 5.5L12 20.5L12 14.5L16.8 5.5H20.5Z"
-        fill="currentColor"
-        fillOpacity="0.65"
+        d="M-80 560 C 290 500, 620 480, 960 512 C 1220 535, 1360 490, 1540 430"
+        stroke="url(#vulptoBeamGrad)"
+        strokeWidth="1.5"
+        strokeDasharray="180 1200"
+        className="vulpto-svg-flow-slow"
+      />
+      <path
+        d="M120 120 H 460 L 520 155 H 920 L 980 120 H 1320"
+        stroke="#E2E8F0"
+        strokeOpacity="0.12"
+        strokeWidth="1.5"
       />
     </svg>
   );
 }
 
-export interface LandingDamagePin {
-  id: string;
-  areaLabel: string;
-  damageLabel: string;
-  detail: string;
-  x: number;
-  y: number;
-  tone: "amber" | "red" | "blue";
-}
-
-export const INITIAL_HERO_PINS: LandingDamagePin[] = [
-  {
-    id: "front",
-    areaLabel: "Para-choque Dianteiro",
-    damageLabel: "Risco leve",
-    detail: "Atrito superficial pré-existente na entrada",
-    x: 49,
-    y: 11,
-    tone: "amber",
-  },
-  {
-    id: "left",
-    areaLabel: "Lateral Esquerda",
-    damageLabel: "Amassado porta",
-    detail: "Pequeno vinco na folha da porta dianteira",
-    x: 24,
-    y: 47,
-    tone: "red",
-  },
-  {
-    id: "wheel",
-    areaLabel: "Roda Tras. Direita",
-    damageLabel: "Ralado de guia",
-    detail: "Borda diamantada marcada antes da lavagem",
-    x: 89,
-    y: 75,
-    tone: "blue",
-  },
-];
-
-const PIN_TONE_STYLES: Record<LandingDamagePin["tone"], { bg: string; ring: string }> = {
-  amber: { bg: "bg-[#D97706]", ring: "ring-[#D97706]/30" },
-  red: { bg: "bg-[#DC4C4C]", ring: "ring-[#DC4C4C]/30" },
-  blue: { bg: "bg-[#2563EB]", ring: "ring-[#2563EB]/30" },
-};
-
-interface VehicleTopBlueprintProps {
-  pins: LandingDamagePin[];
-  selectedPinId: string | null;
-  onSelectPin: (id: string) => void;
-  onAddPin?: (xPercent: number, yPercent: number) => void;
-  compact?: boolean;
-}
-
 /**
- * Silhueta veicular superior real compartilhada entre o Hero Interativo e o Showcase,
- * evitando duplicação do SVG e mantendo consistência visual com o módulo de Vistoria 360º.
+ * Ícones vetoriais animados (estilo SVGator) para reforçar visualmente cada seção sem jargões.
  */
-export function VehicleTopBlueprint({
-  pins,
-  selectedPinId,
-  onSelectPin,
-  onAddPin,
-  compact = false,
-}: VehicleTopBlueprintProps) {
-  function handleCanvasClick(e: React.MouseEvent<HTMLDivElement>) {
-    if (!onAddPin) return;
-    const rect = e.currentTarget.getBoundingClientRect();
-    const x = Math.min(92, Math.max(8, ((e.clientX - rect.left) / rect.width) * 100));
-    const y = Math.min(94, Math.max(6, ((e.clientY - rect.top) / rect.height) * 100));
-    onAddPin(Number(x.toFixed(1)), Number(y.toFixed(1)));
+export function AnimatedSectionIcon({
+  kind,
+  className = "w-10 h-10",
+}: {
+  kind: "3d" | "patio" | "caixa" | "whatsapp";
+  className?: string;
+}) {
+  if (kind === "3d") {
+    return (
+      <svg className={className} viewBox="0 0 48 48" fill="none" aria-hidden="true">
+        <ellipse
+          cx="24"
+          cy="28"
+          rx="18"
+          ry="8"
+          stroke="#94A3B8"
+          strokeWidth="1.6"
+          strokeDasharray="6 4"
+          className="vulpto-svg-orbit"
+        />
+        <path
+          d="M12 24L16 15H32L36 24H12Z"
+          stroke="#F8FAFC"
+          strokeWidth="1.8"
+          strokeLinejoin="round"
+        />
+        <rect x="9" y="23" width="30" height="8" rx="3" stroke="#E2E8F0" strokeWidth="1.8" fill="#161D2B" />
+        <circle cx="15" cy="31" r="3" fill="#07090E" stroke="#E2E8F0" strokeWidth="1.6" />
+        <circle cx="33" cy="31" r="3" fill="#07090E" stroke="#E2E8F0" strokeWidth="1.6" />
+        <circle cx="28" cy="20" r="2.5" fill="#38BDF8" className="animate-ping" />
+        <circle cx="28" cy="20" r="2.2" fill="#38BDF8" />
+      </svg>
+    );
+  }
+
+  if (kind === "patio") {
+    return (
+      <svg className={className} viewBox="0 0 48 48" fill="none" aria-hidden="true">
+        <rect x="6" y="10" width="14" height="28" rx="3" stroke="#64748B" strokeWidth="1.5" />
+        <rect x="28" y="10" width="14" height="28" rx="3" stroke="#94A3B8" strokeWidth="1.5" />
+        <rect
+          x="9"
+          y="15"
+          width="12"
+          height="10"
+          rx="2.5"
+          fill="#E2E8F0"
+          className="vulpto-svg-slide"
+        />
+        <path
+          d="M21 20H27"
+          stroke="#38BDF8"
+          strokeWidth="2"
+          strokeLinecap="round"
+        />
+      </svg>
+    );
+  }
+
+  if (kind === "caixa") {
+    return (
+      <svg className={className} viewBox="0 0 48 48" fill="none" aria-hidden="true">
+        <rect x="8" y="28" width="6" height="12" rx="2" fill="#64748B" />
+        <rect x="17" y="22" width="6" height="18" rx="2" fill="#94A3B8" />
+        <rect x="26" y="16" width="6" height="24" rx="2" fill="#CBD5E1" />
+        <rect x="35" y="10" width="6" height="30" rx="2" fill="#F8FAFC" />
+        <path
+          d="M8 22L18 16L27 18L39 8"
+          stroke="#38BDF8"
+          strokeWidth="2.2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeDasharray="60"
+          className="vulpto-svg-flow"
+        />
+      </svg>
+    );
   }
 
   return (
-    <div
-      onClick={handleCanvasClick}
-      className={`relative mx-auto select-none ${
-        compact ? "w-[190px] h-[310px] sm:w-[210px] sm:h-[340px]" : "w-[220px] h-[360px]"
-      } ${onAddPin ? "cursor-crosshair" : "cursor-default"}`}
-    >
-      <svg
-        viewBox="0 0 200 360"
-        className="w-full h-full"
-        role="img"
-        aria-label="Silhueta técnica superior de vistoria veicular 360 graus"
-      >
-        {/* 4 Rodas e Pneus */}
-        <g>
-          <rect x="8" y="58" width="24" height="46" rx="6" fill="#252B27" stroke="#142D26" strokeWidth="1.5" />
-          <rect x="12" y="64" width="16" height="34" rx="4" fill="#F1F3F1" stroke="#9CA49E" strokeWidth="1" />
-          <rect x="168" y="58" width="24" height="46" rx="6" fill="#252B27" stroke="#142D26" strokeWidth="1.5" />
-          <rect x="172" y="64" width="16" height="34" rx="4" fill="#F1F3F1" stroke="#9CA49E" strokeWidth="1" />
-          <rect x="8" y="246" width="24" height="46" rx="6" fill="#252B27" stroke="#142D26" strokeWidth="1.5" />
-          <rect x="12" y="252" width="16" height="34" rx="4" fill="#F1F3F1" stroke="#9CA49E" strokeWidth="1" />
-          <rect x="168" y="246" width="24" height="46" rx="6" fill="#252B27" stroke="#142D26" strokeWidth="1.5" />
-          <rect x="172" y="252" width="16" height="34" rx="4" fill="#F1F3F1" stroke="#9CA49E" strokeWidth="1" />
-        </g>
-
-        {/* Contorno da Carroceria */}
-        <path
-          d="M 50 30 C 50 15, 75 10, 100 10 C 125 10, 150 15, 150 30 L 158 90 C 162 120, 162 240, 158 280 L 150 340 C 145 352, 125 355, 100 355 C 75 355, 55 352, 50 340 L 42 280 C 38 240, 38 120, 42 90 Z"
-          strokeWidth="2.5"
-          stroke="#252B27"
-          fill="#FFFFFF"
-        />
-
-        {/* Para-choque Dianteiro e Faróis */}
-        <path
-          d="M 50 30 C 50 15, 75 10, 100 10 C 125 10, 150 15, 150 30 L 146 42 C 125 38, 75 38, 54 42 Z"
-          fill="#F1F3F1"
-          stroke="#9CA49E"
-          strokeWidth="1"
-        />
-        <path d="M 52 32 C 55 22, 68 20, 72 32 Z" fill="#E9F3EC" stroke="#247653" strokeWidth="1.2" />
-        <path d="M 148 32 C 145 22, 132 20, 128 32 Z" fill="#E9F3EC" stroke="#247653" strokeWidth="1.2" />
-
-        {/* Capô */}
-        <path d="M 56 46 L 144 46 L 146 76 L 54 76 Z" strokeWidth="1" stroke="#E7EAE7" fill="#F7F8F6" />
-        <text x="100" y="65" fontSize="8" fontWeight="700" fill="#737D75" textAnchor="middle">
-          CAPÔ
-        </text>
-
-        {/* Para-brisa */}
-        <path
-          d="M 56 80 C 70 70, 130 70, 144 80 L 140 120 C 120 115, 80 115, 60 120 Z"
-          strokeWidth="1.4"
-          stroke="#9CA49E"
-          fill="#E9F3EC"
-        />
-
-        {/* Teto */}
-        <rect x="60" y="130" width="80" height="100" rx="8" strokeWidth="1.4" stroke="#E7EAE7" fill="#FFFFFF" />
-        <text x="100" y="184" fontSize="9" fontWeight="700" fill="#252B27" textAnchor="middle">
-          TETO
-        </text>
-
-        {/* Vidro Traseiro */}
-        <path
-          d="M 60 240 C 80 245, 120 245, 140 240 L 144 270 C 130 275, 70 275, 56 270 Z"
-          strokeWidth="1.4"
-          stroke="#9CA49E"
-          fill="#E9F3EC"
-        />
-
-        {/* Porta-malas, Lanternas e Para-choque Traseiro */}
-        <path d="M 56 278 L 144 278 L 142 322 L 58 322 Z" strokeWidth="1" stroke="#E7EAE7" fill="#F7F8F6" />
-        <path d="M 52 324 C 55 334, 68 335, 70 324 Z" fill="#FEF2F2" stroke="#DC4C4C" strokeWidth="1.2" />
-        <path d="M 148 324 C 145 334, 132 335, 130 324 Z" fill="#FEF2F2" stroke="#DC4C4C" strokeWidth="1.2" />
-        <path
-          d="M 58 326 C 75 330, 125 330, 142 326 L 150 340 C 145 352, 125 355, 100 355 C 75 355, 55 352, 50 340 Z"
-          fill="#F1F3F1"
-          stroke="#9CA49E"
-          strokeWidth="1"
-        />
-
-        {/* Retrovisores */}
-        <rect x="22" y="94" width="16" height="24" rx="4" strokeWidth="1.4" stroke="#343C36" fill="#F1F3F1" />
-        <rect x="162" y="94" width="16" height="24" rx="4" strokeWidth="1.4" stroke="#343C36" fill="#F1F3F1" />
-      </svg>
-
-      {/* Marcadores de avaria */}
-      {pins.map((pin, idx) => {
-        const isSelected = selectedPinId === pin.id;
-        const toneStyle = PIN_TONE_STYLES[pin.tone];
-        return (
-          <button
-            key={pin.id}
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              onSelectPin(pin.id);
-            }}
-            style={{ left: `${pin.x}%`, top: `${pin.y}%` }}
-            aria-label={`Selecionar avaria ${idx + 1}: ${pin.areaLabel}`}
-            className={`absolute -translate-x-1/2 -translate-y-1/2 w-6 h-6 rounded-full border-2 border-white text-white text-[11px] font-bold flex items-center justify-center shadow-md transition-transform cursor-pointer ${
-              toneStyle.bg
-            } ${isSelected ? `scale-125 ring-4 ${toneStyle.ring} z-20` : "hover:scale-110 z-10"}`}
-          >
-            {idx + 1}
-          </button>
-        );
-      })}
-    </div>
+    <svg className={className} viewBox="0 0 48 48" fill="none" aria-hidden="true">
+      <path
+        d="M24 8C15.2 8 8 14.8 8 23.2C8 26.7 9.3 29.9 11.4 32.5L9.5 39L16.3 37C18.6 38 21.2 38.5 24 38.5C32.8 38.5 40 31.7 40 23.2C40 14.8 32.8 8 24 8Z"
+        stroke="#E2E8F0"
+        strokeWidth="1.8"
+        fill="#161D2B"
+      />
+      <circle cx="18" cy="23.5" r="2" fill="#10B981" className="animate-pulse" />
+      <circle cx="24" cy="23.5" r="2" fill="#10B981" className="animate-pulse" />
+      <circle cx="30" cy="23.5" r="2" fill="#10B981" className="animate-pulse" />
+    </svg>
   );
 }
 
-export const PORT_PRICING_DEMO = [
-  {
-    key: "HATCH",
-    label: "Hatch",
-    packageTitle: "Vitrificação 9H + Polimento Técnico",
-    price: 780,
-    estimatedHours: "5h no Box",
-  },
-  {
-    key: "SEDAN",
-    label: "Sedan",
-    packageTitle: "Vitrificação 9H + Polimento Técnico",
-    price: 940,
-    estimatedHours: "6h30 no Box",
-  },
-  {
-    key: "SUV",
-    label: "SUV / Picape",
-    packageTitle: "Vitrificação 9H + Polimento Técnico",
-    price: 1180,
-    estimatedHours: "8h no Box",
-  },
-] as const;
-
 export const FAQ_ITEMS = [
   {
-    q: "Preciso cadastrar cartão de crédito para iniciar o teste de 3 dias?",
-    a: "Não. Você cria a conta da sua estética em menos de 1 minuto informando os dados do estabelecimento e do administrador, com acesso imediato ao onboarding por 72 horas sem compromisso.",
+    q: "Preciso cadastrar cartão de crédito para usar os 3 dias grátis?",
+    a: "Não. Você cria a conta da sua estética em menos de 1 minuto e já entra para testar no pátio real durante 3 dias completos, sem pedir cartão.",
   },
   {
-    q: "Qual é a diferença entre os perfis Administrador e Operador?",
-    a: "O Administrador tem visão completa do faturamento, DRE gerencial, despesas, liquidação de comissões, estoque e CRM. O Operador acessa o pátio Kanban, recepção, vistorias 360º, ordens de serviço atribuídas e apenas seu próprio extrato de comissões.",
+    q: "Minha equipe consegue ver o quanto eu faturo ou o lucro da loja?",
+    a: "Não. Cada funcionário entra com um acesso próprio focado no trabalho do dia: receber veículos, fazer a vistoria, acompanhar o box e ver apenas as próprias comissões. Valores de caixa, contas e lucro ficam visíveis só para o dono.",
   },
   {
-    q: "Como funciona a Vistoria Digital 360º na recepção?",
-    a: "A equipe marca diretamente na silhueta veicular ou no modelo 3D as áreas com riscos, amassados, trincas ou queimaduras de verniz, registra nível de combustível, pertences deixados no interior e anexa fotos — gerando um laudo em PDF pronto para enviar via WhatsApp.",
+    q: "Como funciona a vistoria do carro na entrada em 3D?",
+    a: "Na recepção, você gira o carro em 3D na tela do celular, tablet ou computador, abre portas ou capô se precisar e toca exatamente no lugar onde já existe um risco ou amassado. Dá para anexar fotos e enviar o comprovante direto no WhatsApp do cliente.",
   },
   {
-    q: "Posso definir preços diferentes conforme o porte do veículo?",
-    a: "Sim. O catálogo possui matriz automática para Hatch/Pequeno, Sedan/Médio, SUV/Picape, Moto e Utilitário Especial. Ao aprovar um orçamento e converter em Ordem de Serviço, os preços negociados são congelados historicamente.",
+    q: "Posso cobrar preços diferentes para carro pequeno, sedan e caminhonete?",
+    a: "Sim. Ao cadastrar seus serviços você define os valores para carro pequeno, médio, grande, moto e utilitário. Na hora de montar o orçamento ou abrir a ordem de serviço, o valor certo já entra pronto automaticamente.",
   },
   {
-    q: "Como funciona o armazenamento de fotos em nuvem da empresa?",
-    a: "As imagens de vistoria podem ser conectadas ao repositório em nuvem configurado pelo administrador da estética (Google Drive, Telegram Cloud, OneDrive, Dropbox ou S3/R2 com credenciais protegidas por criptografia AES-256-GCM), evitando lotar celulares da equipe.",
+    q: "Onde ficam guardadas as fotos das vistorias?",
+    a: "Você pode conectar o sistema à sua própria conta na nuvem, como Google Drive ou OneDrive, evitando lotar a memória dos celulares dos funcionários.",
   },
   {
-    q: "O cálculo do DRE e das comissões é automático?",
-    a: "Sim. Cada Ordem de Serviço concluída alimenta o fluxo de receitas em regime de caixa, apura taxas de maquininha, custos variáveis de insumos e comissões por colaborador e consolida despesas fixas para mostrar o lucro líquido operacional real.",
+    q: "O sistema avisa quando um cliente está sumido ou quando vai acabar algum produto?",
+    a: "Sim. O Vulpto mostra automaticamente quem não volta há mais de 45 dias, quem tem manutenção de vitrificação vencendo e lista os produtos próximos do estoque mínimo para você repor antes de faltar no box.",
   },
 ];

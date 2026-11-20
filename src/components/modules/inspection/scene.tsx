@@ -27,6 +27,7 @@ type Props = {
   open: OpenState;
   readOnly: boolean;
   cameraResetTrigger?: number;
+  backgroundColor?: string;
   onPick: (anchor: Anchor) => void;
   onTogglePart: (partId: PartId) => void;
   onSelect: (index: number) => void;
@@ -314,8 +315,8 @@ export default function InspectionScene(props: Props) {
         </div>
       }
     >
-      <color attach="background" args={["#F8FAF8"]} />
-      <ambientLight intensity={0.7} />
+      <color attach="background" args={[props.backgroundColor || "#F8FAF8"]} />
+      <ambientLight intensity={props.backgroundColor ? 0.9 : 0.7} />
       <directionalLight position={[4, 7, -5]} intensity={2.6} />
       <directionalLight position={[-4, 5, 5]} intensity={1.2} />
 

@@ -64,11 +64,15 @@ export function Inspection3D({
   damages,
   onChange,
   readOnly = false,
+  demoMode = false,
+  studioDark = false,
   onFallbackTo2D,
 }: {
   damages: DamagePin[];
   onChange: (damages: DamagePin[]) => void;
   readOnly?: boolean;
+  demoMode?: boolean;
+  studioDark?: boolean;
   onFallbackTo2D?: () => void;
 }) {
   const [failure, setFailure] = useState(false);
@@ -154,8 +158,12 @@ export function Inspection3D({
     try {
       const newUrls: string[] = [];
       for (let i = 0; i < files.length; i++) {
-        const formData = new FormData();
         const compressed = await compressInspectionImage(files[i]);
+        if (demoMode) {
+          newUrls.push(URL.createObjectURL(compressed));
+          continue;
+        }
+        const formData = new FormData();
         formData.append("file", compressed);
         const res = await fetch("/api/uploads", { method: "POST", body: formData });
         const data = await res.json();
@@ -186,8 +194,12 @@ export function Inspection3D({
     try {
       const newUrls: string[] = [];
       for (let i = 0; i < files.length; i++) {
-        const formData = new FormData();
         const compressed = await compressInspectionImage(files[i]);
+        if (demoMode) {
+          newUrls.push(URL.createObjectURL(compressed));
+          continue;
+        }
+        const formData = new FormData();
         formData.append("file", compressed);
         const res = await fetch("/api/uploads", { method: "POST", body: formData });
         const data = await res.json();
@@ -267,10 +279,20 @@ export function Inspection3D({
   return (
     <div className="space-y-4 max-w-full overflow-hidden">
       {/* Barra de Ações Rápidas: Abertura das portas/capô e centralização da câmera */}
-      <div className="flex flex-wrap items-center justify-between gap-2 bg-[#F8FAF8] border border-[#DFE2DF] p-3 rounded-2xl">
+      <div
+        className={`flex flex-wrap items-center justify-between gap-2 border p-3 rounded-2xl ${
+          studioDark
+            ? "bg-[#111622] border-white/10"
+            : "bg-[#F8FAF8] border-[#DFE2DF]"
+        }`}
+      >
         <div className="flex flex-wrap items-center gap-1.5">
-          <span className="text-[11px] font-bold text-[#343C36] flex items-center gap-1 mr-1">
-            <Layers className="w-3.5 h-3.5 text-[#247653]" />
+          <span
+            className={`text-[11px] font-bold flex items-center gap-1 mr-1 ${
+              studioDark ? "text-[#CBD5E1]" : "text-[#343C36]"
+            }`}
+          >
+            <Layers className={`w-3.5 h-3.5 ${studioDark ? "text-[#94A3B8]" : "text-[#247653]"}`} />
             Peças:
           </span>
           {PARTS.map((p) => {
@@ -282,7 +304,11 @@ export function Inspection3D({
                 onClick={() => handleTogglePart(p.id)}
                 className={`text-[11px] font-medium px-2.5 py-1 rounded-lg border transition-all cursor-pointer ${
                   isOpen
-                    ? "bg-[#247653] text-white border-[#247653] shadow-xs"
+                    ? studioDark
+                      ? "bg-[#E2E8F0] text-[#07090E] border-white shadow-xs font-bold"
+                      : "bg-[#247653] text-white border-[#247653] shadow-xs"
+                    : studioDark
+                    ? "bg-[#161D2B] text-[#E2E8F0] border-white/10 hover:border-white/30"
                     : "bg-white text-[#343C36] border-[#DFE2DF] hover:border-[#247653]"
                 }`}
                 title={`Clique para ${isOpen ? "fechar" : "abrir"} ${p.label}`}
@@ -296,15 +322,27 @@ export function Inspection3D({
         <button
           type="button"
           onClick={() => setCameraResetTrigger((v) => v + 1)}
-          className="text-[11px] font-semibold px-3 py-1.5 rounded-lg border border-[#DFE2DF] bg-white hover:bg-[#F2F4F1] text-[#343C36] flex items-center gap-1.5 transition-all cursor-pointer"
+          className={`text-[11px] font-semibold px-3 py-1.5 rounded-lg border flex items-center gap-1.5 transition-all cursor-pointer ${
+            studioDark
+              ? "border-white/15 bg-[#161D2B] hover:bg-[#1E293B] text-[#E2E8F0]"
+              : "border-[#DFE2DF] bg-white hover:bg-[#F2F4F1] text-[#343C36]"
+          }`}
         >
-          <RotateCcw className="w-3.5 h-3.5 text-[#247653]" />
+          <RotateCcw className={`w-3.5 h-3.5 ${studioDark ? "text-[#94A3B8]" : "text-[#247653]"}`} />
           <span>Centralizar Visão</span>
         </button>
       </div>
 
       {/* Visualizador 3D Principal */}
-      <div className="h-[420px] sm:h-[520px] w-full overflow-hidden rounded-2xl border border-[#DFE2DF] bg-[#F8FAF8] relative touch-none select-none shadow-inner">
+      <div
+        className={`${
+          demoMode ? "h-[360px] sm:h-[430px]" : "h-[420px] sm:h-[520px]"
+        } w-full overflow-hidden rounded-2xl border relative touch-none select-none shadow-inner ${
+          studioDark
+            ? "border-white/15 bg-[#0B0F17]"
+            : "border-[#DFE2DF] bg-[#F8FAF8]"
+        }`}
+      >
         <ViewerBoundary onFailure={fail}>
           <Scene
             damages={damages}
@@ -312,6 +350,7 @@ export function Inspection3D({
             open={open}
             readOnly={readOnly}
             cameraResetTrigger={cameraResetTrigger}
+            backgroundColor={studioDark ? "#0B0F17" : "#F8FAF8"}
             onPick={handlePick}
             onTogglePart={handleTogglePart}
             onSelect={handleSelectDamage}
@@ -320,14 +359,24 @@ export function Inspection3D({
         </ViewerBoundary>
 
         {/* Dica de Operação no Canto Superior Esquerdo */}
-        <div className="absolute top-3 left-3 pointer-events-none">
-          <div className="bg-white/95 backdrop-blur-md border border-[#DFE2DF] px-3 py-1.5 rounded-xl shadow-xs pointer-events-auto">
-            <p className="text-[11px] font-semibold text-[#142D26] flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-[#10B981] animate-pulse" />
-              Modelo 3D Interativo 360º
+        <div className="absolute top-3 left-3 pointer-events-none max-w-[calc(100%-24px)]">
+          <div
+            className={`backdrop-blur-md border px-3 py-1.5 rounded-xl shadow-xs pointer-events-auto ${
+              studioDark
+                ? "bg-[#111622]/90 border-white/15"
+                : "bg-white/95 border-[#DFE2DF]"
+            }`}
+          >
+            <p
+              className={`text-[11px] font-semibold flex items-center gap-1.5 ${
+                studioDark ? "text-[#F8FAFC]" : "text-[#142D26]"
+              }`}
+            >
+              <span className="w-2 h-2 rounded-full bg-[#10B981] animate-pulse shrink-0" />
+              <span>{demoMode ? "Carro em 3D para Testar" : "Modelo 3D Interativo 360°"}</span>
             </p>
-            <p className="text-[10px] text-[#737D75] mt-0.5">
-              Gire com o mouse/dedo. Dê 1 clique para apontar avaria ou 2 cliques na porta/capô para abrir.
+            <p className={`text-[10px] mt-0.5 ${studioDark ? "text-[#94A3B8]" : "text-[#737D75]"}`}>
+              Gire com o mouse ou dedo. Toque na lataria para marcar um risco ou dê 2 cliques nas portas para abrir.
             </p>
           </div>
         </div>
@@ -605,8 +654,12 @@ export function Inspection3D({
       {/* Lista de Avarias Registradas em formato de Cards Rápidos */}
       {damages.length > 0 && (
         <div className="space-y-2">
-          <h4 className="text-xs font-bold text-[#142D26] uppercase tracking-wider flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-[#247653]" />
+          <h4
+            className={`text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 ${
+              studioDark ? "text-[#E2E8F0]" : "text-[#142D26]"
+            }`}
+          >
+            <span className={`w-2 h-2 rounded-full ${studioDark ? "bg-[#38BDF8]" : "bg-[#247653]"}`} />
             Avarias Apontadas ({damages.length})
           </h4>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
@@ -618,23 +671,29 @@ export function Inspection3D({
                   key={d.id || index}
                   onClick={() => handleSelectDamage(index)}
                   className={`p-3 rounded-xl border text-xs cursor-pointer transition-all flex items-start justify-between gap-2 ${
-                    isSelected
+                    studioDark
+                      ? isSelected
+                        ? "bg-[#161D2B] border-white/40 shadow-xs text-white"
+                        : "bg-[#111622] border-white/10 hover:border-white/25 text-[#E2E8F0]"
+                      : isSelected
                       ? "bg-[#E9F3EC] border-[#247653] shadow-xs"
                       : "bg-white border-[#DFE2DF] hover:border-[#247653]"
                   }`}
                 >
                   <div className="space-y-1 min-w-0 flex-1">
                     <div className="flex items-center gap-1.5">
-                      <span className="font-extrabold text-[#247653]">#{index + 1}</span>
-                      <span className="font-bold text-[#142D26] truncate">
+                      <span className={`font-extrabold ${studioDark ? "text-[#38BDF8]" : "text-[#247653]"}`}>
+                        #{index + 1}
+                      </span>
+                      <span className={`font-bold truncate ${studioDark ? "text-white" : "text-[#142D26]"}`}>
                         {translateArea(d.area)}
                       </span>
                     </div>
-                    <p className="text-[11px] text-[#737D75]">
+                    <p className={`text-[11px] ${studioDark ? "text-[#94A3B8]" : "text-[#737D75]"}`}>
                       {translateDamageType(d.damageType)}
                     </p>
                     {d.description && (
-                      <p className="text-[10px] text-[#343C36] truncate italic">
+                      <p className={`text-[10px] truncate italic ${studioDark ? "text-[#CBD5E1]" : "text-[#343C36]"}`}>
                         &ldquo;{d.description}&rdquo;
                       </p>
                     )}
@@ -696,10 +755,12 @@ export function Inspection3D({
         )}
       </AnimatePresence>
 
-      {/* Nota de Licença Técnica do Modelo 3D */}
-      <p className="text-[10px] text-[#737D75] pt-2 border-t border-[#DFE2DF]/60">
-        Modelo tridimensional veicular sob licença Creative Commons (CC BY 4.0). Rig cinemático e mapeamento de impacto adaptados para Vulpto.
-      </p>
+      {/* Nota de Licença Técnica do Modelo 3D (apenas na tela interna) */}
+      {!demoMode && (
+        <p className="text-[10px] text-[#737D75] pt-2 border-t border-[#DFE2DF]/60">
+          Modelo tridimensional veicular sob licença Creative Commons (CC BY 4.0). Rig cinemático e mapeamento de impacto adaptados para Vulpto.
+        </p>
+      )}
     </div>
   );
 }

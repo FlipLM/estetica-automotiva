@@ -1,302 +1,248 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
-import { ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
-import { MiniVulpto } from "./mini-vulpto";
+import React, { useEffect, useState } from "react";
+import { ArrowLeft, ArrowRight, Pause, Play } from "lucide-react";
 
-export interface CarouselModuleItem {
+interface ModuleSlide {
   id: string;
-  category: string;
+  badge: string;
   title: string;
-  description: string;
-  actionLabel: string;
-  targetHref: string;
-  bgImage: string;
-  visualFocus: string;
-  visualDetail: string;
+  summary: string;
+  image: string;
+  imageAlt: string;
+  highlights: string[];
 }
 
-const CAROUSEL_MODULES: CarouselModuleItem[] = [
+const SLIDES: ModuleSlide[] = [
   {
-    id: "vistoria",
-    category: "Recepção Blindada",
-    title: "Vistoria 360° com Laudo PDF",
-    description:
-      "Check-in com silhueta 2D/3D interativa e fotos organizadas por peça que protegem a estética contra contestações na entrega.",
-    actionLabel: "Ver Vistoria no Sistema",
-    targetHref: "#showcase",
-    bgImage: "/brand/bg-vistoria-360.svg",
-    visualFocus: "3D + Silhueta 2D",
-    visualDetail: "Marcação por coordenadas + envio em PDF no WhatsApp",
+    id: "vistoria-3d",
+    badge: "Entrada do Carro",
+    title: "Vistoria em 3D na Entrada",
+    summary:
+      "Gire o veículo na tela, abra portas e capô, marque riscos ou amassados com foto e envie o comprovante ao cliente antes de começar.",
+    image: "/brand/screens/screen-vistoria-3d.png",
+    imageAlt: "Tela real de vistoria veicular em 3D do Vulpto",
+    highlights: ["Foto direto do celular", "Evita discussão na entrega"],
   },
   {
-    id: "porte",
-    category: "Precificação Dinâmica",
-    title: "Matriz Automática por Porte",
-    description:
-      "Escalonamento de valores para Hatch, Sedan, SUV/Picape, Moto e Utilitário com congelamento histórico dentro de cada OS.",
-    actionLabel: "Explorar Matriz de Portes",
-    targetHref: "#showcase",
-    bgImage: "/brand/bg-patio-detailing.svg",
-    visualFocus: "5 Categorias",
-    visualDetail: "Hatch · Sedan · SUV/Picape · Moto · Utilitário",
+    id: "patio-visual",
+    badge: "Pátio e Boxes",
+    title: "Quadro Visual do Pátio",
+    summary:
+      "Veja em segundos quais carros estão esperando, em lavagem, finalizados ou pagos. Mova entre etapas e boxes só arrastando o cartão.",
+    image: "/brand/screens/screen-patio-kanban.png",
+    imageAlt: "Tela real do quadro visual do pátio e ocupação de boxes",
+    highlights: ["Mostra vagas por box", "Placa destacada no card"],
   },
   {
-    id: "rbac",
-    category: "Governança & Segurança",
-    title: "RBAC Estrito Admin vs Operador",
-    description:
-      "Lucro líquido do DRE, contas a pagar e custo de insumos ficam isolados no servidor apenas para perfis administradores.",
-    actionLabel: "Entender Permissões",
-    targetHref: "#planos",
-    bgImage: "/brand/bg-dre-financeiro.svg",
-    visualFocus: "Cookies HttpOnly",
-    visualDetail: "Operador acessa apenas pátio, vistoria e próprio extrato",
+    id: "precos-porte",
+    badge: "Tabela Inteligente",
+    title: "Preço Automático por Tamanho",
+    summary:
+      "Defina valores para Hatch, Sedã, Utilitário e Picape uma única vez. Na hora do orçamento, o sistema já calcula preço e tempo sozinho.",
+    image: "/brand/screens/screen-precos-porte.png",
+    imageAlt: "Tela real de cadastro de serviços e preços por tamanho de veículo",
+    highlights: ["Sem erro de tabela", "Tempo estimado por serviço"],
   },
   {
-    id: "estoque",
-    category: "Controle de Insumos",
-    title: "Estoque Químico & Custo Médio",
-    description:
-      "Monitore shampoos, boinas, compostos e vitrificadores 9H com baixa atômica por OS, validade de frasco aberto e lista de compras.",
-    actionLabel: "Ver Gestão Química",
-    targetHref: "#showcase",
-    bgImage: "/brand/bg-estoque-quimico.svg",
-    visualFocus: "Ficha Técnica",
-    visualDetail: "Diluição configurável + alerta de reposição mínima",
+    id: "lucro-caixa",
+    badge: "Financeiro Real",
+    title: "Lucro Limpo, Caixa do Dia e Comissões",
+    summary:
+      "Saiba exatamente quanto entrou em Pix, dinheiro ou cartão, desconte despesas e feche a comissão da sua equipe sem planilhas.",
+    image: "/brand/screens/screen-financeiro-caixa.png",
+    imageAlt: "Tela real do controle financeiro e caixa diário do Vulpto",
+    highlights: ["Caixa aberto na hora", "Comissão pronta por funcionário"],
   },
   {
-    id: "crm",
-    category: "Retenção Automotiva",
-    title: "CRM Curva ABC & Dias de Chuva",
-    description:
-      "Reative clientes Classe A inativos há mais de 45 dias, dispare lembretes de revisão de vitrificação e preencha boxes na chuva.",
-    actionLabel: "Simular Retorno CRM",
-    targetHref: "#roi",
-    bgImage: "/brand/bg-patio-detailing.svg",
-    visualFocus: "Anti-Spam Nativo",
-    visualDetail: "Fila Para Chamar Hoje + atribuição de retorno gerado",
+    id: "controle-frascos",
+    badge: "Estoque e Consumo",
+    title: "Controle de Frascos e Produtos",
+    summary:
+      "Acompanhe quantos mililitros foram usados em cada polimento ou vitrificação e receba aviso antes de acabar o produto no meio do serviço.",
+    image: "/brand/screens/screen-estoque-produtos.png",
+    imageAlt: "Tela real de controle de estoque de ceras, shampoos e insumos",
+    highlights: ["Alerta de estoque baixo", "Custo real por atendimento"],
   },
   {
-    id: "byos",
-    category: "Nuvem Corporativa",
-    title: "Armazenamento Próprio (BYOS)",
-    description:
-      "Conecte Google Drive, OneDrive, Dropbox, Telegram Cloud ou Cloudflare R2 com credenciais cifradas em AES-256-GCM.",
-    actionLabel: "Iniciar Teste de 72h",
-    targetHref: "#planos",
-    bgImage: "/brand/bg-vistoria-360.svg",
-    visualFocus: "AES-256-GCM",
-    visualDetail: "Fotos da equipe fora do celular pessoal sem custo extra",
+    id: "avisos-whatsapp",
+    badge: "Fidelização",
+    title: "Avisos no WhatsApp no Momento Certo",
+    summary:
+      "Chame quem não aparece há meses, lembre revisões de vitrificação ou mande promoção em dias de chuva para não deixar box vazio.",
+    image: "/brand/screens/screen-clientes-whatsapp.png",
+    imageAlt: "Tela real de disparos e lembretes para clientes no WhatsApp",
+    highlights: ["Mensagens prontas em 1 clique", "Agenda cheia o mês todo"],
   },
 ];
 
-interface LandingModulesCarouselProps {
-  onStartTrial: () => void;
-}
-
 /**
- * Carrossel editorial inspirado no padrão CollectionsCarousel/CoursesCarousel da Cia do Lacre:
- * autoplay 3.5s, pausa em hover/touch, setas circulares limpas, sem contador numérico e sem balões internos.
+ * Carrossel horizontal escuro em estilo estúdio com capturas reais de cada tela do sistema.
+ * Pausa ao passar o mouse, sem contadores numéricos e com alvos de toque acessíveis.
  */
-export function LandingModulesCarousel({ onStartTrial }: LandingModulesCarouselProps) {
-  const trackRef = useRef<HTMLDivElement>(null);
+export function LandingModulesCarousel() {
   const [activeIndex, setActiveIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
 
-  const scrollToSlide = (index: number) => {
-    const container = trackRef.current;
-    if (!container) return;
-    const normalized = (index + CAROUSEL_MODULES.length) % CAROUSEL_MODULES.length;
-    const children = container.children;
-    const target = children[normalized] as HTMLElement | undefined;
-    if (target) {
-      container.scrollTo({
-        left: target.offsetLeft - container.offsetLeft,
-        behavior: "smooth",
-      });
-      setActiveIndex(normalized);
-    }
-  };
-
   useEffect(() => {
     if (isPaused) return undefined;
-    const prefersReduced =
-      typeof window !== "undefined" &&
-      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (prefersReduced) return undefined;
-
     const timer = window.setInterval(() => {
-      setActiveIndex((prev) => {
-        const next = (prev + 1) % CAROUSEL_MODULES.length;
-        const container = trackRef.current;
-        const target = container?.children[next] as HTMLElement | undefined;
-        if (container && target) {
-          container.scrollTo({
-            left: target.offsetLeft - container.offsetLeft,
-            behavior: "smooth",
-          });
-        }
-        return next;
-      });
-    }, 3500);
-
+      setActiveIndex((prev) => (prev + 1) % SLIDES.length);
+    }, 4200);
     return () => window.clearInterval(timer);
   }, [isPaused]);
 
-  function handleScrollSync() {
-    const container = trackRef.current;
-    if (!container) return;
-    const scrollLeft = container.scrollLeft;
-    let closestIdx = 0;
-    let minDiff = Infinity;
-    Array.from(container.children).forEach((child, idx) => {
-      const el = child as HTMLElement;
-      const diff = Math.abs(el.offsetLeft - container.offsetLeft - scrollLeft);
-      if (diff < minDiff) {
-        minDiff = diff;
-        closestIdx = idx;
-      }
-    });
-    setActiveIndex(closestIdx);
+  function handlePrev() {
+    setActiveIndex((prev) => (prev - 1 + SLIDES.length) % SLIDES.length);
   }
 
+  function handleNext() {
+    setActiveIndex((prev) => (prev + 1) % SLIDES.length);
+  }
+
+  const currentSlide = SLIDES[activeIndex];
+
   return (
-    <section
-      id="diferenciais"
-      className="py-20 bg-[#F7F8F6] overflow-hidden"
+    <div
+      className="relative"
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
-      onTouchStart={() => setIsPaused(true)}
-      onTouchEnd={() => setIsPaused(false)}
+      onFocus={() => setIsPaused(true)}
+      onBlur={() => setIsPaused(false)}
     >
-      <div className="max-w-[1536px] mx-auto px-5 sm:px-10 lg:px-16 xl:px-20">
-        {/* Cabeçalho Editorial Alinhado à Esquerda + Setas à Direita (Zero Contador) */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
-          <div>
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#E9F3EC] text-[#247653] text-xs font-bold uppercase tracking-wider mb-3">
-              <MiniVulpto className="w-4 h-4 text-[#247653]" />
-              <span>Engenharia Sob Medida</span>
-            </div>
-
-            <h2 className="font-heading text-3xl sm:text-4xl lg:text-5xl font-extrabold text-[#142D26] tracking-tight">
-              Por que estéticas escolhem o Vulpto
-            </h2>
-
-            <p className="mt-2 font-editorial text-base text-[#737D75] max-w-2xl leading-relaxed">
-              Cada rotina crítica do estúdio conectada em uma única plataforma, sem planilhas paralelas nem retrabalho na recepção.
-            </p>
-          </div>
-
-          <div className="flex items-center gap-2 shrink-0">
-            <button
-              type="button"
-              onClick={() => scrollToSlide(activeIndex - 1)}
-              className="w-11 h-11 rounded-full bg-white hover:bg-[#247653] text-[#142D26] hover:text-white border border-[#E7EAE7] shadow-xs flex items-center justify-center transition-all duration-200 cursor-pointer"
-              aria-label="Diferencial anterior"
-            >
-              <ChevronLeft className="w-5 h-5" />
-            </button>
-
-            <button
-              type="button"
-              onClick={() => scrollToSlide(activeIndex + 1)}
-              className="w-11 h-11 rounded-full bg-[#247653] hover:bg-[#142D26] text-white shadow-xs flex items-center justify-center transition-all duration-200 cursor-pointer"
-              aria-label="Próximo diferencial"
-            >
-              <ChevronRight className="w-5 h-5" />
-            </button>
-          </div>
+      {/* Barra superior com navegação circular e indicador do módulo */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+        <div className="flex flex-wrap items-center gap-2">
+          {SLIDES.map((slide, idx) => {
+            const active = idx === activeIndex;
+            return (
+              <button
+                key={slide.id}
+                type="button"
+                onClick={() => setActiveIndex(idx)}
+                className={`min-h-[38px] px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer border ${active
+                    ? "bg-gradient-to-b from-[#F8FAFC] to-[#CBD5E1] text-[#07090E] border-white shadow-[0_6px_20px_rgba(255,255,255,0.12)]"
+                    : "bg-[#111622] text-[#94A3B8] border-white/10 hover:border-white/25 hover:text-white"
+                  }`}
+              >
+                {slide.badge}
+              </button>
+            );
+          })}
         </div>
 
-        {/* Faixa do Carrossel com Scroll Snap Tátil */}
-        <div
-          ref={trackRef}
-          onScroll={handleScrollSync}
-          className="flex gap-6 overflow-x-auto snap-x snap-mandatory pb-3 scroll-smooth [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-        >
-          {CAROUSEL_MODULES.map((item) => (
-            <div
-              key={item.id}
-              className="snap-start flex-none w-[88%] sm:w-[calc((100%-24px)/2)] lg:w-[calc((100%-48px)/3)] select-none"
-            >
-              <article className="group bg-white rounded-3xl border border-[#E7EAE7] shadow-xs hover:shadow-xl hover:-translate-y-1.5 transition-all duration-300 ease-out flex flex-col h-full overflow-hidden">
-                {/* Topo Visual Amplo com Zoom Suave (Zero Balões Aninhados) */}
-                <div className="aspect-[16/10] relative overflow-hidden bg-[#142D26]">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={item.bgImage}
-                    alt={item.title}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ease-out"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-[#0B1915]/90 via-[#142D26]/45 to-transparent" />
-                  <div className="absolute bottom-4 left-5 right-5 text-white text-left">
-                    <span className="font-heading text-xl sm:text-2xl font-extrabold tracking-tight block">
-                      {item.visualFocus}
-                    </span>
-                    <span className="text-xs text-[#D2E7D9] leading-snug block mt-0.5">
-                      {item.visualDetail}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Corpo Limpo e Arejado */}
-                <div className="p-6 sm:p-7 flex-1 flex flex-col justify-between text-left">
-                  <div>
-                    <span className="text-[11px] font-bold uppercase tracking-wider text-[#247653] block mb-1.5">
-                      {item.category}
-                    </span>
-
-                    <h3 className="font-heading font-bold text-xl sm:text-2xl text-[#142D26] group-hover:text-[#247653] transition-colors leading-snug mb-3">
-                      {item.title}
-                    </h3>
-
-                    <p className="font-editorial text-sm text-[#737D75] leading-relaxed mb-6">
-                      {item.description}
-                    </p>
-                  </div>
-
-                  {item.targetHref === "#planos" ? (
-                    <button
-                      type="button"
-                      onClick={onStartTrial}
-                      className="w-full min-h-[46px] rounded-full bg-[#E9F3EC] hover:bg-[#247653] text-[#142D26] hover:text-white text-xs font-bold flex items-center justify-center gap-2 transition-all duration-200 cursor-pointer"
-                    >
-                      <span>{item.actionLabel}</span>
-                      <ArrowRight className="w-4 h-4" />
-                    </button>
-                  ) : (
-                    <a
-                      href={item.targetHref}
-                      className="w-full min-h-[46px] rounded-full bg-[#E9F3EC] hover:bg-[#247653] text-[#142D26] hover:text-white text-xs font-bold flex items-center justify-center gap-2 transition-all duration-200"
-                    >
-                      <span>{item.actionLabel}</span>
-                      <ArrowRight className="w-4 h-4" />
-                    </a>
-                  )}
-                </div>
-              </article>
-            </div>
-          ))}
-        </div>
-
-        {/* Indicadores de Paginação em Pílula */}
-        <div className="flex items-center justify-center gap-2 mt-8">
-          {CAROUSEL_MODULES.map((item, idx) => (
-            <button
-              key={item.id}
-              type="button"
-              onClick={() => scrollToSlide(idx)}
-              className={`h-2 rounded-full transition-all duration-300 cursor-pointer ${
-                activeIndex === idx
-                  ? "w-8 bg-[#247653]"
-                  : "w-2 bg-[#D5DBD5] hover:bg-[#247653]/45"
-              }`}
-              aria-label={`Ir para ${item.title}`}
-            />
-          ))}
+        <div className="flex items-center gap-2 self-end sm:self-auto">
+          <button
+            type="button"
+            onClick={() => setIsPaused((p) => !p)}
+            aria-label={isPaused ? "Continuar apresentação" : "Pausar apresentação"}
+            className="w-11 h-11 rounded-full bg-[#111622] border border-white/10 hover:border-white/30 text-[#CBD5E1] hover:text-white flex items-center justify-center transition-colors cursor-pointer"
+          >
+            {isPaused ? <Play className="w-4 h-4" /> : <Pause className="w-4 h-4" />}
+          </button>
+          <button
+            type="button"
+            onClick={handlePrev}
+            aria-label="Tela anterior"
+            className="w-11 h-11 rounded-full bg-[#111622] border border-white/10 hover:border-white/30 text-[#CBD5E1] hover:text-white flex items-center justify-center transition-colors cursor-pointer"
+          >
+            <ArrowLeft className="w-4 h-4" />
+          </button>
+          <button
+            type="button"
+            onClick={handleNext}
+            aria-label="Próxima tela"
+            className="w-11 h-11 rounded-full bg-gradient-to-b from-[#F8FAFC] to-[#CBD5E1] text-[#07090E] hover:brightness-105 flex items-center justify-center transition-all cursor-pointer shadow-[0_6px_18px_rgba(255,255,255,0.14)]"
+          >
+            <ArrowRight className="w-4 h-4" />
+          </button>
         </div>
       </div>
-    </section>
+
+      {/* Palco principal do slide com captura real em moldura estúdio */}
+      <div className="rounded-[28px] bg-[#0D121C] border border-white/15 shadow-[0_32px_90px_rgba(0,0,0,0.6)] overflow-hidden">
+        <div className="grid grid-cols-1 lg:grid-cols-12 items-stretch">
+          {/* Esquerda: Captura real do módulo */}
+          <div className="lg:col-span-8 bg-[#07090E] p-3 sm:p-5 border-b lg:border-b-0 lg:border-r border-white/10">
+            <div className="rounded-2xl overflow-hidden border border-white/10 bg-[#111622] shadow-2xl">
+              {/* Barra discreta de janela */}
+              <div className="px-4 py-2.5 bg-[#121824] border-b border-white/10 flex items-center justify-between">
+                <div className="flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 rounded-full bg-white/20" />
+                  <span className="w-2.5 h-2.5 rounded-full bg-white/20" />
+                  <span className="w-2.5 h-2.5 rounded-full bg-white/20" />
+                </div>
+                <span className="text-[11px] font-medium text-[#94A3B8]">
+                  Tela real do sistema — {currentSlide.badge}
+                </span>
+                <span className="w-2 h-2 rounded-full bg-[#10B981]" />
+              </div>
+
+              <div className="relative aspect-[16/10] w-full overflow-hidden bg-[#0B0F17]">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  key={currentSlide.id}
+                  src={currentSlide.image}
+                  alt={currentSlide.imageAlt}
+                  className="w-full h-full object-cover object-top transition-opacity duration-500"
+                />
+                <div
+                  className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-[#07090E]/75 to-transparent"
+                  aria-hidden="true"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Direita: Explicação direta ao dono */}
+          <div className="lg:col-span-4 p-6 sm:p-8 flex flex-col justify-between bg-gradient-to-b from-[#111622] to-[#0B0F17]">
+            <div>
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/[0.06] border border-white/15 text-[11px] font-semibold text-[#CBD5E1]">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#38BDF8]" />
+                <span>{currentSlide.badge}</span>
+              </span>
+
+              <h3 className="font-heading text-2xl sm:text-[28px] font-extrabold text-white tracking-tight leading-tight mt-4">
+                {currentSlide.title}
+              </h3>
+
+              <p className="text-sm sm:text-base text-[#94A3B8] leading-relaxed mt-3">
+                {currentSlide.summary}
+              </p>
+
+              <ul className="mt-6 space-y-2.5">
+                {currentSlide.highlights.map((hl) => (
+                  <li
+                    key={hl}
+                    className="flex items-center gap-2.5 text-sm font-medium text-[#E2E8F0]"
+                  >
+                    <span className="w-5 h-5 rounded-full bg-[#10B981]/15 border border-[#10B981]/40 text-[#10B981] flex items-center justify-center text-[11px] font-bold shrink-0">
+                      ✓
+                    </span>
+                    <span>{hl}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Pílulas de progresso */}
+            <div className="mt-8 pt-5 border-t border-white/10 flex items-center gap-2">
+              {SLIDES.map((s, idx) => (
+                <button
+                  key={s.id}
+                  type="button"
+                  onClick={() => setActiveIndex(idx)}
+                  aria-label={`Ver ${s.title}`}
+                  className={`h-2 rounded-full transition-all cursor-pointer ${idx === activeIndex
+                      ? "w-8 bg-gradient-to-r from-white to-[#94A3B8]"
+                      : "w-2 bg-white/20 hover:bg-white/40"
+                    }`}
+                />
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }

@@ -18,8 +18,11 @@ const PUBLIC_PAGES = [
   "/redefinir-senha",
   "/gestor-master",
   "/vulpto_logo.png",
+  "/vulpto_full_logo.png",
+  "/vulpto_rounded_logo.png",
   "/vulpto_logo_vector.svg",
   "/brand",
+  "/models",
   "/favicon.ico",
   "/apple-touch-icon.png",
 ];
@@ -184,6 +187,6 @@ export async function middleware(req: NextRequest) {
 export const config = {
   // Exclui assets estáticos do Next, logos da marca e modelos 3D. Uploads (fotos de vistoria) exigem login.
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|apple-touch-icon.png|vulpto_logo.png|vulpto_logo_vector.svg|brand/|models/).*)",
+    "/((?!_next/static|_next/image|favicon.ico|apple-touch-icon.png|vulpto_logo.png|vulpto_full_logo.png|vulpto_rounded_logo.png|vulpto_logo_vector.svg|brand/|models/).*)",
   ],
 };

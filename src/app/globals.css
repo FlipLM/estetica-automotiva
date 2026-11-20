@@ -340,3 +340,83 @@ textarea {
     break-inside: avoid !important;
   }
 }
+
+/* =========================================================
+ * ANIMAÇÕES SVGATOR / STUDIO MOTION (LANDING PAGE VULPTO)
+ * ========================================================= */
+@keyframes vulptoSvgFlow {
+  0% {
+    stroke-dashoffset: 320;
+    opacity: 0.35;
+  }
+  50% {
+    opacity: 0.95;
+  }
+  100% {
+    stroke-dashoffset: 0;
+    opacity: 0.35;
+  }
+}
+
+@keyframes vulptoSvgOrbit {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes vulptoSvgSlide {
+  0%,
+  100% {
+    transform: translateX(0px);
+  }
+  50% {
+    transform: translateX(4px);
+  }
+}
+
+@keyframes vulptoChromePulse {
+  0%,
+  100% {
+    opacity: 0.45;
+  }
+  50% {
+    opacity: 0.9;
+  }
+}
+
+.vulpto-svg-flow {
+  stroke-dasharray: 120 200;
+  animation: vulptoSvgFlow 5.5s linear infinite;
+}
+
+.vulpto-svg-flow-slow {
+  stroke-dasharray: 160 220;
+  animation: vulptoSvgFlow 8s linear infinite;
+}
+
+.vulpto-svg-orbit {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: vulptoSvgOrbit 9s linear infinite;
+}
+
+.vulpto-svg-slide {
+  animation: vulptoSvgSlide 2.8s ease-in-out infinite;
+}
+
+.vulpto-chrome-pulse {
+  animation: vulptoChromePulse 4.5s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vulpto-svg-flow,
+  .vulpto-svg-flow-slow,
+  .vulpto-svg-orbit,
+  .vulpto-svg-slide,
+  .vulpto-chrome-pulse {
+    animation: none !important;
+  }
+}
