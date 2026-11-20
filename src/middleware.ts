@@ -3,10 +3,11 @@ import { jwtVerify } from "jose";
 
 /**
  * Barreira central de autenticação e segurança HTTP (deny-by-default).
+ * - Libera a Landing Page pública em "/" mantendo todo o painel e APIs protegidos.
  * - Força HTTPS em produção (item 19).
  * - Aplica cabeçalhos de segurança CSP, HSTS, XFO, nosniff, COOP (item 18).
  * - Bloqueia CSRF por validação de Origin em mutações (item 9).
- * - Toda rota é protegida, exceto as listadas em PUBLIC_* (item 6).
+ * - Toda rota é protegida, exceto "/" e as listadas em PUBLIC_* (item 6).
  */
 const AUTH_COOKIE_NAME = "detailing_saas_token";
 
@@ -17,6 +18,7 @@ const PUBLIC_PAGES = [
   "/redefinir-senha",
   "/gestor-master",
   "/vulpto_logo.png",
+  "/vulpto_logo_vector.svg",
   "/brand",
   "/favicon.ico",
   "/apple-touch-icon.png",
@@ -120,7 +122,7 @@ export async function middleware(req: NextRequest) {
 
   const isPublic = isApi
     ? matches(pathname, PUBLIC_API_PREFIXES)
-    : matches(pathname, PUBLIC_PAGES);
+    : pathname === "/" || matches(pathname, PUBLIC_PAGES);
   if (isPublic) {
     if (pathname === "/login") {
       const payload = await getVerifiedSessionPayload(req);
@@ -180,8 +182,8 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  // Exclui apenas assets estáticos do Next e modelos 3D. Uploads (fotos de vistoria) exigem login.
+  // Exclui assets estáticos do Next, logos da marca e modelos 3D. Uploads (fotos de vistoria) exigem login.
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|apple-touch-icon.png|vulpto_logo.png|brand/|models/).*)",
+    "/((?!_next/static|_next/image|favicon.ico|apple-touch-icon.png|vulpto_logo.png|vulpto_logo_vector.svg|brand/|models/).*)",
   ],
 };
